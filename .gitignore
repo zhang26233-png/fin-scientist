@@ -1,5 +1,16 @@
-﻿__pycache__/
+__pycache__/
 *.pyc
 .venv/
 .env
+.env.*
+!.env.example
 .streamlit/secrets.toml
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.log
+logs/
+cache/
+data/cache/
+*.sqlite
+*.db

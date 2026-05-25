@@ -1,4 +1,5 @@
 import math
+import os
 import re
 from datetime import date
 
@@ -8,7 +9,7 @@ import streamlit as st
 import yfinance as yf
 
 
-APP_VERSION = "V0.7"
+APP_VERSION = "V0.8"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
@@ -151,6 +152,38 @@ def resolve_name_to_ticker(name):
     return NAME_MAP.get(name.strip())
 
 
+def validate_ticker_input(raw_ticker, market):
+    ticker = (raw_ticker or "").strip().upper()
+    if not ticker:
+        return False, "股票代码不能为空。"
+    if len(ticker) > 20:
+        return False, "股票代码过长，请检查输入。"
+    if market == "A股":
+        clean_ticker = ticker.replace(".SS", "").replace(".SZ", "")
+        if not re.fullmatch(r"\d{6}", clean_ticker):
+            return False, "A股代码应为 6 位数字，例如 600519、000001。"
+        return True, ""
+    if market == "港股":
+        clean_ticker = ticker.replace(".HK", "")
+        if not re.fullmatch(r"\d{1,5}", clean_ticker):
+            return False, "港股代码应为数字，例如 0700、9988、3690。"
+        return True, ""
+    if not re.fullmatch(r"[A-Z0-9.\-]{1,12}", ticker):
+        return False, "美股代码仅支持字母、数字、点号和短横线，例如 NVDA、BRK-B。"
+    return True, ""
+
+
+def validate_name_input(name):
+    clean_name = (name or "").strip()
+    if not clean_name:
+        return False, "股票名称不能为空。"
+    if len(clean_name) > 30:
+        return False, "股票名称过长，请改用股票代码。"
+    if re.search(r"[<>{}\\[\];`$]", clean_name):
+        return False, "股票名称包含不支持的特殊字符，请检查输入。"
+    return True, ""
+
+
 def normalize_ticker(raw_ticker, market):
     ticker = raw_ticker.strip().upper()
     if not ticker:
@@ -171,6 +204,239 @@ def normalize_yfinance_data(data):
     return data
 
 
+def get_data_source(market):
+    if market == "A股":
+        return "AkShare"
+    if market == "港股":
+        return "AkShare 优先，yfinance 备用"
+    return "yfinance"
+
+
+def get_market_currency(market):
+    if market == "美股":
+        return "USD"
+    if market == "港股":
+        return "HKD"
+    if market == "A股":
+        return "CNY"
+    return MISSING
+
+
+def get_primary_source(market):
+    if market == "美股":
+        return "yfinance"
+    if market in ("港股", "A股"):
+        return "AkShare"
+    return "数据源默认"
+
+
+def get_fallback_source(market):
+    return "yfinance" if market == "港股" else "无"
+
+
+def normalize_hk_symbol_for_akshare(symbol):
+    return symbol.upper().replace(".HK", "").zfill(5)
+
+
+def normalize_price_dataframe(raw_data):
+    if raw_data is None or raw_data.empty:
+        return pd.DataFrame()
+
+    data = normalize_yfinance_data(raw_data.copy())
+    column_map = {
+        "日期": "Date",
+        "开盘": "Open",
+        "最高": "High",
+        "最低": "Low",
+        "收盘": "Close",
+        "成交量": "Volume",
+        "成交额": "Turnover",
+        "Adj Close": "Adj Close",
+    }
+    data = data.rename(columns=column_map)
+
+    if "Date" not in data.columns:
+        data = data.reset_index()
+        first_col = data.columns[0]
+        data = data.rename(columns={first_col: "Date"})
+
+    data["Date"] = pd.to_datetime(data["Date"], errors="coerce")
+    data = data.dropna(subset=["Date"])
+    data = data.sort_values("Date")
+    duplicate_dates_removed = int(data["Date"].duplicated().sum())
+    data = data.drop_duplicates(subset=["Date"], keep="last")
+
+    standard_columns = ["Date", "Open", "High", "Low", "Close", "Volume", "Turnover", "Adj Close"]
+    keep_columns = [col for col in standard_columns if col in data.columns]
+    data = data[keep_columns]
+
+    for col in ["Open", "High", "Low", "Close", "Volume", "Turnover", "Adj Close"]:
+        if col in data.columns:
+            data[col] = pd.to_numeric(data[col], errors="coerce")
+
+    data = data.set_index("Date", drop=False)
+    data.attrs["duplicate_dates_removed"] = duplicate_dates_removed
+    return data
+
+
+def check_data_freshness(price_df, market_type):
+    if price_df is None or price_df.empty:
+        return {
+            "latest_trade_date": INSUFFICIENT,
+            "days_since_latest": math.nan,
+            "freshness_note": "未获取到最新交易日，无法判断数据时效性。",
+        }
+
+    try:
+        dates = pd.to_datetime(price_df["Date"] if "Date" in price_df else price_df.index, errors="coerce")
+        dates = pd.Series(dates).dropna()
+        if dates.empty:
+            raise ValueError("empty dates")
+        latest_trade_date = dates.max().date()
+        days_since_latest = (date.today() - latest_trade_date).days
+    except Exception:
+        return {
+            "latest_trade_date": INSUFFICIENT,
+            "days_since_latest": math.nan,
+            "freshness_note": "交易日期字段不可用，无法判断数据时效性。",
+        }
+
+    if days_since_latest <= 5:
+        note = "数据时效性正常，但免费数据源仍可能存在延迟。"
+    elif days_since_latest <= 15:
+        note = "最新交易日距离当前日期较久，数据可能不是最新。"
+    else:
+        note = "数据明显滞后，请检查代码、市场类型或数据源。"
+
+    return {
+        "latest_trade_date": latest_trade_date.strftime("%Y-%m-%d"),
+        "days_since_latest": days_since_latest,
+        "freshness_note": f"{note} 不同市场存在节假日差异，本提示仅用于风险识别。",
+    }
+
+
+def build_data_source_meta(
+    price_df,
+    market,
+    primary_source,
+    fallback_source,
+    actual_source,
+    fallback_used=False,
+    adjustment="数据源默认口径",
+    source_warning=None,
+):
+    freshness = check_data_freshness(price_df, market)
+    warning = source_warning or "免费数据源可能延迟、缺失，且不同来源的复权口径和字段口径可能不一致。"
+    if fallback_used:
+        warning = f"主数据源 AkShare 获取失败，当前使用备用数据源 yfinance。{warning}"
+    return {
+        "primary_source": primary_source,
+        "fallback_source": fallback_source or "无",
+        "actual_source": actual_source or "无",
+        "fallback_used": bool(fallback_used),
+        "latest_trade_date": freshness["latest_trade_date"],
+        "data_frequency": "日线",
+        "currency": get_market_currency(market) or "数据源默认",
+        "adjustment": adjustment or "数据源默认口径",
+        "freshness_note": freshness["freshness_note"],
+        "source_warning": warning,
+    }
+
+
+def get_price_data_metadata(data, symbol, market):
+    source_meta = data.attrs.get("data_source_meta", {}) if data is not None else {}
+    clean_index = pd.to_datetime(data.index, errors="coerce") if data is not None and not data.empty else pd.Index([])
+    clean_index = pd.Series(clean_index).dropna()
+    return {
+        "数据来源": source_meta.get("actual_source", get_data_source(market)),
+        "主数据源": source_meta.get("primary_source", get_primary_source(market)),
+        "备用数据源": source_meta.get("fallback_source", get_fallback_source(market)),
+        "是否使用备用源": "是" if source_meta.get("fallback_used") else "否",
+        "最近更新时间": source_meta.get("latest_trade_date") or (clean_index.max().strftime("%Y-%m-%d") if len(clean_index) else INSUFFICIENT),
+        "市场类型": market,
+        "币种": source_meta.get("currency", get_market_currency(market)),
+        "数据频率": source_meta.get("data_frequency", "日线"),
+        "复权口径": source_meta.get("adjustment", "数据源默认口径"),
+        "时效性说明": source_meta.get("freshness_note", check_data_freshness(data, market)["freshness_note"]),
+        "数据源风险提示": source_meta.get("source_warning", "免费数据源可能延迟、缺失或口径不一致。"),
+        "起始日期": clean_index.min().strftime("%Y-%m-%d") if len(clean_index) else INSUFFICIENT,
+        "结束日期": clean_index.max().strftime("%Y-%m-%d") if len(clean_index) else INSUFFICIENT,
+        "实际查询代码": symbol,
+    }
+
+
+def check_price_data_quality(data):
+    report = generate_data_quality_report(data)
+    return {
+        "数据行数": report["总交易日数量"],
+        "缺失收盘价数量": report["收盘价为空的行数"],
+        "重复日期数量": report["重复日期数量"],
+        "异常日涨跌幅数量": report["单日涨跌幅超过20%的异常记录数量"],
+        "质量提示": report["数据质量结论"],
+    }
+
+
+def generate_data_quality_report(price_df):
+    if price_df is None or price_df.empty:
+        return {
+            "数据起始日期": INSUFFICIENT,
+            "数据结束日期": INSUFFICIENT,
+            "总交易日数量": 0,
+            "缺失值总数": INSUFFICIENT,
+            "重复日期数量": INSUFFICIENT,
+            "收盘价为空的行数": INSUFFICIENT,
+            "成交量为0的行数": INSUFFICIENT,
+            "单日涨跌幅超过20%的异常记录数量": INSUFFICIENT,
+            "是否足够计算MA20": "否",
+            "是否足够计算MA60": "否",
+            "是否足够计算MA120": "否",
+            "是否足够计算年化波动率": "否",
+            "是否足够计算最大回撤": "否",
+            "数据质量结论": "数据不足，请谨慎使用",
+        }
+
+    data = price_df.copy()
+    dates = pd.to_datetime(data["Date"] if "Date" in data else data.index, errors="coerce")
+    valid_dates = pd.Series(dates).dropna()
+    close_prices = pd.to_numeric(data["Close"], errors="coerce") if "Close" in data else pd.Series(index=data.index, dtype=float)
+    volume = pd.to_numeric(data["Volume"], errors="coerce") if "Volume" in data else pd.Series(index=data.index, dtype=float)
+    daily_returns = close_prices.pct_change(fill_method=None).replace([math.inf, -math.inf], math.nan)
+
+    total_days = int(len(data))
+    missing_total = int(data.isna().sum().sum())
+    duplicate_dates = int(pd.Series(dates).duplicated().sum()) + int(data.attrs.get("duplicate_dates_removed", 0))
+    missing_close = int(close_prices.isna().sum())
+    zero_volume = int((volume == 0).sum()) if "Volume" in data else INSUFFICIENT
+    abnormal_count = int((daily_returns.abs() > 0.2).sum())
+    valid_close_count = int(close_prices.dropna().shape[0])
+
+    serious_issues = total_days < 20 or missing_close > 0.2 * max(total_days, 1)
+    minor_issues = missing_total > 0 or duplicate_dates > 0 or abnormal_count > 0 or valid_close_count < 60
+    if serious_issues:
+        conclusion = "数据不足，请谨慎使用"
+    elif minor_issues:
+        conclusion = "数据基本可用但存在缺陷"
+    else:
+        conclusion = "数据较完整"
+
+    return {
+        "数据起始日期": valid_dates.min().strftime("%Y-%m-%d") if len(valid_dates) else INSUFFICIENT,
+        "数据结束日期": valid_dates.max().strftime("%Y-%m-%d") if len(valid_dates) else INSUFFICIENT,
+        "总交易日数量": total_days,
+        "缺失值总数": missing_total,
+        "重复日期数量": duplicate_dates,
+        "收盘价为空的行数": missing_close,
+        "成交量为0的行数": zero_volume,
+        "单日涨跌幅超过20%的异常记录数量": abnormal_count,
+        "是否足够计算MA20": "是" if valid_close_count >= 20 else "否",
+        "是否足够计算MA60": "是" if valid_close_count >= 60 else "否",
+        "是否足够计算MA120": "是" if valid_close_count >= 120 else "否",
+        "是否足够计算年化波动率": "是" if valid_close_count >= 21 else "否",
+        "是否足够计算最大回撤": "是" if valid_close_count >= 2 else "否",
+        "数据质量结论": conclusion,
+    }
+
+
 def fetch_yfinance_history(symbol, period):
     data = yf.download(
         symbol,
@@ -179,8 +445,7 @@ def fetch_yfinance_history(symbol, period):
         progress=False,
         auto_adjust=False,
     )
-    data = normalize_yfinance_data(data)
-    return data
+    return normalize_price_dataframe(data)
 
 
 def fetch_a_share_history(symbol, period_label):
@@ -195,27 +460,147 @@ def fetch_a_share_history(symbol, period_label):
     )
     if raw.empty:
         return pd.DataFrame()
+    return normalize_price_dataframe(raw)
 
-    column_map = {
-        "日期": "Date",
-        "开盘": "Open",
-        "收盘": "Close",
-        "最高": "High",
-        "最低": "Low",
-        "成交量": "Volume",
-        "成交额": "Turnover",
-    }
-    data = raw.rename(columns=column_map)
-    data["Date"] = pd.to_datetime(data["Date"])
-    data = data.set_index("Date")
-    keep_columns = [col for col in ["Open", "High", "Low", "Close", "Volume", "Turnover"] if col in data]
-    return data[keep_columns].apply(pd.to_numeric, errors="coerce")
+
+def fetch_hk_akshare_history(symbol, period_label):
+    end_date = date.today()
+    start_date = end_date - pd.DateOffset(months=PERIOD_MONTHS[period_label])
+    raw = ak.stock_hk_hist(
+        symbol=normalize_hk_symbol_for_akshare(symbol),
+        period="daily",
+        start_date=start_date.strftime("%Y%m%d"),
+        end_date=end_date.strftime("%Y%m%d"),
+        adjust="qfq",
+    )
+    if raw.empty:
+        return pd.DataFrame()
+    return normalize_price_dataframe(raw)
 
 
 def fetch_market_data(symbol, market, period_label):
-    if market == "A股":
-        return fetch_a_share_history(symbol, period_label)
-    return fetch_yfinance_history(symbol, PERIOD_OPTIONS[period_label])
+    primary_source = get_primary_source(market)
+    fallback_source = get_fallback_source(market)
+
+    try:
+        if market == "A股":
+            data = fetch_a_share_history(symbol, period_label)
+            data.attrs["data_source_meta"] = build_data_source_meta(
+                data,
+                market,
+                primary_source,
+                fallback_source,
+                "AkShare" if not data.empty else "无",
+                adjustment="前复权 qfq",
+            )
+            return data
+
+        if market == "港股":
+            try:
+                data = fetch_hk_akshare_history(symbol, period_label)
+                if not data.empty:
+                    data.attrs["data_source_meta"] = build_data_source_meta(
+                        data,
+                        market,
+                        primary_source,
+                        fallback_source,
+                        "AkShare",
+                        fallback_used=False,
+                        adjustment="前复权 qfq",
+                    )
+                    return data
+            except Exception:
+                data = pd.DataFrame()
+
+            fallback_data = fetch_yfinance_history(normalize_ticker(symbol, "港股"), PERIOD_OPTIONS[period_label])
+            fallback_data.attrs["data_source_meta"] = build_data_source_meta(
+                fallback_data,
+                market,
+                primary_source,
+                fallback_source,
+                "yfinance" if not fallback_data.empty else "无",
+                fallback_used=not fallback_data.empty,
+                adjustment="yfinance 默认口径",
+            )
+            return fallback_data
+
+        data = fetch_yfinance_history(symbol, PERIOD_OPTIONS[period_label])
+        data.attrs["data_source_meta"] = build_data_source_meta(
+            data,
+            market,
+            primary_source,
+            fallback_source,
+            "yfinance" if not data.empty else "无",
+            adjustment="yfinance 默认口径",
+        )
+        return data
+    except Exception:
+        empty = pd.DataFrame()
+        empty.attrs["data_source_meta"] = build_data_source_meta(
+            empty,
+            market,
+            primary_source,
+            fallback_source,
+            "无",
+            source_warning="主数据源和备用数据源均未返回可用行情，请检查代码、市场类型或网络连接。",
+        )
+        return empty
+
+
+def compare_hk_sources_if_available(ticker):
+    try:
+        ak_data = fetch_hk_akshare_history(ticker, "6个月")
+        yf_data = fetch_yfinance_history(normalize_ticker(ticker, "港股"), "6mo")
+        if ak_data.empty or yf_data.empty or "Close" not in ak_data or "Close" not in yf_data:
+            return {
+                "status": "unavailable",
+                "message": "主备数据源未能同时获取，暂无法完成交叉校验。",
+            }
+
+        ak_close = ak_data[["Date", "Close"]].dropna()
+        yf_close = yf_data[["Date", "Close"]].dropna()
+        if ak_close.empty or yf_close.empty:
+            return {
+                "status": "unavailable",
+                "message": "主备数据源未能同时获取，暂无法完成交叉校验。",
+            }
+
+        merged = pd.merge(ak_close, yf_close, on="Date", how="inner", suffixes=("_akshare", "_yfinance"))
+        if not merged.empty:
+            compare_row = merged.sort_values("Date").iloc[-1]
+            compare_date = compare_row["Date"]
+            ak_price = compare_row["Close_akshare"]
+            yf_price = compare_row["Close_yfinance"]
+        else:
+            ak_latest = ak_close.sort_values("Date").iloc[-1]
+            yf_latest = yf_close.sort_values("Date").iloc[-1]
+            compare_date = min(ak_latest["Date"], yf_latest["Date"])
+            ak_price = ak_latest["Close"]
+            yf_price = yf_latest["Close"]
+
+        if pd.isna(ak_price) or pd.isna(yf_price) or yf_price == 0:
+            raise ValueError("invalid compare price")
+        diff_pct = abs(ak_price / yf_price - 1)
+        if diff_pct <= 0.01:
+            message = "AkShare 与 yfinance 最近收盘价差异较小。"
+            status = "ok"
+        else:
+            message = "不同数据源存在超过 1% 的价格差异，请谨慎使用。"
+            status = "warning"
+
+        return {
+            "status": status,
+            "message": message,
+            "compare_date": pd.to_datetime(compare_date).strftime("%Y-%m-%d"),
+            "akshare_close": ak_price,
+            "yfinance_close": yf_price,
+            "diff_pct": diff_pct,
+        }
+    except Exception:
+        return {
+            "status": "unavailable",
+            "message": "主备数据源未能同时获取，暂无法完成交叉校验。",
+        }
 
 
 def fetch_yfinance_info(symbol):
@@ -330,24 +715,36 @@ def fetch_financial_snapshot(market, info):
 
 
 def calculate_return(close_prices, days):
-    if len(close_prices) <= days:
+    """Calculate point-to-point return over a fixed number of trading days."""
+    clean_prices = pd.to_numeric(close_prices, errors="coerce").dropna()
+    if len(clean_prices) <= days:
         return math.nan
-    return close_prices.iloc[-1] / close_prices.iloc[-days - 1] - 1
+    base_price = clean_prices.iloc[-days - 1]
+    latest_price = clean_prices.iloc[-1]
+    if pd.isna(base_price) or base_price == 0:
+        return math.nan
+    return latest_price / base_price - 1
 
 
 def calculate_max_drawdown(close_prices):
-    if len(close_prices) < 2:
+    """Calculate the worst peak-to-trough drawdown for a price series."""
+    clean_prices = pd.to_numeric(close_prices, errors="coerce").dropna()
+    clean_prices = clean_prices[clean_prices > 0]
+    if len(clean_prices) < 2:
         return math.nan
-    running_high = close_prices.cummax()
-    drawdown = close_prices / running_high - 1
+    running_high = clean_prices.cummax()
+    drawdown = clean_prices / running_high - 1
     return drawdown.min()
 
 
 def calculate_indicators(data):
-    close_prices = data["Close"].dropna() if "Close" in data else pd.Series(dtype=float)
-    volume = data["Volume"].dropna() if "Volume" in data else pd.Series(dtype=float)
-    daily_returns = close_prices.pct_change().dropna()
+    """Build the core technical indicator dictionary from historical prices."""
+    close_prices = pd.to_numeric(data["Close"], errors="coerce").dropna() if "Close" in data else pd.Series(dtype=float)
+    volume = pd.to_numeric(data["Volume"], errors="coerce").dropna() if "Volume" in data else pd.Series(dtype=float)
+    daily_returns = close_prices.pct_change(fill_method=None).replace([math.inf, -math.inf], math.nan).dropna()
     latest_close = close_prices.iloc[-1] if len(close_prices) else math.nan
+    ma_20d = close_prices.tail(20).mean() if len(close_prices) >= 20 else math.nan
+    ma_60d = close_prices.tail(60).mean() if len(close_prices) >= 60 else math.nan
 
     return {
         "latest_close": latest_close,
@@ -356,11 +753,11 @@ def calculate_indicators(data):
         "return_60d": calculate_return(close_prices, 60),
         "return_120d": calculate_return(close_prices, 120),
         "ma_5d": close_prices.tail(5).mean() if len(close_prices) >= 5 else math.nan,
-        "ma_20d": close_prices.tail(20).mean() if len(close_prices) >= 20 else math.nan,
-        "ma_60d": close_prices.tail(60).mean() if len(close_prices) >= 60 else math.nan,
+        "ma_20d": ma_20d,
+        "ma_60d": ma_60d,
         "ma_120d": close_prices.tail(120).mean() if len(close_prices) >= 120 else math.nan,
-        "bias_20d": latest_close / close_prices.tail(20).mean() - 1 if len(close_prices) >= 20 else math.nan,
-        "bias_60d": latest_close / close_prices.tail(60).mean() - 1 if len(close_prices) >= 60 else math.nan,
+        "bias_20d": latest_close / ma_20d - 1 if len(close_prices) >= 20 and ma_20d else math.nan,
+        "bias_60d": latest_close / ma_60d - 1 if len(close_prices) >= 60 and ma_60d else math.nan,
         "annual_volatility": daily_returns.std() * math.sqrt(252) if len(daily_returns) >= 20 else math.nan,
         "max_drawdown": calculate_max_drawdown(close_prices),
         "range_high": close_prices.max() if len(close_prices) else math.nan,
@@ -376,15 +773,23 @@ def parse_ticker_list(input_text, market_type="美股"):
     raw_items = re.split(r"[,，\s]+", input_text or "")
     tickers = []
     seen = set()
+    invalid_items = []
 
     for raw_item in raw_items:
         item = raw_item.strip().upper()
         if not item:
             continue
+        is_valid, _ = validate_ticker_input(item, market_type)
+        if not is_valid:
+            invalid_items.append(item)
+            continue
         normalized = normalize_ticker(item, market_type)
         if normalized and normalized not in seen:
             tickers.append(normalized)
             seen.add(normalized)
+
+    if invalid_items:
+        st.warning(f"以下代码格式不符合 {market_type} 规则，已跳过：{', '.join(invalid_items[:5])}")
 
     if len(tickers) > 10:
         st.warning("多股票对比最多支持 10 只股票，本次仅处理前 10 只。")
@@ -501,6 +906,14 @@ def build_comparison_table(tickers, market_type, period):
 
     comparison_df = pd.DataFrame(rows)
     comparison_df.attrs["normalized_prices"] = normalize_price_series(price_series_map)
+    if price_series_map:
+        all_dates = pd.Index([])
+        for close_prices in price_series_map.values():
+            all_dates = all_dates.append(pd.Index(close_prices.dropna().index))
+        all_dates = pd.to_datetime(all_dates, errors="coerce").dropna()
+        if len(all_dates):
+            comparison_df.attrs["start_date"] = all_dates.min().strftime("%Y-%m-%d")
+            comparison_df.attrs["end_date"] = all_dates.max().strftime("%Y-%m-%d")
     return comparison_df
 
 
@@ -608,6 +1021,11 @@ def render_comparison_section(tickers, market_type, period_label):
         st.warning("多股票对比表为空，请检查输入代码或数据源状态。")
         return
 
+    st.caption(
+        f"数据来源：{get_data_source(market_type)} | 市场类型：{market_type} | "
+        f"币种：{get_market_currency(market_type)} | 时间范围：{period_label} | "
+        f"起止日期：{comparison_df.attrs.get('start_date', INSUFFICIENT)} 至 {comparison_df.attrs.get('end_date', INSUFFICIENT)}"
+    )
     display_columns = [col for col in comparison_df.columns if not col.startswith("_")]
     st.dataframe(comparison_df[display_columns], hide_index=True, use_container_width=True)
 
@@ -854,12 +1272,23 @@ def run_backtest_section(
         return
 
     metrics = calculate_backtest_metrics(backtest_df)
+    metadata = get_price_data_metadata(backtest_price_data, actual_ticker, market_type)
+    quality_report = generate_data_quality_report(backtest_price_data)
 
     st.subheader("回测说明")
     st.write(
         f"策略名称：{strategy_name} | 股票代码：{actual_ticker} | 市场类型：{market_type} | "
         f"回测时间范围：{period_label} | 初始资金：{initial_capital:,.0f} | 单边交易成本：{trading_cost:.4f}"
     )
+    st.write(
+        f"实际数据源：{metadata['数据来源']} | 主数据源：{metadata['主数据源']} | "
+        f"备用数据源：{metadata['备用数据源']} | 是否使用备用源：{metadata['是否使用备用源']} | "
+        f"最近交易日：{metadata['最近更新时间']} | 币种：{metadata['币种']}"
+    )
+    with st.expander("回测数据质量检查"):
+        st.dataframe(pd.DataFrame([quality_report]), hide_index=True, use_container_width=True)
+        if quality_report["数据质量结论"] != "数据较完整":
+            st.warning(quality_report["数据质量结论"])
     st.caption("这是教学演示，不构成投资建议；回测结果不代表未来收益。")
 
     metric_cols = st.columns(6)
@@ -1206,366 +1635,413 @@ def truncate_text(text, limit=300):
     return text if len(text) <= limit else f"{text[:limit]}..."
 
 
-st.set_page_config(page_title="FinScientist", page_icon="📈", layout="wide")
+if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
+    st.set_page_config(page_title="FinScientist", page_icon="📈", layout="wide")
 
-if "watchlist" not in st.session_state:
-    st.session_state.watchlist = []
+    if "watchlist" not in st.session_state:
+        st.session_state.watchlist = []
 
-st.title("FinScientist")
-st.subheader("AI-assisted financial research workspace")
-st.caption("V0.7 新增简单策略回测模块；仍为本地规则化研究原型，不调用 AI API。")
+    st.title("FinScientist")
+    st.subheader("AI-assisted financial research workspace")
+    st.caption("V0.8 新增数据源可靠性与数据质量报告模块；仍为本地规则化研究原型，不调用 AI API。")
 
-with st.sidebar:
-    st.header("研究参数")
-    market = st.selectbox("市场类型", options=MARKET_OPTIONS, index=0)
-    input_mode = st.radio("输入方式", options=["股票代码", "股票名称"], horizontal=True)
-    user_input = st.text_input(
-        "股票代码或股票名称",
-        value="NVDA" if input_mode == "股票代码" else "英伟达",
-        placeholder="例如：NVDA、0700、600519、英伟达、贵州茅台",
-    )
-    period_label = st.selectbox("时间范围", options=list(PERIOD_OPTIONS.keys()), index=2)
-    analysis_style = st.selectbox("分析风格", options=ANALYSIS_STYLES, index=0)
-    dimensions = st.multiselect(
-        "分析维度",
-        options=ANALYSIS_DIMENSIONS,
-        default=["趋势", "波动", "基本面", "板块", "风险"],
-    )
-    show_description = st.checkbox("显示公司简介", value=True)
-    show_financials = st.checkbox("显示财务摘要", value=True)
-    show_sector = st.checkbox("显示板块观察", value=True)
-    show_events = st.checkbox("显示近期重大消息", value=True)
-    enable_manual_event = st.checkbox("启用手动事件分析", value=True)
-    event_analysis_style = st.selectbox(
-        "事件分析风格",
-        options=["保守解读", "中性解读", "积极解读"],
-        index=1,
-    )
-    manual_event_text = st.text_area(
-        "手动输入重大事件",
-        placeholder="例如：公司发布超预期财报，AI 服务器需求持续增长，管理层上调全年收入指引。",
-        height=120,
-    )
-    run_button = st.button("生成研究工作台", type="primary")
-
-    st.divider()
-    st.header("多股票对比")
-    comparison_input = st.text_area(
-        "多股票代码",
-        value="NVDA, AAPL, MSFT",
-        help="可用英文逗号、中文逗号、空格或换行分隔多个股票代码。美股输入 NVDA；港股输入 0700；A股输入 600519。",
-        height=90,
-    )
-    comparison_market = st.selectbox("多股票市场类型", options=MARKET_OPTIONS, index=0)
-    run_comparison_button = st.button("运行多股票对比")
-    add_current_button = st.button("加入当前标的到自选股")
-    st.caption(f"当前自选股数量：{len(st.session_state.watchlist)}")
-    if st.session_state.watchlist:
-        st.write("、".join(st.session_state.watchlist))
-    run_watchlist_comparison_button = st.button(
-        "基于自选股运行对比",
-        disabled=not bool(st.session_state.watchlist),
-    )
-    clear_watchlist_button = st.button(
-        "清空自选股",
-        disabled=not bool(st.session_state.watchlist),
-    )
-
-    st.divider()
-    st.header("策略回测")
-    enable_backtest = st.checkbox("启用策略回测", value=True)
-    backtest_strategy = st.selectbox("回测策略", options=BACKTEST_STRATEGIES, index=0)
-    initial_capital = st.number_input("初始资金", min_value=10000, value=100000, step=10000)
-    trading_cost = st.number_input(
-        "单边交易成本",
-        min_value=0.0,
-        max_value=0.05,
-        value=0.001,
-        step=0.0005,
-        format="%.4f",
-        help="例如 0.001 表示单边交易成本 0.1%。",
-    )
-    backtest_period_label = st.selectbox("回测时间范围", options=BACKTEST_PERIOD_OPTIONS, index=1)
-    run_backtest_button = st.button("运行回测", disabled=not enable_backtest)
-
-if clear_watchlist_button:
-    clear_watchlist()
-    st.success("已清空自选股列表。")
-
-selected_market = market
-raw_symbol = ""
-symbol = ""
-input_error = ""
-if not user_input.strip():
-    input_error = "请输入股票代码或股票名称。"
-elif input_mode == "股票名称":
-    resolved = resolve_name_to_ticker(user_input)
-    if not resolved:
-        input_error = "当前版本暂不支持该名称搜索，请改用股票代码输入。"
-    else:
-        selected_market, raw_symbol = resolved
-else:
-    raw_symbol = user_input
-
-if raw_symbol:
-    symbol = normalize_ticker(raw_symbol, selected_market)
-
-if add_current_button:
-    if symbol:
-        add_to_watchlist(symbol)
-        st.success(f"已加入自选股：{symbol}")
-    else:
-        st.warning(input_error or "请输入有效股票代码后再加入自选股。")
-
-comparison_tickers = []
-if run_comparison_button:
-    comparison_tickers = parse_ticker_list(comparison_input, comparison_market)
-    if not comparison_tickers:
-        st.warning("请输入至少一只股票代码后再运行多股票对比。")
-elif run_watchlist_comparison_button:
-    comparison_tickers = parse_ticker_list(" ".join(st.session_state.watchlist), comparison_market)
-    if not comparison_tickers:
-        st.warning("当前暂无可用于对比的自选股。")
-
-if not run_button:
-    if comparison_tickers:
-        render_watchlist_panel()
-        render_comparison_section(comparison_tickers, comparison_market, period_label)
-        if run_backtest_button:
-            run_backtest_section(symbol, selected_market, backtest_strategy, backtest_period_label, initial_capital, trading_cost)
-    elif run_backtest_button:
-        render_watchlist_panel()
-        run_backtest_section(symbol, selected_market, backtest_strategy, backtest_period_label, initial_capital, trading_cost)
-    else:
-        st.info("在侧边栏选择市场和输入方式后，点击“生成研究工作台”；也可以直接运行多股票对比或策略回测。")
-        render_watchlist_panel()
-    st.stop()
-
-if input_error:
-    st.warning(input_error)
-    st.stop()
-
-if not symbol:
-    st.warning("请输入股票代码。")
-    st.stop()
-
-try:
-    with st.spinner(f"正在获取 {selected_market} 标的 {symbol} 数据..."):
-        price_data = fetch_market_data(symbol, selected_market, period_label)
-        source_info = (
-            fetch_a_share_info(symbol)
-            if selected_market == "A股"
-            else fetch_yfinance_info(symbol)
+    with st.sidebar:
+        st.header("研究参数")
+        market = st.selectbox("市场类型", options=MARKET_OPTIONS, index=0)
+        input_mode = st.radio("输入方式", options=["股票代码", "股票名称"], horizontal=True)
+        user_input = st.text_input(
+            "股票代码或股票名称",
+            value="NVDA" if input_mode == "股票代码" else "英伟达",
+            placeholder="例如：NVDA、0700、600519、英伟达、贵州茅台",
         )
-except Exception as exc:
-    st.error(f"未获取到数据，请检查代码、市场类型或网络连接。错误信息：{exc}")
-    st.stop()
+        period_label = st.selectbox("时间范围", options=list(PERIOD_OPTIONS.keys()), index=2)
+        analysis_style = st.selectbox("分析风格", options=ANALYSIS_STYLES, index=0)
+        dimensions = st.multiselect(
+            "分析维度",
+            options=ANALYSIS_DIMENSIONS,
+            default=["趋势", "波动", "基本面", "板块", "风险"],
+        )
+        show_description = st.checkbox("显示公司简介", value=True)
+        show_financials = st.checkbox("显示财务摘要", value=True)
+        show_sector = st.checkbox("显示板块观察", value=True)
+        show_events = st.checkbox("显示近期重大消息", value=True)
+        enable_manual_event = st.checkbox("启用手动事件分析", value=True)
+        event_analysis_style = st.selectbox(
+            "事件分析风格",
+            options=["保守解读", "中性解读", "积极解读"],
+            index=1,
+        )
+        manual_event_text = st.text_area(
+            "手动输入重大事件",
+            placeholder="例如：公司发布超预期财报，AI 服务器需求持续增长，管理层上调全年收入指引。",
+            height=120,
+        )
+        run_button = st.button("生成研究工作台", type="primary")
 
-if price_data.empty or "Close" not in price_data.columns:
-    st.error("未获取到数据，请检查代码、市场类型或网络连接")
-    st.stop()
+        st.divider()
+        st.header("多股票对比")
+        comparison_input = st.text_area(
+            "多股票代码",
+            value="NVDA, AAPL, MSFT",
+            help="可用英文逗号、中文逗号、空格或换行分隔多个股票代码。美股输入 NVDA；港股输入 0700；A股输入 600519。",
+            height=90,
+        )
+        comparison_market = st.selectbox("多股票市场类型", options=MARKET_OPTIONS, index=0)
+        run_comparison_button = st.button("运行多股票对比")
+        add_current_button = st.button("加入当前标的到自选股")
+        st.caption(f"当前自选股数量：{len(st.session_state.watchlist)}")
+        if st.session_state.watchlist:
+            st.write("、".join(st.session_state.watchlist))
+        run_watchlist_comparison_button = st.button(
+            "基于自选股运行对比",
+            disabled=not bool(st.session_state.watchlist),
+        )
+        clear_watchlist_button = st.button(
+            "清空自选股",
+            disabled=not bool(st.session_state.watchlist),
+        )
 
-metrics = calculate_indicators(price_data)
-profile = fetch_company_profile(symbol, selected_market, source_info)
-valuation = fetch_valuation_metrics(symbol, selected_market, source_info, metrics)
-financial = fetch_financial_snapshot(selected_market, source_info)
-rating, rating_reasons = generate_rating(metrics)
-technical_summary = generate_technical_summary(metrics, analysis_style)
-fundamental_summary = generate_fundamental_summary(valuation, financial)
-sector_summary = generate_sector_summary(profile)
-news_items = fetch_news(symbol, selected_market, limit=5)
-manual_event_type = classify_event(manual_event_text) if manual_event_text.strip() else "未分类事件"
-manual_event_analysis = (
-    generate_event_analysis(manual_event_text, manual_event_type, event_analysis_style)
-    if enable_manual_event
-    else None
-)
-conclusion = generate_integrated_conclusion(
-    rating,
-    rating_reasons,
-    technical_summary,
-    fundamental_summary,
-    sector_summary,
-    manual_event_analysis,
-)
+        st.divider()
+        st.header("策略回测")
+        enable_backtest = st.checkbox("启用策略回测", value=True)
+        backtest_strategy = st.selectbox("回测策略", options=BACKTEST_STRATEGIES, index=0)
+        initial_capital = st.number_input("初始资金", min_value=10000, value=100000, step=10000)
+        trading_cost = st.number_input(
+            "单边交易成本",
+            min_value=0.0,
+            max_value=0.05,
+            value=0.001,
+            step=0.0005,
+            format="%.4f",
+            help="例如 0.001 表示单边交易成本 0.1%。",
+        )
+        backtest_period_label = st.selectbox("回测时间范围", options=BACKTEST_PERIOD_OPTIONS, index=1)
+        run_backtest_button = st.button("运行回测", disabled=not enable_backtest)
 
-st.divider()
-st.header("标的基础信息")
-st.caption(f"用户输入：{user_input} | 实际查询代码：{symbol} | 市场类型：{selected_market}")
+    if clear_watchlist_button:
+        clear_watchlist()
+        st.success("已清空自选股列表。")
 
-info_cols = st.columns(4)
-info_cols[0].metric("公司名称", profile["company_name"])
-info_cols[1].metric("交易所", profile["exchange"])
-info_cols[2].metric("国家/地区", profile["country"])
-info_cols[3].metric("员工数量", format_large_number(profile["employees"]))
-
-info_cols_2 = st.columns(4)
-info_cols_2[0].metric("行业", profile["industry"])
-info_cols_2[1].metric("板块", profile["sector"])
-info_cols_2[2].metric("官网", profile["website"])
-info_cols_2[3].metric("英文名称/简称", profile["short_name"])
-
-if show_description:
-    st.write("公司简介")
-    st.write(truncate_text(profile["description"]))
-
-st.divider()
-st.header("核心价格指标")
-price_cols = st.columns(5)
-price_cols[0].metric("最新收盘价", format_price(metrics["latest_close"]))
-price_cols[1].metric("近5日涨跌幅", format_percent(metrics["return_5d"]))
-price_cols[2].metric("近20日涨跌幅", format_percent(metrics["return_20d"]))
-price_cols[3].metric("近60日涨跌幅", format_percent(metrics["return_60d"]))
-price_cols[4].metric("近120日涨跌幅", format_percent(metrics["return_120d"]))
-
-risk_cols = st.columns(5)
-risk_cols[0].metric("年化波动率", format_percent(metrics["annual_volatility"]))
-risk_cols[1].metric("最大回撤", format_percent(metrics["max_drawdown"]))
-risk_cols[2].metric("区间最高价", format_price(metrics["range_high"]))
-risk_cols[3].metric("区间最低价", format_price(metrics["range_low"]))
-risk_cols[4].metric("近20日平均成交量", format_large_number(metrics["avg_volume_20d"]))
-
-st.divider()
-st.header("均线与趋势指标")
-ma_cols = st.columns(6)
-ma_cols[0].metric("5日均线", format_price(metrics["ma_5d"]))
-ma_cols[1].metric("20日均线", format_price(metrics["ma_20d"]))
-ma_cols[2].metric("60日均线", format_price(metrics["ma_60d"]))
-ma_cols[3].metric("120日均线", format_price(metrics["ma_120d"]))
-ma_cols[4].metric("相对20日均线偏离", format_percent(metrics["bias_20d"]))
-ma_cols[5].metric("相对60日均线偏离", format_percent(metrics["bias_60d"]))
-trend_text = describe_trend(metrics)
-st.write(trend_text)
-
-st.divider()
-st.header("估值指标")
-valuation_cols = st.columns(5)
-valuation_cols[0].metric("市值", format_large_number(valuation["market_cap"]))
-valuation_cols[1].metric("PE", format_metric(valuation["pe"]))
-valuation_cols[2].metric("Forward PE", format_metric(valuation["forward_pe"]))
-valuation_cols[3].metric("PB", format_metric(valuation["pb"]))
-valuation_cols[4].metric("PS", format_metric(valuation["ps"]))
-
-valuation_cols_2 = st.columns(5)
-valuation_cols_2[0].metric("股息率", format_percent(valuation["dividend_yield"], MISSING))
-valuation_cols_2[1].metric("Beta", format_metric(valuation["beta"]))
-valuation_cols_2[2].metric("52周最高价", format_price(valuation["high_52w"]))
-valuation_cols_2[3].metric("52周最低价", format_price(valuation["low_52w"]))
-valuation_cols_2[4].metric("目标价均值", format_price(valuation["target_mean_price"]))
-
-if show_financials:
-    st.divider()
-    st.header("财务摘要")
-    if all(is_missing(value) for value in financial.values()):
-        st.info("当前暂未获取到可用财务摘要")
+    selected_market = market
+    raw_symbol = ""
+    symbol = ""
+    input_error = ""
+    if not user_input.strip():
+        input_error = "请输入股票代码或股票名称。"
+    elif input_mode == "股票名称":
+        is_valid_name, name_error = validate_name_input(user_input)
+        if not is_valid_name:
+            input_error = name_error
+        else:
+            resolved = resolve_name_to_ticker(user_input)
+            if not resolved:
+                input_error = "当前版本暂不支持该名称搜索，请改用股票代码输入。"
+            else:
+                selected_market, raw_symbol = resolved
     else:
-        financial_cols = st.columns(4)
-        financial_cols[0].metric("总收入", format_large_number(financial["total_revenue"]))
-        financial_cols[1].metric("毛利率", format_percent(financial["gross_margin"], MISSING))
-        financial_cols[2].metric("EBITDA", format_large_number(financial["ebitda"]))
-        financial_cols[3].metric("净利润率", format_percent(financial["net_income_margin"], MISSING))
+        is_valid_ticker, ticker_error = validate_ticker_input(user_input, selected_market)
+        if not is_valid_ticker:
+            input_error = ticker_error
+        else:
+            raw_symbol = user_input
 
-        financial_cols_2 = st.columns(4)
-        financial_cols_2[0].metric("总现金", format_large_number(financial["total_cash"]))
-        financial_cols_2[1].metric("总债务", format_large_number(financial["total_debt"]))
-        financial_cols_2[2].metric("自由现金流", format_large_number(financial["free_cash_flow"]))
-        financial_cols_2[3].metric("ROE / ROA", format_percent(financial["roe_roa"], MISSING))
+    if raw_symbol:
+        symbol = normalize_ticker(raw_symbol, selected_market)
 
-st.divider()
-st.header("价格趋势图")
-st.line_chart(build_price_frame(price_data))
-st.write(trend_text)
+    if add_current_button:
+        if symbol:
+            add_to_watchlist(symbol)
+            st.success(f"已加入自选股：{symbol}")
+        else:
+            st.warning(input_error or "请输入有效股票代码后再加入自选股。")
 
-st.divider()
-st.header("技术面解释")
-for title, content in technical_summary.items():
-    st.subheader(title)
-    st.write(content)
+    comparison_tickers = []
+    if run_comparison_button:
+        comparison_tickers = parse_ticker_list(comparison_input, comparison_market)
+        if not comparison_tickers:
+            st.warning("请输入至少一只股票代码后再运行多股票对比。")
+    elif run_watchlist_comparison_button:
+        comparison_tickers = parse_ticker_list(" ".join(st.session_state.watchlist), comparison_market)
+        if not comparison_tickers:
+            st.warning("当前暂无可用于对比的自选股。")
 
-st.divider()
-st.header("基本面解释")
-for title, content in fundamental_summary.items():
-    st.subheader(title)
-    st.write(content)
+    if not run_button:
+        if comparison_tickers:
+            render_watchlist_panel()
+            render_comparison_section(comparison_tickers, comparison_market, period_label)
+            if run_backtest_button:
+                run_backtest_section(symbol, selected_market, backtest_strategy, backtest_period_label, initial_capital, trading_cost)
+        elif run_backtest_button:
+            render_watchlist_panel()
+            run_backtest_section(symbol, selected_market, backtest_strategy, backtest_period_label, initial_capital, trading_cost)
+        else:
+            st.info("在侧边栏选择市场和输入方式后，点击“生成研究工作台”；也可以直接运行多股票对比或策略回测。")
+            render_watchlist_panel()
+        st.stop()
 
-if show_sector:
+    if input_error:
+        st.warning(input_error)
+        st.stop()
+
+    if not symbol:
+        st.warning("请输入股票代码。")
+        st.stop()
+
+    try:
+        with st.spinner(f"正在获取 {selected_market} 标的 {symbol} 数据..."):
+            price_data = fetch_market_data(symbol, selected_market, period_label)
+            source_info = (
+                fetch_a_share_info(symbol)
+                if selected_market == "A股"
+                else fetch_yfinance_info(symbol)
+            )
+    except Exception as exc:
+        st.error(f"未获取到数据，请检查代码、市场类型或网络连接。错误信息：{exc}")
+        st.stop()
+
+    if price_data.empty or "Close" not in price_data.columns:
+        st.error("未获取到数据，请检查代码、市场类型或网络连接")
+        st.stop()
+
+    metrics = calculate_indicators(price_data)
+    profile = fetch_company_profile(symbol, selected_market, source_info)
+    valuation = fetch_valuation_metrics(symbol, selected_market, source_info, metrics)
+    financial = fetch_financial_snapshot(selected_market, source_info)
+    rating, rating_reasons = generate_rating(metrics)
+    technical_summary = generate_technical_summary(metrics, analysis_style)
+    fundamental_summary = generate_fundamental_summary(valuation, financial)
+    sector_summary = generate_sector_summary(profile)
+    news_items = fetch_news(symbol, selected_market, limit=5)
+    manual_event_type = classify_event(manual_event_text) if manual_event_text.strip() else "未分类事件"
+    manual_event_analysis = (
+        generate_event_analysis(manual_event_text, manual_event_type, event_analysis_style)
+        if enable_manual_event
+        else None
+    )
+    conclusion = generate_integrated_conclusion(
+        rating,
+        rating_reasons,
+        technical_summary,
+        fundamental_summary,
+        sector_summary,
+        manual_event_analysis,
+    )
+
     st.divider()
-    st.header("板块/行业观察")
-    for title, content in sector_summary.items():
+    st.header("标的基础信息")
+    st.caption(f"用户输入：{user_input} | 实际查询代码：{symbol} | 市场类型：{selected_market}")
+
+    metadata = get_price_data_metadata(price_data, symbol, selected_market)
+    quality_report = generate_data_quality_report(price_data)
+    st.subheader("数据源与可靠性")
+    meta_cols = st.columns(5)
+    meta_cols[0].metric("实际使用的数据源", metadata["数据来源"])
+    meta_cols[1].metric("主数据源", metadata["主数据源"])
+    meta_cols[2].metric("备用数据源", metadata["备用数据源"])
+    meta_cols[3].metric("是否使用备用源", metadata["是否使用备用源"])
+    meta_cols[4].metric("最近交易日", metadata["最近更新时间"])
+
+    meta_cols_2 = st.columns(5)
+    meta_cols_2[0].metric("数据频率", metadata["数据频率"])
+    meta_cols_2[1].metric("币种", metadata["币种"])
+    meta_cols_2[2].metric("复权口径", metadata["复权口径"])
+    meta_cols_2[3].metric("起始日期", metadata["起始日期"])
+    meta_cols_2[4].metric("结束日期", metadata["结束日期"])
+    st.info(metadata["时效性说明"])
+    st.warning(metadata["数据源风险提示"])
+
+    with st.expander("数据质量报告 Data Quality Report"):
+        st.dataframe(pd.DataFrame([quality_report]), hide_index=True, use_container_width=True)
+        st.write(f"数据质量结论：**{quality_report['数据质量结论']}**")
+        if quality_report["数据质量结论"] != "数据较完整":
+            st.warning(quality_report["数据质量结论"])
+
+    if selected_market == "港股":
+        with st.expander("港股主备数据源校验"):
+            hk_compare = compare_hk_sources_if_available(symbol)
+            if hk_compare["status"] == "warning":
+                st.warning(hk_compare["message"])
+            else:
+                st.info(hk_compare["message"])
+            if hk_compare.get("compare_date"):
+                st.write(
+                    f"可比日期：{hk_compare['compare_date']} | AkShare 收盘价：{format_price(hk_compare['akshare_close'])} | "
+                    f"yfinance 收盘价：{format_price(hk_compare['yfinance_close'])} | 差异：{format_percent(hk_compare['diff_pct'])}"
+                )
+
+    info_cols = st.columns(4)
+    info_cols[0].metric("公司名称", profile["company_name"])
+    info_cols[1].metric("交易所", profile["exchange"])
+    info_cols[2].metric("国家/地区", profile["country"])
+    info_cols[3].metric("员工数量", format_large_number(profile["employees"]))
+
+    info_cols_2 = st.columns(4)
+    info_cols_2[0].metric("行业", profile["industry"])
+    info_cols_2[1].metric("板块", profile["sector"])
+    info_cols_2[2].metric("官网", profile["website"])
+    info_cols_2[3].metric("英文名称/简称", profile["short_name"])
+
+    if show_description:
+        st.write("公司简介")
+        st.write(truncate_text(profile["description"]))
+
+    st.divider()
+    st.header("核心价格指标")
+    price_cols = st.columns(5)
+    price_cols[0].metric("最新收盘价", format_price(metrics["latest_close"]))
+    price_cols[1].metric("近5日涨跌幅", format_percent(metrics["return_5d"]))
+    price_cols[2].metric("近20日涨跌幅", format_percent(metrics["return_20d"]))
+    price_cols[3].metric("近60日涨跌幅", format_percent(metrics["return_60d"]))
+    price_cols[4].metric("近120日涨跌幅", format_percent(metrics["return_120d"]))
+
+    risk_cols = st.columns(5)
+    risk_cols[0].metric("年化波动率", format_percent(metrics["annual_volatility"]))
+    risk_cols[1].metric("最大回撤", format_percent(metrics["max_drawdown"]))
+    risk_cols[2].metric("区间最高价", format_price(metrics["range_high"]))
+    risk_cols[3].metric("区间最低价", format_price(metrics["range_low"]))
+    risk_cols[4].metric("近20日平均成交量", format_large_number(metrics["avg_volume_20d"]))
+
+    st.divider()
+    st.header("均线与趋势指标")
+    ma_cols = st.columns(6)
+    ma_cols[0].metric("5日均线", format_price(metrics["ma_5d"]))
+    ma_cols[1].metric("20日均线", format_price(metrics["ma_20d"]))
+    ma_cols[2].metric("60日均线", format_price(metrics["ma_60d"]))
+    ma_cols[3].metric("120日均线", format_price(metrics["ma_120d"]))
+    ma_cols[4].metric("相对20日均线偏离", format_percent(metrics["bias_20d"]))
+    ma_cols[5].metric("相对60日均线偏离", format_percent(metrics["bias_60d"]))
+    trend_text = describe_trend(metrics)
+    st.write(trend_text)
+
+    st.divider()
+    st.header("估值指标")
+    valuation_cols = st.columns(5)
+    valuation_cols[0].metric("市值", format_large_number(valuation["market_cap"]))
+    valuation_cols[1].metric("PE", format_metric(valuation["pe"]))
+    valuation_cols[2].metric("Forward PE", format_metric(valuation["forward_pe"]))
+    valuation_cols[3].metric("PB", format_metric(valuation["pb"]))
+    valuation_cols[4].metric("PS", format_metric(valuation["ps"]))
+
+    valuation_cols_2 = st.columns(5)
+    valuation_cols_2[0].metric("股息率", format_percent(valuation["dividend_yield"], MISSING))
+    valuation_cols_2[1].metric("Beta", format_metric(valuation["beta"]))
+    valuation_cols_2[2].metric("52周最高价", format_price(valuation["high_52w"]))
+    valuation_cols_2[3].metric("52周最低价", format_price(valuation["low_52w"]))
+    valuation_cols_2[4].metric("目标价均值", format_price(valuation["target_mean_price"]))
+
+    if show_financials:
+        st.divider()
+        st.header("财务摘要")
+        if all(is_missing(value) for value in financial.values()):
+            st.info("当前暂未获取到可用财务摘要")
+        else:
+            financial_cols = st.columns(4)
+            financial_cols[0].metric("总收入", format_large_number(financial["total_revenue"]))
+            financial_cols[1].metric("毛利率", format_percent(financial["gross_margin"], MISSING))
+            financial_cols[2].metric("EBITDA", format_large_number(financial["ebitda"]))
+            financial_cols[3].metric("净利润率", format_percent(financial["net_income_margin"], MISSING))
+
+            financial_cols_2 = st.columns(4)
+            financial_cols_2[0].metric("总现金", format_large_number(financial["total_cash"]))
+            financial_cols_2[1].metric("总债务", format_large_number(financial["total_debt"]))
+            financial_cols_2[2].metric("自由现金流", format_large_number(financial["free_cash_flow"]))
+            financial_cols_2[3].metric("ROE / ROA", format_percent(financial["roe_roa"], MISSING))
+
+    st.divider()
+    st.header("价格趋势图")
+    st.line_chart(build_price_frame(price_data))
+    st.write(trend_text)
+
+    st.divider()
+    st.header("技术面解释")
+    for title, content in technical_summary.items():
         st.subheader(title)
         st.write(content)
 
-if show_events:
     st.divider()
-    st.header("近期重大消息")
-    st.caption("新闻数据可能不完整、延迟或缺失；当前模块仅用于学习演示。")
+    st.header("基本面解释")
+    for title, content in fundamental_summary.items():
+        st.subheader(title)
+        st.write(content)
 
-    if selected_market == "A股":
-        st.info("A股实时新闻与公告将在后续版本接入，目前可使用下方手动事件输入进行分析。")
-    elif news_items:
-        news_frame = pd.DataFrame(news_items)
-        st.dataframe(
-            news_frame[["标题", "来源", "发布时间"]],
-            hide_index=True,
-            use_container_width=True,
-        )
-        with st.expander("新闻链接"):
-            for item in news_items:
-                link = item.get("链接", MISSING)
-                if is_missing(link):
-                    st.write(f"- {item['标题']}")
-                else:
-                    st.write(f"- [{item['标题']}]({link})")
-    else:
-        st.info("当前暂无可用新闻数据，可能是数据源限制或网络问题。")
-
-if enable_manual_event:
-    st.divider()
-    st.header("手动事件分析")
-    if manual_event_analysis:
-        st.write("用户输入的事件")
-        st.write(manual_event_text)
-        for title, content in manual_event_analysis.items():
+    if show_sector:
+        st.divider()
+        st.header("板块/行业观察")
+        for title, content in sector_summary.items():
             st.subheader(title)
             st.write(content)
-    else:
-        st.info("可在侧边栏输入公司或行业事件，系统将基于本地规则生成事件解读。")
 
-st.divider()
-st.header("综合研究结论")
-st.subheader("技术面结论")
-st.write(conclusion["技术面结论"])
-st.subheader("基本面结论")
-st.write(conclusion["基本面结论"])
-st.subheader("板块结论")
-st.write(conclusion["板块结论"])
-st.subheader("事件面结论")
-st.write(conclusion["事件面结论"])
-st.subheader("综合观察评级")
-st.write(f"**{conclusion['综合观察评级']}**")
-st.subheader("评级依据")
-for item in conclusion["评级依据"]:
-    st.write(f"- {item}")
-st.caption(conclusion["免责声明"])
+    if show_events:
+        st.divider()
+        st.header("近期重大消息")
+        st.caption("新闻数据可能不完整、延迟或缺失；当前模块仅用于学习演示。")
 
-st.divider()
-render_watchlist_panel()
-if comparison_tickers:
-    render_comparison_section(comparison_tickers, comparison_market, period_label)
-if run_backtest_button:
-    run_backtest_section(symbol, selected_market, backtest_strategy, backtest_period_label, initial_capital, trading_cost)
+        if selected_market == "A股":
+            st.info("A股实时新闻与公告将在后续版本接入，目前可使用下方手动事件输入进行分析。")
+        elif news_items:
+            news_frame = pd.DataFrame(news_items)
+            st.dataframe(
+                news_frame[["标题", "来源", "发布时间"]],
+                hide_index=True,
+                use_container_width=True,
+            )
+            with st.expander("新闻链接"):
+                for item in news_items:
+                    link = item.get("链接", MISSING)
+                    if is_missing(link):
+                        st.write(f"- {item['标题']}")
+                    else:
+                        st.write(f"- [{item['标题']}]({link})")
+        else:
+            st.info("当前暂无可用新闻数据，可能是数据源限制或网络问题。")
 
-st.divider()
-st.header("风险提示")
-st.write("- yfinance / akshare 数据可能延迟、缺失或口径不一致。")
-st.write("- A股、港股、美股的数据字段存在差异，跨市场指标不能简单横向比较。")
-st.write("- 公司基本面字段可能存在缺失、滞后或数据源映射错误。")
-st.write("- 新闻数据可能延迟、缺失或来源不完整。")
-st.write("- 手动事件分析基于关键词规则，不代表真实因果判断。")
-st.write("- 事件影响需要结合财报、公告、行业数据进一步验证。")
-st.write("- 策略回测为简化教学模型，未考虑滑点、真实撮合、停牌、涨跌停和复权差异。")
-st.write("- 回测结果不代表未来收益，交易成本也只是粗略估计。")
-st.write("- 本项目目前是学习原型，不是正式投研系统。")
-st.write("- 规则化摘要不能替代专业研究判断。")
-st.write("- 本结果不构成投资建议。")
-st.write("- 不应据此进行真实交易。")
+    if enable_manual_event:
+        st.divider()
+        st.header("手动事件分析")
+        if manual_event_analysis:
+            st.write("用户输入的事件")
+            st.write(manual_event_text)
+            for title, content in manual_event_analysis.items():
+                st.subheader(title)
+                st.write(content)
+        else:
+            st.info("可在侧边栏输入公司或行业事件，系统将基于本地规则生成事件解读。")
+
+    st.divider()
+    st.header("综合研究结论")
+    st.subheader("技术面结论")
+    st.write(conclusion["技术面结论"])
+    st.subheader("基本面结论")
+    st.write(conclusion["基本面结论"])
+    st.subheader("板块结论")
+    st.write(conclusion["板块结论"])
+    st.subheader("事件面结论")
+    st.write(conclusion["事件面结论"])
+    st.subheader("综合观察评级")
+    st.write(f"**{conclusion['综合观察评级']}**")
+    st.subheader("评级依据")
+    for item in conclusion["评级依据"]:
+        st.write(f"- {item}")
+    st.caption(conclusion["免责声明"])
+
+    st.divider()
+    render_watchlist_panel()
+    if comparison_tickers:
+        render_comparison_section(comparison_tickers, comparison_market, period_label)
+    if run_backtest_button:
+        run_backtest_section(symbol, selected_market, backtest_strategy, backtest_period_label, initial_capital, trading_cost)
+
+    st.divider()
+    st.header("风险提示")
+    st.write("- yfinance / akshare 数据可能延迟、缺失或口径不一致。")
+    st.write("- A股、港股、美股的数据字段存在差异，跨市场指标不能简单横向比较。")
+    st.write("- 公司基本面字段可能存在缺失、滞后或数据源映射错误。")
+    st.write("- 新闻数据可能延迟、缺失或来源不完整。")
+    st.write("- 手动事件分析基于关键词规则，不代表真实因果判断。")
+    st.write("- 事件影响需要结合财报、公告、行业数据进一步验证。")
+    st.write("- 策略回测为简化教学模型，未考虑滑点、真实撮合、停牌、涨跌停和复权差异。")
+    st.write("- 回测结果不代表未来收益，交易成本也只是粗略估计。")
+    st.write("- 本项目目前是学习原型，不是正式投研系统。")
+    st.write("- 规则化摘要不能替代专业研究判断。")
+    st.write("- 本结果不构成投资建议。")
+    st.write("- 不应据此进行真实交易。")
