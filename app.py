@@ -5,6 +5,43 @@ import streamlit as st
 import yfinance as yf
 
 
+APP_VERSION = "V0.3"
+
+MARKET_OPTIONS = {
+    "美股": {
+        "suffix": "",
+        "default": "NVDA",
+        "example": "NVDA、AAPL、MSFT",
+        "benchmark": "^GSPC",
+        "benchmark_name": "S&P 500",
+        "note": "直接输入美股 ticker，例如 NVDA。",
+    },
+    "港股": {
+        "suffix": ".HK",
+        "default": "0700",
+        "example": "0700、9988、3690",
+        "benchmark": "^HSI",
+        "benchmark_name": "恒生指数",
+        "note": "输入港股数字代码即可，例如 0700 会转换为 0700.HK。",
+    },
+    "A股-沪市": {
+        "suffix": ".SS",
+        "default": "600519",
+        "example": "600519、601318、600036",
+        "benchmark": "000001.SS",
+        "benchmark_name": "上证指数",
+        "note": "输入沪市 6 位代码即可，例如 600519 会转换为 600519.SS。",
+    },
+    "A股-深市": {
+        "suffix": ".SZ",
+        "default": "000001",
+        "example": "000001、300750、002594",
+        "benchmark": "399001.SZ",
+        "benchmark_name": "深证成指",
+        "note": "输入深市 6 位代码即可，例如 000001 会转换为 000001.SZ。",
+    },
+}
+
 PERIOD_OPTIONS = {
     "3个月": "3mo",
     "6个月": "6mo",
@@ -21,6 +58,17 @@ def normalize_yfinance_data(data):
         data = data.copy()
         data.columns = data.columns.get_level_values(0)
     return data
+
+
+def build_yfinance_symbol(raw_ticker, market):
+    ticker = raw_ticker.strip().upper()
+    suffix = MARKET_OPTIONS[market]["suffix"]
+
+    if not ticker:
+        return ""
+    if suffix and not ticker.endswith(suffix):
+        return f"{ticker}{suffix}"
+    return ticker
 
 
 def format_price(value):
@@ -84,12 +132,38 @@ def calculate_metrics(data):
     }
 
 
+def download_history(symbol, period):
+    data = yf.download(
+        symbol,
+        period=period,
+        interval="1d",
+        progress=False,
+        auto_adjust=False,
+    )
+    return normalize_yfinance_data(data)
+
+
 def build_price_frame(data):
     price_frame = pd.DataFrame(index=data.index)
     price_frame["收盘价"] = data["Close"]
     price_frame["20日均线"] = data["Close"].rolling(20).mean()
     price_frame["60日均线"] = data["Close"].rolling(60).mean()
     return price_frame
+
+
+def build_relative_frame(stock_data, benchmark_data, stock_symbol, benchmark_name):
+    if benchmark_data.empty or "Close" not in benchmark_data:
+        return pd.DataFrame()
+
+    frame = pd.DataFrame(
+        {
+            stock_symbol: stock_data["Close"].dropna(),
+            benchmark_name: benchmark_data["Close"].dropna(),
+        }
+    ).dropna()
+    if frame.empty:
+        return frame
+    return frame / frame.iloc[0] * 100
 
 
 def describe_trend(metrics):
@@ -168,7 +242,29 @@ def describe_price_position(metrics):
     return "当前价格位于52周区间中部，价格位置相对中性。"
 
 
-def build_research_summary(ticker, metrics, analysis_style, dimensions):
+def describe_market_relative(relative_frame, stock_symbol, benchmark_name):
+    if relative_frame.empty or stock_symbol not in relative_frame or benchmark_name not in relative_frame:
+        return "市场基准数据不足，暂时无法判断相对表现。"
+
+    stock_return = relative_frame[stock_symbol].iloc[-1] / 100 - 1
+    benchmark_return = relative_frame[benchmark_name].iloc[-1] / 100 - 1
+    diff = stock_return - benchmark_return
+
+    if diff > 0.05:
+        return f"观察期内相对 {benchmark_name} 明显跑赢，个股相对强度较高。"
+    if diff < -0.05:
+        return f"观察期内相对 {benchmark_name} 明显跑输，需关注个股弱势原因。"
+    return f"观察期内与 {benchmark_name} 表现接近，相对强弱暂不明显。"
+
+
+def build_research_summary(
+    display_ticker,
+    market,
+    metrics,
+    analysis_style,
+    dimensions,
+    relative_text,
+):
     trend_text = describe_trend(metrics)
     volatility_text = describe_volatility(metrics, analysis_style)
     position_text = describe_price_position(metrics)
@@ -186,9 +282,11 @@ def build_research_summary(ticker, metrics, analysis_style, dimensions):
         "趋势判断": trend_text,
         "波动风险": volatility_text,
         "价格位置": position_text,
+        "市场对比": relative_text,
         "综合观察": (
-            f"{ticker} 的本地模拟评级为 **{rating}**。当前分析风格为"
-            f" **{analysis_style}**，关注维度包括：{dimensions_text}。{overall_text}"
+            f"{market} 标的 {display_ticker} 的本地模拟评级为 **{rating}**。"
+            f"当前分析风格为 **{analysis_style}**，关注维度包括：{dimensions_text}。"
+            f"{overall_text}"
         ),
     }
 
@@ -197,11 +295,18 @@ st.set_page_config(page_title="FinScientist", page_icon="📈", layout="wide")
 
 st.title("FinScientist")
 st.subheader("AI-assisted financial research workspace")
-st.caption("当前版本基于 yfinance 市场数据和本地规则生成摘要，不调用 AI API。")
+st.caption(f"{APP_VERSION} 多市场基础研究工作台：基于 yfinance 市场数据和本地规则生成摘要，不调用 AI API。")
 
 with st.sidebar:
     st.header("研究参数")
-    ticker = st.text_input("股票代码", value="NVDA", placeholder="例如：NVDA、AAPL、MSFT")
+    market = st.selectbox("市场", options=list(MARKET_OPTIONS.keys()), index=0)
+    market_config = MARKET_OPTIONS[market]
+    ticker = st.text_input(
+        "股票代码",
+        value=market_config["default"],
+        placeholder=f"例如：{market_config['example']}",
+        help=market_config["note"],
+    )
     period_label = st.selectbox("时间范围", options=list(PERIOD_OPTIONS.keys()), index=2)
     analysis_style = st.selectbox("分析风格", options=ANALYSIS_STYLES, index=0)
     dimensions = st.multiselect(
@@ -209,27 +314,29 @@ with st.sidebar:
         options=ANALYSIS_DIMENSIONS,
         default=["趋势", "波动", "风险"],
     )
+    compare_benchmark = st.checkbox("对比市场指数", value=True)
     run_button = st.button("生成研究工作台", type="primary")
 
 if not run_button:
-    st.info("在侧边栏设置研究参数后，点击“生成研究工作台”。")
+    st.info("在侧边栏选择市场、输入股票代码后，点击“生成研究工作台”。")
     st.stop()
 
-cleaned_ticker = ticker.strip().upper()
-if not cleaned_ticker:
+yf_symbol = build_yfinance_symbol(ticker, market)
+if not yf_symbol:
     st.warning("请输入股票代码。")
     st.stop()
 
+benchmark_symbol = market_config["benchmark"]
+benchmark_name = market_config["benchmark_name"]
+
 try:
-    with st.spinner(f"正在获取 {cleaned_ticker} 历史行情数据..."):
-        stock_data = yf.download(
-            cleaned_ticker,
-            period=PERIOD_OPTIONS[period_label],
-            interval="1d",
-            progress=False,
-            auto_adjust=False,
+    with st.spinner(f"正在获取 {market} 标的 {yf_symbol} 历史行情数据..."):
+        stock_data = download_history(yf_symbol, PERIOD_OPTIONS[period_label])
+        benchmark_data = (
+            download_history(benchmark_symbol, PERIOD_OPTIONS[period_label])
+            if compare_benchmark
+            else pd.DataFrame()
         )
-        stock_data = normalize_yfinance_data(stock_data)
 except Exception:
     st.error("未获取到数据，请检查股票代码或网络")
     st.stop()
@@ -240,9 +347,13 @@ if stock_data.empty or "Close" not in stock_data.columns:
 
 metrics = calculate_metrics(stock_data)
 rating = build_rating(metrics)
+relative_frame = build_relative_frame(stock_data, benchmark_data, yf_symbol, benchmark_name)
+relative_text = describe_market_relative(relative_frame, yf_symbol, benchmark_name)
 
 st.divider()
 st.header("核心指标")
+st.caption(f"市场：{market} | 输入代码：{ticker.strip().upper()} | yfinance 代码：{yf_symbol}")
+
 rating_col, price_col, ret20_col, ret60_col = st.columns(4)
 rating_col.metric("本地模拟评级", rating)
 price_col.metric("最新收盘价", format_price(metrics["latest_close"]))
@@ -265,9 +376,25 @@ st.header("价格趋势")
 st.line_chart(build_price_frame(stock_data))
 st.write(describe_trend(metrics))
 
+if compare_benchmark:
+    st.subheader("市场指数对比")
+    if relative_frame.empty:
+        st.warning("市场指数数据不足，暂时无法展示相对表现。")
+    else:
+        st.caption("首个共同交易日归一化为 100")
+        st.line_chart(relative_frame)
+        st.write(relative_text)
+
 st.divider()
 st.header("规则化研究摘要")
-summary = build_research_summary(cleaned_ticker, metrics, analysis_style, dimensions)
+summary = build_research_summary(
+    yf_symbol,
+    market,
+    metrics,
+    analysis_style,
+    dimensions,
+    relative_text,
+)
 for title, content in summary.items():
     st.subheader(title)
     st.write(content)
@@ -275,7 +402,9 @@ for title, content in summary.items():
 st.divider()
 st.header("风险提示")
 st.write("- 数据源稳定性风险：第三方数据服务可能出现访问失败或接口变化。")
-st.write("- yfinance 数据延迟或缺失风险：行情、成交量和历史价格可能延迟、不完整或不可用。")
+st.write("- yfinance 数据延迟或缺失风险：不同市场的行情、成交量和历史价格可能延迟、不完整或不可用。")
+st.write("- 市场代码映射风险：港股、A股需要 yfinance 后缀转换，错误代码会导致无法获取数据。")
 st.write("- 单一技术指标误判风险：均线、涨跌幅和波动率不能单独决定投资价值。")
+st.write("- 跨市场可比性风险：不同市场交易制度、货币、涨跌停和流动性差异会影响指标解释。")
 st.write("- 市场波动风险：宏观环境、财报、政策和流动性变化可能导致价格剧烈波动。")
 st.write("- 本项目不构成投资建议：所有评级和摘要仅用于学习演示。")
