@@ -8,15 +8,17 @@ import streamlit as st
 import yfinance as yf
 
 
-APP_VERSION = "V0.6"
+APP_VERSION = "V0.7"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
 MARKET_OPTIONS = ["美股", "港股", "A股"]
-PERIOD_OPTIONS = {"3个月": "3mo", "6个月": "6mo", "1年": "1y", "2年": "2y"}
-PERIOD_MONTHS = {"3个月": 3, "6个月": 6, "1年": 12, "2年": 24}
+PERIOD_OPTIONS = {"3个月": "3mo", "6个月": "6mo", "1年": "1y", "2年": "2y", "5年": "5y"}
+PERIOD_MONTHS = {"3个月": 3, "6个月": 6, "1年": 12, "2年": 24, "5年": 60}
 ANALYSIS_STYLES = ["稳健型", "成长型", "短线交易型"]
 ANALYSIS_DIMENSIONS = ["趋势", "波动", "估值", "成交量", "基本面", "板块", "风险"]
+BACKTEST_STRATEGIES = ["均线趋势策略", "双均线策略", "动量策略"]
+BACKTEST_PERIOD_OPTIONS = ["6个月", "1年", "2年", "5年"]
 
 NAME_MAP = {
     "英伟达": ("美股", "NVDA"),
@@ -621,6 +623,283 @@ def render_comparison_section(tickers, market_type, period_label):
         st.info("本次可用于绘制归一化价格走势的数据不足。")
 
 
+def is_valid_number(value):
+    number = to_number(value)
+    return not pd.isna(number) and math.isfinite(number)
+
+
+def calculate_max_drawdown_for_series(nav_series):
+    clean_nav = nav_series.dropna() if isinstance(nav_series, pd.Series) else pd.Series(dtype=float)
+    clean_nav = clean_nav[clean_nav > 0]
+    if len(clean_nav) < 2:
+        return math.nan
+    running_high = clean_nav.cummax()
+    drawdown = clean_nav / running_high - 1
+    return drawdown.min()
+
+
+def generate_backtest_signals(price_df, strategy_name, trading_cost=0.0):
+    if price_df is None or price_df.empty or "Close" not in price_df.columns:
+        return pd.DataFrame()
+
+    backtest_df = pd.DataFrame(index=price_df.index)
+    backtest_df["Close"] = pd.to_numeric(price_df["Close"], errors="coerce")
+    backtest_df = backtest_df.dropna(subset=["Close"])
+    if backtest_df.empty:
+        return pd.DataFrame()
+
+    if strategy_name in ("均线趋势策略", "动量策略") and len(backtest_df) < 20:
+        return pd.DataFrame()
+    if strategy_name == "双均线策略" and len(backtest_df) < 60:
+        return pd.DataFrame()
+
+    backtest_df["return"] = backtest_df["Close"].pct_change().fillna(0)
+
+    if strategy_name == "均线趋势策略":
+        backtest_df["MA20"] = backtest_df["Close"].rolling(20).mean()
+        backtest_df["signal"] = (backtest_df["Close"] > backtest_df["MA20"]).astype(int)
+    elif strategy_name == "双均线策略":
+        backtest_df["MA20"] = backtest_df["Close"].rolling(20).mean()
+        backtest_df["MA60"] = backtest_df["Close"].rolling(60).mean()
+        backtest_df["signal"] = (backtest_df["MA20"] > backtest_df["MA60"]).astype(int)
+    elif strategy_name == "动量策略":
+        backtest_df["momentum_20d"] = backtest_df["Close"] / backtest_df["Close"].shift(20) - 1
+        backtest_df["signal"] = (backtest_df["momentum_20d"] > 0).astype(int)
+    else:
+        return pd.DataFrame()
+
+    backtest_df["signal"] = backtest_df["signal"].fillna(0).astype(int)
+    backtest_df["position"] = backtest_df["signal"].shift(1).fillna(0)
+    backtest_df["position_change"] = backtest_df["position"].diff().abs().fillna(backtest_df["position"].abs())
+    backtest_df["strategy_return"] = (
+        backtest_df["position"] * backtest_df["return"]
+        - backtest_df["position_change"] * max(float(trading_cost), 0.0)
+    )
+    backtest_df["benchmark_return"] = backtest_df["return"]
+    backtest_df["strategy_return"] = backtest_df["strategy_return"].replace([math.inf, -math.inf], math.nan).fillna(0)
+    backtest_df["benchmark_return"] = backtest_df["benchmark_return"].replace([math.inf, -math.inf], math.nan).fillna(0)
+    backtest_df["strategy_nav"] = (1 + backtest_df["strategy_return"]).cumprod()
+    backtest_df["benchmark_nav"] = (1 + backtest_df["benchmark_return"]).cumprod()
+
+    return backtest_df[
+        [
+            "Close",
+            "return",
+            "signal",
+            "position",
+            "strategy_return",
+            "benchmark_return",
+            "strategy_nav",
+            "benchmark_nav",
+        ]
+    ]
+
+
+def calculate_backtest_metrics(backtest_df):
+    empty_metrics = {
+        "strategy_total_return": math.nan,
+        "benchmark_total_return": math.nan,
+        "strategy_annual_return": math.nan,
+        "benchmark_annual_return": math.nan,
+        "strategy_annual_volatility": math.nan,
+        "strategy_max_drawdown": math.nan,
+        "sharpe_ratio": math.nan,
+        "trade_count": math.nan,
+        "holding_days_ratio": math.nan,
+        "win_rate": math.nan,
+    }
+    if backtest_df is None or backtest_df.empty or len(backtest_df) < 2:
+        return empty_metrics
+
+    data = backtest_df.copy()
+    days = len(data)
+    if days <= 1:
+        return empty_metrics
+
+    strategy_nav = data["strategy_nav"].dropna()
+    benchmark_nav = data["benchmark_nav"].dropna()
+    if strategy_nav.empty or benchmark_nav.empty:
+        return empty_metrics
+
+    strategy_total_return = strategy_nav.iloc[-1] - 1
+    benchmark_total_return = benchmark_nav.iloc[-1] - 1
+    years = days / 252
+    strategy_annual_return = (strategy_nav.iloc[-1] ** (1 / years) - 1) if years > 0 and strategy_nav.iloc[-1] > 0 else math.nan
+    benchmark_annual_return = (benchmark_nav.iloc[-1] ** (1 / years) - 1) if years > 0 and benchmark_nav.iloc[-1] > 0 else math.nan
+
+    strategy_returns = data["strategy_return"].dropna()
+    return_std = strategy_returns.std()
+    strategy_annual_volatility = return_std * math.sqrt(252) if len(strategy_returns) >= 20 else math.nan
+    sharpe_ratio = (
+        strategy_returns.mean() / return_std * math.sqrt(252)
+        if len(strategy_returns) >= 20 and return_std and return_std > 0
+        else math.nan
+    )
+
+    position_change = data["position"].diff().abs().fillna(data["position"].abs())
+    trade_count = int(position_change.sum()) if len(position_change) else math.nan
+    holding_days_ratio = data["position"].mean() if "position" in data else math.nan
+    win_rate = (strategy_returns > 0).mean() if len(strategy_returns) else math.nan
+
+    metrics = {
+        "strategy_total_return": strategy_total_return,
+        "benchmark_total_return": benchmark_total_return,
+        "strategy_annual_return": strategy_annual_return,
+        "benchmark_annual_return": benchmark_annual_return,
+        "strategy_annual_volatility": strategy_annual_volatility,
+        "strategy_max_drawdown": calculate_max_drawdown_for_series(data["strategy_nav"]),
+        "sharpe_ratio": sharpe_ratio,
+        "trade_count": trade_count,
+        "holding_days_ratio": holding_days_ratio,
+        "win_rate": win_rate,
+    }
+
+    return {
+        key: (value if is_valid_number(value) else math.nan)
+        for key, value in metrics.items()
+    }
+
+
+def format_backtest_number(value):
+    return INSUFFICIENT if not is_valid_number(value) else f"{value:.2f}"
+
+
+def format_backtest_count(value):
+    return INSUFFICIENT if not is_valid_number(value) else f"{int(value)}"
+
+
+def generate_backtest_summary(metrics, strategy_name):
+    if not metrics or not is_valid_number(metrics.get("strategy_total_return")):
+        return "回测数据不足，暂时无法生成稳定解读。回测结果仅用于学习演示，不代表未来收益，不构成投资建议。"
+
+    strategy_return = metrics["strategy_total_return"]
+    benchmark_return = metrics["benchmark_total_return"]
+    max_drawdown = metrics["strategy_max_drawdown"]
+    volatility = metrics["strategy_annual_volatility"]
+    trade_count = metrics["trade_count"]
+
+    relative_text = "跑赢基准" if strategy_return > benchmark_return else "未跑赢基准"
+    drawdown_text = (
+        "回撤相对可控"
+        if is_valid_number(max_drawdown) and max_drawdown > -0.2
+        else "回撤压力较大，需要重点观察极端行情下的风险"
+    )
+    volatility_text = (
+        "波动率偏高，净值曲线可能较不稳定"
+        if is_valid_number(volatility) and volatility > 0.35
+        else "波动率处于相对温和区间"
+    )
+    trade_text = (
+        "交易频率较高，结果对交易成本更敏感"
+        if is_valid_number(trade_count) and trade_count > 20
+        else "交易频率较低，策略更偏向阶段性持仓"
+    )
+
+    if strategy_name == "双均线策略":
+        suitable_market = "可能更适合趋势延续较强、噪音相对较低的市场环境。"
+        failure_market = "在横盘震荡和频繁假突破环境中可能反复切换仓位。"
+    elif strategy_name == "动量策略":
+        suitable_market = "可能更适合短中期动量延续明显的市场环境。"
+        failure_market = "在快速反转或消息驱动跳变较多的市场中可能失效。"
+    else:
+        suitable_market = "可能更适合价格持续站上短期均线的趋势行情。"
+        failure_market = "在均线附近反复震荡时可能出现较多无效信号。"
+
+    return "\n".join(
+        [
+            f"1. 策略相对表现：本次 {strategy_name} {relative_text}，策略累计收益率为 {format_percent(strategy_return)}，基准累计收益率为 {format_percent(benchmark_return)}。",
+            f"2. 收益与回撤特征：策略最大回撤为 {format_percent(max_drawdown)}，{drawdown_text}。",
+            f"3. 波动风险：策略年化波动率为 {format_percent(volatility)}，{volatility_text}。",
+            f"4. 交易频率：本次粗略统计交易次数为 {format_backtest_count(trade_count)}，{trade_text}。",
+            f"5. 适合环境：{suitable_market}",
+            f"6. 可能失效环境：{failure_market}",
+            "7. 风险提示：回测结果不代表未来收益，仅用于学习演示，不构成投资建议，不应用于真实交易。",
+        ]
+    )
+
+
+def run_backtest_section(
+    ticker,
+    market_type,
+    strategy_name,
+    period_label,
+    initial_capital,
+    trading_cost,
+):
+    st.divider()
+    st.header("策略回测")
+
+    if not ticker:
+        st.warning("请输入有效股票代码后再运行回测。")
+        return
+
+    try:
+        actual_ticker = normalize_ticker(ticker, market_type)
+        with st.spinner(f"正在运行 {actual_ticker} 的策略回测..."):
+            backtest_price_data = fetch_market_data(actual_ticker, market_type, period_label)
+            backtest_df = generate_backtest_signals(backtest_price_data, strategy_name, trading_cost)
+    except Exception as exc:
+        st.error(f"策略回测失败，请检查代码、市场类型或数据源状态。错误信息：{exc}")
+        return
+
+    min_days = 60 if strategy_name == "双均线策略" else 20
+    if backtest_price_data is None or backtest_price_data.empty or "Close" not in backtest_price_data.columns:
+        st.warning("未获取到可用于回测的历史价格数据。")
+        return
+    if len(backtest_price_data.dropna(subset=["Close"])) < min_days:
+        st.warning(f"{strategy_name} 至少需要 {min_days} 个交易日数据，当前历史数据不足。")
+        return
+    if backtest_df.empty:
+        st.warning("回测结果为空，请检查策略参数或历史数据。")
+        return
+
+    metrics = calculate_backtest_metrics(backtest_df)
+
+    st.subheader("回测说明")
+    st.write(
+        f"策略名称：{strategy_name} | 股票代码：{actual_ticker} | 市场类型：{market_type} | "
+        f"回测时间范围：{period_label} | 初始资金：{initial_capital:,.0f} | 单边交易成本：{trading_cost:.4f}"
+    )
+    st.caption("这是教学演示，不构成投资建议；回测结果不代表未来收益。")
+
+    metric_cols = st.columns(6)
+    metric_cols[0].metric("策略累计收益率", format_percent(metrics["strategy_total_return"]))
+    metric_cols[1].metric("基准累计收益率", format_percent(metrics["benchmark_total_return"]))
+    metric_cols[2].metric("策略最大回撤", format_percent(metrics["strategy_max_drawdown"]))
+    metric_cols[3].metric("夏普比率", format_backtest_number(metrics["sharpe_ratio"]))
+    metric_cols[4].metric("交易次数", format_backtest_count(metrics["trade_count"]))
+    metric_cols[5].metric("持仓天数占比", format_percent(metrics["holding_days_ratio"]))
+
+    st.subheader("净值曲线")
+    nav_frame = pd.DataFrame(index=backtest_df.index)
+    nav_frame["策略净值"] = backtest_df["strategy_nav"] * initial_capital
+    nav_frame["基准净值"] = backtest_df["benchmark_nav"] * initial_capital
+    st.line_chart(nav_frame)
+
+    st.subheader("最近 20 条买卖信号")
+    signal_table = backtest_df.tail(20).reset_index()
+    first_col = signal_table.columns[0]
+    signal_table = signal_table.rename(
+        columns={
+            first_col: "日期",
+            "Close": "收盘价",
+            "signal": "signal",
+            "position": "position",
+            "strategy_return": "strategy_return",
+            "strategy_nav": "strategy_nav",
+            "benchmark_nav": "benchmark_nav",
+        }
+    )
+    st.dataframe(
+        signal_table[["日期", "收盘价", "signal", "position", "strategy_return", "strategy_nav", "benchmark_nav"]],
+        hide_index=True,
+        use_container_width=True,
+    )
+
+    st.subheader("回测解释")
+    st.write(generate_backtest_summary(metrics, strategy_name))
+
+
 def build_price_frame(data):
     price_frame = pd.DataFrame(index=data.index)
     price_frame["收盘价"] = data["Close"]
@@ -934,7 +1213,7 @@ if "watchlist" not in st.session_state:
 
 st.title("FinScientist")
 st.subheader("AI-assisted financial research workspace")
-st.caption("V0.6 新增多股票对比与临时自选股观察列表；仍为本地规则化研究原型，不调用 AI API。")
+st.caption("V0.7 新增简单策略回测模块；仍为本地规则化研究原型，不调用 AI API。")
 
 with st.sidebar:
     st.header("研究参数")
@@ -992,6 +1271,23 @@ with st.sidebar:
         disabled=not bool(st.session_state.watchlist),
     )
 
+    st.divider()
+    st.header("策略回测")
+    enable_backtest = st.checkbox("启用策略回测", value=True)
+    backtest_strategy = st.selectbox("回测策略", options=BACKTEST_STRATEGIES, index=0)
+    initial_capital = st.number_input("初始资金", min_value=10000, value=100000, step=10000)
+    trading_cost = st.number_input(
+        "单边交易成本",
+        min_value=0.0,
+        max_value=0.05,
+        value=0.001,
+        step=0.0005,
+        format="%.4f",
+        help="例如 0.001 表示单边交易成本 0.1%。",
+    )
+    backtest_period_label = st.selectbox("回测时间范围", options=BACKTEST_PERIOD_OPTIONS, index=1)
+    run_backtest_button = st.button("运行回测", disabled=not enable_backtest)
+
 if clear_watchlist_button:
     clear_watchlist()
     st.success("已清空自选股列表。")
@@ -1035,8 +1331,13 @@ if not run_button:
     if comparison_tickers:
         render_watchlist_panel()
         render_comparison_section(comparison_tickers, comparison_market, period_label)
+        if run_backtest_button:
+            run_backtest_section(symbol, selected_market, backtest_strategy, backtest_period_label, initial_capital, trading_cost)
+    elif run_backtest_button:
+        render_watchlist_panel()
+        run_backtest_section(symbol, selected_market, backtest_strategy, backtest_period_label, initial_capital, trading_cost)
     else:
-        st.info("在侧边栏选择市场和输入方式后，点击“生成研究工作台”；也可以直接运行多股票对比。")
+        st.info("在侧边栏选择市场和输入方式后，点击“生成研究工作台”；也可以直接运行多股票对比或策略回测。")
         render_watchlist_panel()
     st.stop()
 
@@ -1251,6 +1552,8 @@ st.divider()
 render_watchlist_panel()
 if comparison_tickers:
     render_comparison_section(comparison_tickers, comparison_market, period_label)
+if run_backtest_button:
+    run_backtest_section(symbol, selected_market, backtest_strategy, backtest_period_label, initial_capital, trading_cost)
 
 st.divider()
 st.header("风险提示")
@@ -1260,6 +1563,8 @@ st.write("- 公司基本面字段可能存在缺失、滞后或数据源映射�
 st.write("- 新闻数据可能延迟、缺失或来源不完整。")
 st.write("- 手动事件分析基于关键词规则，不代表真实因果判断。")
 st.write("- 事件影响需要结合财报、公告、行业数据进一步验证。")
+st.write("- 策略回测为简化教学模型，未考虑滑点、真实撮合、停牌、涨跌停和复权差异。")
+st.write("- 回测结果不代表未来收益，交易成本也只是粗略估计。")
 st.write("- 本项目目前是学习原型，不是正式投研系统。")
 st.write("- 规则化摘要不能替代专业研究判断。")
 st.write("- 本结果不构成投资建议。")
