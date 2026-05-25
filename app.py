@@ -1,4 +1,5 @@
 import math
+import re
 from datetime import date
 
 import akshare as ak
@@ -7,7 +8,7 @@ import streamlit as st
 import yfinance as yf
 
 
-APP_VERSION = "V0.5"
+APP_VERSION = "V0.6"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
@@ -369,6 +370,257 @@ def calculate_indicators(data):
     }
 
 
+def parse_ticker_list(input_text, market_type="美股"):
+    raw_items = re.split(r"[,，\s]+", input_text or "")
+    tickers = []
+    seen = set()
+
+    for raw_item in raw_items:
+        item = raw_item.strip().upper()
+        if not item:
+            continue
+        normalized = normalize_ticker(item, market_type)
+        if normalized and normalized not in seen:
+            tickers.append(normalized)
+            seen.add(normalized)
+
+    if len(tickers) > 10:
+        st.warning("多股票对比最多支持 10 只股票，本次仅处理前 10 只。")
+        tickers = tickers[:10]
+
+    return tickers
+
+
+def get_comparison_trend_state(metrics):
+    if metrics["data_points"] < 60:
+        return "数据不足"
+    latest_close = metrics["latest_close"]
+    ma_20d = metrics["ma_20d"]
+    ma_60d = metrics["ma_60d"]
+    if pd.isna(latest_close) or pd.isna(ma_20d) or pd.isna(ma_60d):
+        return "数据不足"
+    if latest_close > ma_20d and latest_close > ma_60d:
+        return "偏强"
+    if latest_close < ma_20d and latest_close < ma_60d:
+        return "偏弱"
+    return "中性"
+
+
+def get_comparison_rating(metrics):
+    if metrics["data_points"] < 60:
+        return "数据不足"
+
+    trend_state = get_comparison_trend_state(metrics)
+    return_60d = to_number(metrics["return_60d"])
+    annual_volatility = to_number(metrics["annual_volatility"])
+    max_drawdown = to_number(metrics["max_drawdown"])
+
+    if (
+        trend_state == "偏强"
+        and not pd.isna(return_60d)
+        and return_60d > 0
+        and (pd.isna(max_drawdown) or max_drawdown > -0.25)
+    ):
+        return "强势观察"
+    if (
+        trend_state == "偏弱"
+        or (not pd.isna(max_drawdown) and max_drawdown <= -0.25)
+        or (not pd.isna(annual_volatility) and annual_volatility >= 0.45)
+    ):
+        return "风险观察"
+    return "中性观察"
+
+
+def normalize_price_series(price_series_map):
+    normalized = pd.DataFrame()
+    for ticker, close_prices in price_series_map.items():
+        clean_prices = close_prices.dropna()
+        if len(clean_prices) < 2:
+            continue
+        first_price = clean_prices.iloc[0]
+        if pd.isna(first_price) or first_price == 0:
+            continue
+        normalized[ticker] = clean_prices / first_price * 100
+    return normalized
+
+
+def build_comparison_table(tickers, market_type, period):
+    rows = []
+    price_series_map = {}
+
+    for ticker in tickers:
+        row = {
+            "输入代码": ticker,
+            "实际查询代码": ticker,
+            "最新收盘价": INSUFFICIENT,
+            "近20日涨跌幅": INSUFFICIENT,
+            "近60日涨跌幅": INSUFFICIENT,
+            "年化波动率": INSUFFICIENT,
+            "最大回撤": INSUFFICIENT,
+            "相对20日均线偏离": INSUFFICIENT,
+            "相对60日均线偏离": INSUFFICIENT,
+            "趋势状态": "数据不足",
+            "本地模拟评级": "数据不足",
+            "数据状态": "数据不足",
+        }
+        try:
+            actual_ticker = normalize_ticker(ticker, market_type)
+            row["实际查询代码"] = actual_ticker
+            data = fetch_market_data(actual_ticker, market_type, period)
+            if data.empty or "Close" not in data.columns:
+                row["数据状态"] = "获取失败"
+                rows.append(row)
+                continue
+
+            metrics = calculate_indicators(data)
+            row.update(
+                {
+                    "最新收盘价": format_price(metrics["latest_close"]),
+                    "近20日涨跌幅": format_percent(metrics["return_20d"]),
+                    "近60日涨跌幅": format_percent(metrics["return_60d"]),
+                    "年化波动率": format_percent(metrics["annual_volatility"]),
+                    "最大回撤": format_percent(metrics["max_drawdown"]),
+                    "相对20日均线偏离": format_percent(metrics["bias_20d"]),
+                    "相对60日均线偏离": format_percent(metrics["bias_60d"]),
+                    "趋势状态": get_comparison_trend_state(metrics),
+                    "本地模拟评级": get_comparison_rating(metrics),
+                    "数据状态": "正常" if metrics["data_points"] >= 20 else "数据不足",
+                    "_return_60d": metrics["return_60d"],
+                    "_annual_volatility": metrics["annual_volatility"],
+                    "_max_drawdown": metrics["max_drawdown"],
+                    "_bias_20d": metrics["bias_20d"],
+                    "_bias_60d": metrics["bias_60d"],
+                }
+            )
+            price_series_map[actual_ticker] = data["Close"]
+        except Exception:
+            row["数据状态"] = "获取失败"
+        rows.append(row)
+
+    comparison_df = pd.DataFrame(rows)
+    comparison_df.attrs["normalized_prices"] = normalize_price_series(price_series_map)
+    return comparison_df
+
+
+def list_symbols_by_condition(comparison_df, condition, limit=5):
+    symbols = []
+    for _, row in comparison_df.iterrows():
+        try:
+            if condition(row):
+                symbols.append(str(row["实际查询代码"]))
+        except Exception:
+            continue
+    return symbols[:limit]
+
+
+def format_symbol_list(symbols):
+    return "、".join(symbols) if symbols else "暂无明显标的"
+
+
+def generate_comparison_summary(comparison_df):
+    if comparison_df.empty:
+        return "暂无可用于生成摘要的多股票对比数据。仅用于学习演示，不构成投资建议。"
+
+    valid_df = comparison_df[comparison_df["数据状态"] != "获取失败"].copy()
+    if valid_df.empty:
+        return "本次对比未获取到可用行情数据。请检查股票代码、市场类型或数据源状态。仅用于学习演示，不构成投资建议。"
+
+    strong_symbols = list_symbols_by_condition(
+        valid_df,
+        lambda row: not pd.isna(to_number(row.get("_return_60d")))
+        and to_number(row.get("_return_60d")) > 0.05,
+    )
+    high_vol_symbols = list_symbols_by_condition(
+        valid_df,
+        lambda row: not pd.isna(to_number(row.get("_annual_volatility")))
+        and to_number(row.get("_annual_volatility")) >= 0.45,
+    )
+    high_drawdown_symbols = list_symbols_by_condition(
+        valid_df,
+        lambda row: not pd.isna(to_number(row.get("_max_drawdown")))
+        and to_number(row.get("_max_drawdown")) <= -0.25,
+    )
+    weak_symbols = list_symbols_by_condition(valid_df, lambda row: row.get("趋势状态") == "偏弱")
+    above_ma_symbols = list_symbols_by_condition(
+        valid_df,
+        lambda row: not pd.isna(to_number(row.get("_bias_20d")))
+        and not pd.isna(to_number(row.get("_bias_60d")))
+        and to_number(row.get("_bias_20d")) > 0
+        and to_number(row.get("_bias_60d")) > 0,
+    )
+    research_symbols = list_symbols_by_condition(
+        valid_df,
+        lambda row: row.get("本地模拟评级") in ("强势观察", "中性观察")
+        and row.get("趋势状态") != "偏弱",
+    )
+
+    return "\n".join(
+        [
+            f"1. 相对强势标的：{format_symbol_list(strong_symbols)}。这些标的近60日表现相对更强，但仍需结合估值、财报和行业信息继续验证。",
+            f"2. 高波动标的：{format_symbol_list(high_vol_symbols)}。这些标的年化波动率偏高，适合重点观察价格弹性和风险暴露。",
+            f"3. 高回撤标的：{format_symbol_list(high_drawdown_symbols)}。这些标的区间最大回撤较大，需要进一步排查基本面、行业景气和事件冲击。",
+            f"4. 趋势较弱标的：{format_symbol_list(weak_symbols)}。这些标的当前价格相对主要均线偏弱，短中期趋势确认度较低。",
+            f"5. 后续研究建议：价格高于20日和60日均线的标的包括 {format_symbol_list(above_ma_symbols)}；更适合进入下一步研究清单的标的包括 {format_symbol_list(research_symbols)}。本摘要不输出买入、卖出或目标价，仅用于学习演示，不构成投资建议。",
+        ]
+    )
+
+
+def add_to_watchlist(ticker):
+    if "watchlist" not in st.session_state:
+        st.session_state.watchlist = []
+    ticker = (ticker or "").strip().upper()
+    if ticker and ticker not in st.session_state.watchlist:
+        st.session_state.watchlist.append(ticker)
+
+
+def clear_watchlist():
+    st.session_state.watchlist = []
+
+
+def render_watchlist_panel():
+    st.header("自选股观察列表")
+    watchlist = st.session_state.get("watchlist", [])
+    st.metric("当前自选股数量", len(watchlist))
+    if watchlist:
+        st.write("、".join(watchlist))
+    else:
+        st.info("当前暂无自选股，可先在单股票分析区加入当前标的。")
+
+
+def render_comparison_section(tickers, market_type, period_label):
+    st.divider()
+    st.header("多股票对比")
+
+    if not tickers:
+        st.warning("请输入至少一只股票代码后再运行多股票对比。")
+        return
+
+    try:
+        with st.spinner(f"正在获取 {market_type} 多股票对比数据..."):
+            comparison_df = build_comparison_table(tickers, market_type, period_label)
+    except Exception as exc:
+        st.error(f"多股票对比生成失败，请稍后重试。错误信息：{exc}")
+        return
+
+    if comparison_df.empty:
+        st.warning("多股票对比表为空，请检查输入代码或数据源状态。")
+        return
+
+    display_columns = [col for col in comparison_df.columns if not col.startswith("_")]
+    st.dataframe(comparison_df[display_columns], hide_index=True, use_container_width=True)
+
+    st.subheader("表格解释")
+    st.write(generate_comparison_summary(comparison_df))
+
+    normalized_prices = comparison_df.attrs.get("normalized_prices", pd.DataFrame())
+    if isinstance(normalized_prices, pd.DataFrame) and not normalized_prices.empty:
+        st.subheader("归一化收盘价走势")
+        st.caption("每只股票第一天价格设为 100，后续按相对变化展示。")
+        st.line_chart(normalized_prices)
+    else:
+        st.info("本次可用于绘制归一化价格走势的数据不足。")
+
+
 def build_price_frame(data):
     price_frame = pd.DataFrame(index=data.index)
     price_frame["收盘价"] = data["Close"]
@@ -677,9 +929,12 @@ def truncate_text(text, limit=300):
 
 st.set_page_config(page_title="FinScientist", page_icon="📈", layout="wide")
 
+if "watchlist" not in st.session_state:
+    st.session_state.watchlist = []
+
 st.title("FinScientist")
 st.subheader("AI-assisted financial research workspace")
-st.caption("V0.5 增强近期重大消息与事件驱动分析，但仍为本地规则化研究原型，不调用 AI API。")
+st.caption("V0.6 新增多股票对比与临时自选股观察列表；仍为本地规则化研究原型，不调用 AI API。")
 
 with st.sidebar:
     st.header("研究参数")
@@ -714,25 +969,81 @@ with st.sidebar:
     )
     run_button = st.button("生成研究工作台", type="primary")
 
-if not run_button:
-    st.info("在侧边栏选择市场和输入方式后，点击“生成研究工作台”。")
-    st.stop()
+    st.divider()
+    st.header("多股票对比")
+    comparison_input = st.text_area(
+        "多股票代码",
+        value="NVDA, AAPL, MSFT",
+        help="可用英文逗号、中文逗号、空格或换行分隔多个股票代码。美股输入 NVDA；港股输入 0700；A股输入 600519。",
+        height=90,
+    )
+    comparison_market = st.selectbox("多股票市场类型", options=MARKET_OPTIONS, index=0)
+    run_comparison_button = st.button("运行多股票对比")
+    add_current_button = st.button("加入当前标的到自选股")
+    st.caption(f"当前自选股数量：{len(st.session_state.watchlist)}")
+    if st.session_state.watchlist:
+        st.write("、".join(st.session_state.watchlist))
+    run_watchlist_comparison_button = st.button(
+        "基于自选股运行对比",
+        disabled=not bool(st.session_state.watchlist),
+    )
+    clear_watchlist_button = st.button(
+        "清空自选股",
+        disabled=not bool(st.session_state.watchlist),
+    )
 
-if not user_input.strip():
-    st.warning("请输入股票代码或股票名称。")
-    st.stop()
+if clear_watchlist_button:
+    clear_watchlist()
+    st.success("已清空自选股列表。")
 
 selected_market = market
-if input_mode == "股票名称":
+raw_symbol = ""
+symbol = ""
+input_error = ""
+if not user_input.strip():
+    input_error = "请输入股票代码或股票名称。"
+elif input_mode == "股票名称":
     resolved = resolve_name_to_ticker(user_input)
     if not resolved:
-        st.warning("当前版本暂不支持该名称搜索，请改用股票代码输入。")
-        st.stop()
-    selected_market, raw_symbol = resolved
+        input_error = "当前版本暂不支持该名称搜索，请改用股票代码输入。"
+    else:
+        selected_market, raw_symbol = resolved
 else:
     raw_symbol = user_input
 
-symbol = normalize_ticker(raw_symbol, selected_market)
+if raw_symbol:
+    symbol = normalize_ticker(raw_symbol, selected_market)
+
+if add_current_button:
+    if symbol:
+        add_to_watchlist(symbol)
+        st.success(f"已加入自选股：{symbol}")
+    else:
+        st.warning(input_error or "请输入有效股票代码后再加入自选股。")
+
+comparison_tickers = []
+if run_comparison_button:
+    comparison_tickers = parse_ticker_list(comparison_input, comparison_market)
+    if not comparison_tickers:
+        st.warning("请输入至少一只股票代码后再运行多股票对比。")
+elif run_watchlist_comparison_button:
+    comparison_tickers = parse_ticker_list(" ".join(st.session_state.watchlist), comparison_market)
+    if not comparison_tickers:
+        st.warning("当前暂无可用于对比的自选股。")
+
+if not run_button:
+    if comparison_tickers:
+        render_watchlist_panel()
+        render_comparison_section(comparison_tickers, comparison_market, period_label)
+    else:
+        st.info("在侧边栏选择市场和输入方式后，点击“生成研究工作台”；也可以直接运行多股票对比。")
+        render_watchlist_panel()
+    st.stop()
+
+if input_error:
+    st.warning(input_error)
+    st.stop()
+
 if not symbol:
     st.warning("请输入股票代码。")
     st.stop()
@@ -935,6 +1246,11 @@ st.subheader("评级依据")
 for item in conclusion["评级依据"]:
     st.write(f"- {item}")
 st.caption(conclusion["免责声明"])
+
+st.divider()
+render_watchlist_panel()
+if comparison_tickers:
+    render_comparison_section(comparison_tickers, comparison_market, period_label)
 
 st.divider()
 st.header("风险提示")

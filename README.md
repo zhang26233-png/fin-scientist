@@ -1,84 +1,97 @@
 # FinScientist
 
-FinScientist V0.5 is a single-file Streamlit prototype for a multi-market financial research workspace. It supports US stocks, Hong Kong stocks, and A-shares, and combines market data, technical indicators, company profile fields, valuation fields, financial snapshots, sector notes, recent news, manual event analysis, and local rule-based summaries.
+FinScientist V0.6 是一个单文件 Streamlit 金融研究学习原型。它支持美股、港股、A股，提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、本地规则化摘要，并新增多股票对比和临时自选股观察列表。
 
-The current version does not call the OpenAI API, does not use a database, and does not perform automated trading.
+当前版本不调用 OpenAI API，不使用数据库，不做自动交易。所有结果仅用于学习演示，不构成投资建议。
 
-## Supported Markets
+## 当前版本
 
-- US stocks: yfinance, for example `NVDA`, `AAPL`, `MSFT`, `TSLA`
-- Hong Kong stocks: yfinance, for example `0700`, `9988`, `3690`
-- A-shares: akshare price data, for example `600519`, `000001`, `300750`, `002594`
+当前版本：V0.6
 
-## Data Sources
+V0.6 新增：
 
-- `yfinance`: US and Hong Kong historical prices, company profile fields, valuation fields, selected financial fields, and optional news.
-- `akshare`: A-share historical daily prices.
-- Built-in mappings: selected stock-name mappings and selected A-share sector/profile mappings.
+- 多股票对比功能
+- 临时自选股观察列表
+- 基于自选股一键运行对比
+- 多只股票归一化收盘价走势展示
+- 本地规则化多股票对比摘要
 
-## Input Modes
+## 支持市场
 
-You can search by stock code or stock name.
+- 美股：通过 `yfinance` 获取数据，例如 `NVDA`、`AAPL`、`MSFT`、`TSLA`
+- 港股：通过 `yfinance` 获取数据，例如 `0700`、`9988`、`3690`，系统会自动转换为 `0700.HK`
+- A股：通过 `akshare` 获取价格数据，例如 `600519`、`000001`、`300750`、`002594`
 
-Supported built-in stock name mappings include:
+## 多股票输入格式
 
-- 英伟达 -> 美股 / `NVDA`
-- 苹果 -> 美股 / `AAPL`
-- 微软 -> 美股 / `MSFT`
-- 特斯拉 -> 美股 / `TSLA`
-- 腾讯控股 -> 港股 / `0700.HK`
-- 阿里巴巴-W -> 港股 / `9988.HK`
-- 美团-W -> 港股 / `3690.HK`
-- 贵州茅台 -> A股 / `600519`
-- 平安银行 -> A股 / `000001`
-- 宁德时代 -> A股 / `300750`
+多股票对比输入框支持英文逗号、中文逗号、空格和换行分隔：
 
-If a name is not in the built-in mapping table, use stock code input.
+```text
+NVDA, AAPL, MSFT
+```
 
-## Current Features
+```text
+0700，9988 3690
+```
 
-- Market selector: US stocks, Hong Kong stocks, A-shares
-- Code or name input
-- Time ranges: 3 months, 6 months, 1 year, 2 years
-- Analysis style selector: conservative, growth, short-term trading
-- Company profile module
-- Core price indicator module
-- Valuation and financial summary modules
-- Price trend chart using `st.line_chart`
-- Technical, fundamental, and sector explanation modules
-- Recent major news module
-- Manual event analysis module
-- Event type recognition
-- Event impact explanation
-- Integrated local research conclusion and simulated rating
-- Risk warnings
+```text
+600519
+000001
+300750
+```
 
-## V0.5 News And Event Module
+单次最多处理 10 只股票。超过 10 只时，系统只取前 10 只并提示。
 
-For US and Hong Kong stocks, the app attempts to display the first 5 available yfinance news items, including title, source, publish time, and link when available.
+## 当前功能
 
-For A-shares, the current version does not perform complex news crawling. Use the manual event input box for event analysis.
+- 单股票研究工作台
+- 市场选择：美股、港股、A股
+- 股票代码或内置股票名称输入
+- 时间范围：3个月、6个月、1年、2年
+- 分析风格选择：稳健型、成长型、短线交易型
+- 公司基础信息
+- 核心价格指标
+- 均线与趋势指标
+- 估值和财务摘要
+- 价格趋势图
+- 技术面、基本面、板块解释
+- 近期重大消息模块
+- 手动事件分析模块
+- 综合本地模拟评级
+- 多股票对比表格
+- 多股票归一化走势
+- 临时自选股观察列表
 
-Manual event analysis supports these event types:
+## 多股票对比内容
 
-- 财报业绩类
-- 政策监管类
-- 产品订单类
-- 融资资本类
-- 行业景气类
-- 市场交易类
-- 未分类事件
+对比表包含：
 
-The event analysis outputs:
+- 输入代码
+- 实际查询代码
+- 最新收盘价
+- 近20日涨跌幅
+- 近60日涨跌幅
+- 年化波动率
+- 最大回撤
+- 当前价格相对20日均线偏离
+- 当前价格相对60日均线偏离
+- 趋势状态：偏强 / 中性 / 偏弱 / 数据不足
+- 本地模拟评级：强势观察 / 中性观察 / 风险观察 / 数据不足
 
-- Event type
-- Possible positive impact
-- Possible negative risk
-- Data that needs further verification
-- Possible short-term trading sentiment impact
-- Possible medium- and long-term fundamental impact
+如果某只股票数据获取失败，系统会在该行显示获取失败或数据不足，并继续处理其他股票。
 
-## Setup
+## 自选股观察列表
+
+自选股列表通过 `st.session_state` 临时保存：
+
+- 可将当前单股票分析标的加入自选股
+- 可查看当前自选股数量和代码列表
+- 可清空自选股
+- 可基于自选股一键运行多股票对比
+
+自选股列表仅保存在当前 Streamlit 会话中，关闭会话后可能丢失。
+
+## 安装
 
 ```powershell
 python -m venv .venv
@@ -86,27 +99,29 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## Run
+## 运行
 
 ```powershell
 streamlit run app.py
 ```
 
-Open the local URL shown by Streamlit in your browser.
+运行后打开 Streamlit 在终端中显示的本地 URL。
 
-## Current Limitations
+## 当前局限
 
-- yfinance news can be unstable, delayed, incomplete, or unavailable.
-- A-share real-time news and announcements are not formally integrated yet.
-- Manual event analysis is keyword-based and can misclassify events.
-- The event explanation is not a real causal model.
-- Local rule-based analysis cannot replace human research.
-- This project is not investment advice and should not be used for real trading decisions.
+- 自选股列表仅保存在当前会话中。
+- 多股票对比速度受 `yfinance`、`akshare` 等数据源影响。
+- 数据源可能延迟、缺失或字段口径不一致。
+- yfinance 新闻数据可能不稳定、延迟、缺失或不可用。
+- A股实时新闻和公告尚未正式接入。
+- 手动事件分析基于关键词规则，不是真实因果模型。
+- 当前结果仅用于学习演示，不构成投资建议。
+- 不应据此进行真实交易。
 
-## Next Steps
+## 下一步计划
 
-- Connect more reliable news and announcement data.
-- Add multi-stock comparison.
-- Add a backtesting module.
-- Add AI-generated research summaries.
-- Split the project structure to improve maintainability.
+- 加入回测模块
+- 加入 AI 研究摘要
+- 接入更稳定的新闻和公告数据
+- 拆分项目结构，提高可维护性
+- 支持持久化自选股列表
