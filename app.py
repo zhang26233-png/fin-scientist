@@ -9,7 +9,7 @@ import streamlit as st
 import yfinance as yf
 
 
-APP_VERSION = "V0.8"
+APP_VERSION = "V0.9.1"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
@@ -20,6 +20,47 @@ ANALYSIS_STYLES = ["稳健型", "成长型", "短线交易型"]
 ANALYSIS_DIMENSIONS = ["趋势", "波动", "估值", "成交量", "基本面", "板块", "风险"]
 BACKTEST_STRATEGIES = ["均线趋势策略", "双均线策略", "动量策略"]
 BACKTEST_PERIOD_OPTIONS = ["6个月", "1年", "2年", "5年"]
+SCREENING_MARKET_OPTIONS = ["A股", "港股", "美股"]
+SCREENING_POOL_OPTIONS = ["默认示例股票池", "自定义股票池"]
+SCREENING_TOP_OPTIONS = ["Top 10", "Top 20", "Top 30"]
+DEFAULT_SCREENING_UNIVERSES = {
+    "A股": [
+        "600519.SH",
+        "300750.SZ",
+        "601318.SH",
+        "600036.SH",
+        "000858.SZ",
+        "002594.SZ",
+        "688981.SH",
+        "300760.SZ",
+        "600276.SH",
+        "000333.SZ",
+    ],
+    "港股": [
+        "0700.HK",
+        "9988.HK",
+        "3690.HK",
+        "1810.HK",
+        "0981.HK",
+        "1211.HK",
+        "2269.HK",
+        "9999.HK",
+        "9618.HK",
+        "1024.HK",
+    ],
+    "美股": [
+        "AAPL",
+        "MSFT",
+        "NVDA",
+        "GOOGL",
+        "AMZN",
+        "META",
+        "TSLA",
+        "AMD",
+        "AVGO",
+        "NFLX",
+    ],
+}
 
 NAME_MAP = {
     "英伟达": ("美股", "NVDA"),
@@ -798,6 +839,132 @@ def parse_ticker_list(input_text, market_type="美股"):
     return tickers
 
 
+def get_default_universe(market):
+    return DEFAULT_SCREENING_UNIVERSES.get(market, []).copy()
+
+
+def infer_a_share_suffix(ticker_digits):
+    if ticker_digits.startswith("6"):
+        return ".SH", "根据首位数字推断为上海市场。"
+    if ticker_digits.startswith(("0", "3")):
+        return ".SZ", "根据首位数字推断为深圳市场。"
+    return "", "格式需进一步确认"
+
+
+def normalize_screening_ticker(ticker, market):
+    raw_value = str(ticker or "").strip()
+    normalized = raw_value.upper()
+    if not normalized:
+        return {
+            "原始输入": raw_value,
+            "展示代码": "",
+            "内部查询代码": "",
+            "市场": market,
+            "备注": "空代码，已跳过",
+            "is_valid": False,
+        }
+
+    if market == "A股":
+        clean_code = normalized.replace(".SH", "").replace(".SZ", "")
+        if re.fullmatch(r"\d{6}", clean_code):
+            suffix = ""
+            note = "已标准化"
+            if normalized.endswith(".SH"):
+                suffix = ".SH"
+            elif normalized.endswith(".SZ"):
+                suffix = ".SZ"
+            else:
+                suffix, note = infer_a_share_suffix(clean_code)
+            display_code = f"{clean_code}{suffix}" if suffix else raw_value
+            return {
+                "原始输入": raw_value,
+                "展示代码": display_code,
+                "内部查询代码": clean_code,
+                "市场": market,
+                "备注": note,
+                "is_valid": bool(suffix),
+            }
+        return {
+            "原始输入": raw_value,
+            "展示代码": raw_value,
+            "内部查询代码": clean_code or raw_value,
+            "市场": market,
+            "备注": "格式需进一步确认",
+            "is_valid": False,
+        }
+
+    if market == "港股":
+        clean_code = normalized.replace(".HK", "")
+        if re.fullmatch(r"\d{1,5}", clean_code):
+            display_code = f"{clean_code.zfill(4)}.HK"
+            return {
+                "原始输入": raw_value,
+                "展示代码": display_code,
+                "内部查询代码": display_code,
+                "市场": market,
+                "备注": "已标准化",
+                "is_valid": True,
+            }
+        return {
+            "原始输入": raw_value,
+            "展示代码": raw_value,
+            "内部查询代码": raw_value,
+            "市场": market,
+            "备注": "格式需进一步确认",
+            "is_valid": False,
+        }
+
+    clean_code = normalized.strip()
+    if re.fullmatch(r"[A-Z0-9.\-]{1,12}", clean_code):
+        return {
+            "原始输入": raw_value,
+            "展示代码": clean_code,
+            "内部查询代码": clean_code,
+            "市场": market,
+            "备注": "已标准化",
+            "is_valid": True,
+        }
+
+    return {
+        "原始输入": raw_value,
+        "展示代码": raw_value,
+        "内部查询代码": raw_value,
+        "市场": market,
+        "备注": "格式需进一步确认",
+        "is_valid": False,
+    }
+
+
+def parse_screening_universe(input_text, market):
+    raw_items = [item.strip() for item in re.split(r"[,，\s]+", input_text or "") if item.strip()]
+    warnings = []
+    parsed_items = []
+    seen = set()
+
+    if len(raw_items) > 50:
+        warnings.append("股票池最多解析 50 只，本次仅保留前 50 只。")
+        raw_items = raw_items[:50]
+
+    for raw_item in raw_items:
+        parsed = normalize_screening_ticker(raw_item, market)
+        dedupe_key = parsed["展示代码"] or parsed["原始输入"].upper()
+        if not dedupe_key or dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        parsed_items.append(parsed)
+
+    if not parsed_items:
+        warnings.append("未解析到有效股票代码。")
+
+    if any(item["备注"] == "格式需进一步确认" for item in parsed_items):
+        warnings.append("部分代码格式需进一步确认，本版本仍会在解析表中展示。")
+
+    return {
+        "parsed_items": parsed_items,
+        "warnings": warnings,
+    }
+
+
 def get_comparison_trend_state(metrics):
     if metrics["data_points"] < 60:
         return "数据不足"
@@ -1039,6 +1206,48 @@ def render_comparison_section(tickers, market_type, period_label):
         st.line_chart(normalized_prices)
     else:
         st.info("本次可用于绘制归一化价格走势的数据不足。")
+
+
+def render_screening_section(market, pool_source, top_n_label, input_text):
+    st.divider()
+    st.header("自动研究对象筛选")
+    st.write(
+        "本模块用于从股票池中筛选研究优先级较高的候选对象，仅用于学习和研究，"
+        "不构成投资建议，也不代表买入、卖出或持有建议。"
+    )
+    st.caption(
+        "当前 V0.9.1 只完成股票池输入与代码解析，后续版本再加入批量数据获取、"
+        "指标计算、研究优先级评分、入选理由和风险提示。"
+    )
+
+    if pool_source == "默认示例股票池":
+        source_text = " ".join(get_default_universe(market))
+    else:
+        source_text = input_text or ""
+        if not source_text.strip():
+            st.warning("请选择自定义股票池时，请先输入至少一个股票代码。")
+            return
+
+    result = parse_screening_universe(source_text, market)
+    for warning in result["warnings"]:
+        st.warning(warning)
+
+    parsed_items = result["parsed_items"]
+    if not parsed_items:
+        st.warning("解析后没有可展示的候选对象。")
+        return
+
+    st.subheader("初筛结果")
+    info_cols = st.columns(4)
+    info_cols[0].metric("市场类型", market)
+    info_cols[1].metric("股票池来源", pool_source)
+    info_cols[2].metric("计划筛选数量", top_n_label)
+    info_cols[3].metric("解析后股票数量", len(parsed_items))
+
+    display_frame = pd.DataFrame(parsed_items)
+    display_columns = ["原始输入", "展示代码", "内部查询代码", "市场", "备注"]
+    st.dataframe(display_frame[display_columns], hide_index=True, use_container_width=True)
+    st.info("当前 V0.9.1 仅完成股票池解析。下一版本将加入批量行情获取和数据源状态记录。")
 
 
 def is_valid_number(value):
@@ -1570,11 +1779,11 @@ def generate_event_analysis(event_text, event_type, analysis_style):
             "long": "中长期影响取决于行业景气是否持续，以及公司是否具备成本、品牌或技术优势。",
         },
         "市场交易类": {
-            "positive": "放量突破或资金流入可能强化趋势交易信号，提高短期关注度。",
+            "positive": "放量突破或资金流入可能强化趋势关注线索，提高短期关注度。",
             "negative": "跌破关键位置、放量下跌或高换手回落可能意味着情绪退潮和回撤风险。",
             "verify": "需要验证成交量、换手率、关键均线、支撑压力位和后续价格确认。",
             "short": "短期影响主要体现在交易情绪、趋势延续和波动率变化。",
-            "long": "中长期基本面影响有限，除非交易信号背后有基本面或事件催化支撑。",
+            "long": "中长期基本面影响有限，除非价格和成交量线索背后有基本面或事件催化支撑。",
         },
         "未分类事件": {
             "positive": "事件描述暂未匹配到明确类别，可能仍包含潜在利好线索。",
@@ -1643,7 +1852,7 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
 
     st.title("FinScientist")
     st.subheader("AI-assisted financial research workspace")
-    st.caption("V0.8 新增数据源可靠性与数据质量报告模块；仍为本地规则化研究原型，不调用 AI API。")
+    st.caption("V0.9.1 新增自动研究对象筛选模块骨架；仍为本地规则化研究原型，不调用 AI API。")
 
     with st.sidebar:
         st.header("研究参数")
@@ -1718,6 +1927,20 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
         backtest_period_label = st.selectbox("回测时间范围", options=BACKTEST_PERIOD_OPTIONS, index=1)
         run_backtest_button = st.button("运行回测", disabled=not enable_backtest)
 
+        st.divider()
+        st.header("自动研究对象筛选")
+        screening_market = st.selectbox("筛选市场", options=SCREENING_MARKET_OPTIONS, index=0)
+        screening_pool_source = st.selectbox("股票池选择", options=SCREENING_POOL_OPTIONS, index=0)
+        screening_custom_input = st.text_area(
+            "自定义股票池",
+            value="",
+            placeholder="例如：NVDA, AAPL, MSFT\n例如：600519.SH, 300750.SZ\n例如：0700.HK, 9988.HK",
+            height=90,
+            disabled=screening_pool_source == "默认示例股票池",
+        )
+        screening_top_n = st.selectbox("筛选数量", options=SCREENING_TOP_OPTIONS, index=0)
+        run_screening_button = st.button("生成研究候选池")
+
     if clear_watchlist_button:
         clear_watchlist()
         st.success("已清空自选股列表。")
@@ -1766,7 +1989,15 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
             st.warning("当前暂无可用于对比的自选股。")
 
     if not run_button:
-        if comparison_tickers:
+        if run_screening_button:
+            render_watchlist_panel()
+            render_screening_section(
+                screening_market,
+                screening_pool_source,
+                screening_top_n,
+                screening_custom_input,
+            )
+        elif comparison_tickers:
             render_watchlist_panel()
             render_comparison_section(comparison_tickers, comparison_market, period_label)
             if run_backtest_button:
@@ -2030,6 +2261,13 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
         render_comparison_section(comparison_tickers, comparison_market, period_label)
     if run_backtest_button:
         run_backtest_section(symbol, selected_market, backtest_strategy, backtest_period_label, initial_capital, trading_cost)
+    if run_screening_button:
+        render_screening_section(
+            screening_market,
+            screening_pool_source,
+            screening_top_n,
+            screening_custom_input,
+        )
 
     st.divider()
     st.header("风险提示")
