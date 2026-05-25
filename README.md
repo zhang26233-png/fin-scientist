@@ -1,39 +1,82 @@
 # FinScientist
 
-FinScientist V0.3 is a single-file Streamlit prototype for a multi-market financial research workspace. It uses yfinance market data and local rule-based logic to generate lightweight stock research views.
+FinScientist V0.5 is a single-file Streamlit prototype for a multi-market financial research workspace. It supports US stocks, Hong Kong stocks, and A-shares, and combines market data, technical indicators, company profile fields, valuation fields, financial snapshots, sector notes, recent news, manual event analysis, and local rule-based summaries.
 
-It does not call any AI API and does not use a database.
+The current version does not call the OpenAI API, does not use a database, and does not perform automated trading.
+
+## Supported Markets
+
+- US stocks: yfinance, for example `NVDA`, `AAPL`, `MSFT`, `TSLA`
+- Hong Kong stocks: yfinance, for example `0700`, `9988`, `3690`
+- A-shares: akshare price data, for example `600519`, `000001`, `300750`, `002594`
+
+## Data Sources
+
+- `yfinance`: US and Hong Kong historical prices, company profile fields, valuation fields, selected financial fields, and optional news.
+- `akshare`: A-share historical daily prices.
+- Built-in mappings: selected stock-name mappings and selected A-share sector/profile mappings.
+
+## Input Modes
+
+You can search by stock code or stock name.
+
+Supported built-in stock name mappings include:
+
+- 英伟达 -> 美股 / `NVDA`
+- 苹果 -> 美股 / `AAPL`
+- 微软 -> 美股 / `MSFT`
+- 特斯拉 -> 美股 / `TSLA`
+- 腾讯控股 -> 港股 / `0700.HK`
+- 阿里巴巴-W -> 港股 / `9988.HK`
+- 美团-W -> 港股 / `3690.HK`
+- 贵州茅台 -> A股 / `600519`
+- 平安银行 -> A股 / `000001`
+- 宁德时代 -> A股 / `300750`
+
+If a name is not in the built-in mapping table, use stock code input.
 
 ## Current Features
 
-- Multi-market selection:
-  - US stocks, such as `NVDA`, `AAPL`, `MSFT`
-  - Hong Kong stocks, such as `0700.HK`, `9988.HK`, `3690.HK`
-  - Shanghai A-shares, such as `600519.SS`, `601318.SS`, `600036.SS`
-  - Shenzhen A-shares, such as `000001.SZ`, `300750.SZ`, `002594.SZ`
-- Automatic yfinance symbol conversion for Hong Kong and A-share tickers.
-- Sidebar controls for market, stock ticker, time range, analysis style, analysis dimensions, and benchmark comparison.
-- Time ranges: 3 months, 6 months, 1 year, and 2 years.
-- Market benchmark comparison:
-  - US stocks: S&P 500
-  - Hong Kong stocks: Hang Seng Index
-  - Shanghai A-shares: SSE Composite
-  - Shenzhen A-shares: SZSE Component
-- Core indicators:
-  - Latest close
-  - 20-day return
-  - 60-day return
-  - 20-day moving average
-  - 60-day moving average
-  - Annualized volatility
-  - Maximum drawdown
-  - 52-week high
-  - 52-week low
-  - 20-day average volume
-- Closing price chart with 20-day and 60-day moving averages.
-- Normalized stock-vs-benchmark chart when benchmark data is available.
-- Local rule-based research summary covering trend, volatility risk, price position, market comparison, and overall observation.
-- Local simulated rating: strong watch, neutral watch, or risk watch.
+- Market selector: US stocks, Hong Kong stocks, A-shares
+- Code or name input
+- Time ranges: 3 months, 6 months, 1 year, 2 years
+- Analysis style selector: conservative, growth, short-term trading
+- Company profile module
+- Core price indicator module
+- Valuation and financial summary modules
+- Price trend chart using `st.line_chart`
+- Technical, fundamental, and sector explanation modules
+- Recent major news module
+- Manual event analysis module
+- Event type recognition
+- Event impact explanation
+- Integrated local research conclusion and simulated rating
+- Risk warnings
+
+## V0.5 News And Event Module
+
+For US and Hong Kong stocks, the app attempts to display the first 5 available yfinance news items, including title, source, publish time, and link when available.
+
+For A-shares, the current version does not perform complex news crawling. Use the manual event input box for event analysis.
+
+Manual event analysis supports these event types:
+
+- 财报业绩类
+- 政策监管类
+- 产品订单类
+- 融资资本类
+- 行业景气类
+- 市场交易类
+- 未分类事件
+
+The event analysis outputs:
+
+- Event type
+- Possible positive impact
+- Possible negative risk
+- Data that needs further verification
+- Possible short-term trading sentiment impact
+- Possible medium- and long-term fundamental impact
 
 ## Setup
 
@@ -51,27 +94,19 @@ streamlit run app.py
 
 Open the local URL shown by Streamlit in your browser.
 
-## Ticker Notes
-
-- US stocks: enter the ticker directly, such as `NVDA`.
-- Hong Kong stocks: enter the numeric code, such as `0700`; the app converts it to `0700.HK`.
-- Shanghai A-shares: enter the 6-digit code, such as `600519`; the app converts it to `600519.SS`.
-- Shenzhen A-shares: enter the 6-digit code, such as `000001`; the app converts it to `000001.SZ`.
-
 ## Current Limitations
 
-- yfinance data can be delayed, missing, or unavailable for some tickers and markets.
-- Hong Kong and A-share support depends on yfinance symbol availability.
-- The app only uses historical market data and simple local rules.
-- Cross-market indicators are not fully comparable because markets differ in currency, trading rules, liquidity, and price limits.
-- The simulated rating is for learning and demonstration only.
-- It does not include backtesting, portfolio tracking, financial statement analysis, or AI-generated reasoning.
-- It is not investment advice.
+- yfinance news can be unstable, delayed, incomplete, or unavailable.
+- A-share real-time news and announcements are not formally integrated yet.
+- Manual event analysis is keyword-based and can misclassify events.
+- The event explanation is not a real causal model.
+- Local rule-based analysis cannot replace human research.
+- This project is not investment advice and should not be used for real trading decisions.
 
 ## Next Steps
 
-- Add richer data sources for fundamentals, news, and analyst estimates.
+- Connect more reliable news and announcement data.
+- Add multi-stock comparison.
 - Add a backtesting module.
-- Add AI-generated summaries.
-- Improve A-share and Hong Kong market coverage with more reliable regional data sources.
-- Add exportable research reports.
+- Add AI-generated research summaries.
+- Split the project structure to improve maintainability.
