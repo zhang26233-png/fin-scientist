@@ -1,6 +1,7 @@
 import math
 import os
 import re
+import time
 from datetime import date
 
 import akshare as ak
@@ -8,8 +9,12 @@ import pandas as pd
 import streamlit as st
 import yfinance as yf
 
+try:
+    import baostock as bs
+except Exception:
+    bs = None
 
-APP_VERSION = "V0.9.1"
+APP_VERSION = "V0.9.2c"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
@@ -23,6 +28,12 @@ BACKTEST_PERIOD_OPTIONS = ["6个月", "1年", "2年", "5年"]
 SCREENING_MARKET_OPTIONS = ["A股", "港股", "美股"]
 SCREENING_POOL_OPTIONS = ["默认示例股票池", "自定义股票池"]
 SCREENING_TOP_OPTIONS = ["Top 10", "Top 20", "Top 30"]
+A_SHARE_SCREENING_SOURCE_MODES = [
+    "自动：AkShare → BaoStock → yfinance",
+    "仅 AkShare",
+    "仅 BaoStock",
+    "仅 yfinance",
+]
 DEFAULT_SCREENING_UNIVERSES = {
     "A股": [
         "600519.SH",
@@ -279,6 +290,77 @@ def normalize_hk_symbol_for_akshare(symbol):
     return symbol.upper().replace(".HK", "").zfill(5)
 
 
+def normalize_a_share_symbol_for_akshare(symbol):
+    return str(symbol or "").strip().upper().replace(".SH", "").replace(".SZ", "")
+
+
+def infer_a_share_yfinance_suffix(symbol):
+    query_symbol = normalize_a_share_symbol_for_akshare(symbol)
+    if query_symbol.startswith("6"):
+        return ".SS"
+    if query_symbol.startswith(("0", "3")):
+        return ".SZ"
+    return ""
+
+
+def normalize_a_share_symbol_for_yfinance(symbol):
+    query_symbol = normalize_a_share_symbol_for_akshare(symbol)
+    suffix = infer_a_share_yfinance_suffix(query_symbol)
+    return f"{query_symbol}{suffix}" if suffix else ""
+
+
+def convert_a_share_to_yfinance_ticker(query_ticker):
+    query_symbol = normalize_a_share_symbol_for_akshare(query_ticker)
+    if not re.fullmatch(r"\d{6}", query_symbol):
+        return None, "A股 yfinance 查询代码必须先标准化为 6 位数字。"
+    if query_symbol.startswith("6"):
+        return f"{query_symbol}.SS", ""
+    if query_symbol.startswith(("0", "2", "3")):
+        return f"{query_symbol}.SZ", ""
+    return None, "无法根据 A股代码首位判断 yfinance 后缀。"
+
+
+def convert_a_share_to_baostock_code(query_ticker):
+    query_symbol = normalize_a_share_symbol_for_akshare(query_ticker)
+    if not re.fullmatch(r"\d{6}", query_symbol):
+        return None, "A股 BaoStock 查询代码必须先标准化为 6 位数字。"
+    if query_symbol.startswith("6"):
+        return f"sh.{query_symbol}", ""
+    if query_symbol.startswith(("0", "2", "3")):
+        return f"sz.{query_symbol}", ""
+    return None, "无法根据 A股代码首位判断 BaoStock 市场前缀。"
+
+
+def get_screening_fallback_source(market):
+    if market == "A股":
+        return "BaoStock / yfinance"
+    if market == "港股":
+        return "yfinance"
+    return "无"
+
+
+def is_network_error_message(error_text):
+    text = str(error_text or "").lower()
+    network_keywords = [
+        "connection aborted",
+        "remotedisconnected",
+        "connectionreseterror",
+        "forcibly closed",
+        "远程主机强迫关闭",
+        "without response",
+        "connection reset",
+        "timeout",
+        "timed out",
+        "proxy",
+        "ssl",
+    ]
+    return any(keyword in text for keyword in network_keywords)
+
+
+def get_network_diagnostic_text():
+    return "AkShare 网络连接失败或远端断开，可能与接口稳定性、请求频率、代理/VPN 或网络环境有关。"
+
+
 def normalize_price_dataframe(raw_data):
     if raw_data is None or raw_data.empty:
         return pd.DataFrame()
@@ -489,19 +571,202 @@ def fetch_yfinance_history(symbol, period):
     return normalize_price_dataframe(data)
 
 
-def fetch_a_share_history(symbol, period_label):
+def fetch_a_share_baostock_data(query_ticker, start_date, end_date):
+    query_symbol = normalize_a_share_symbol_for_akshare(query_ticker)
+    bs_code, code_error = convert_a_share_to_baostock_code(query_symbol)
+    if code_error:
+        empty = pd.DataFrame()
+        empty.attrs.update(
+            {
+                "query_symbol": query_symbol,
+                "baostock_code": "",
+                "attempt_params": "BaoStock 未请求",
+                "failure_stage": "BaoStock 代码转换失败",
+                "error_message": code_error,
+            }
+        )
+        return empty
+
+    if bs is None:
+        empty = pd.DataFrame()
+        empty.attrs.update(
+            {
+                "query_symbol": query_symbol,
+                "baostock_code": bs_code,
+                "attempt_params": f"BaoStock({bs_code})",
+                "failure_stage": "BaoStock 依赖不可用",
+                "error_message": "未安装 baostock 依赖，请先安装 requirements.txt。",
+            }
+        )
+        return empty
+
+    login_result = None
+    try:
+        login_result = bs.login()
+        if getattr(login_result, "error_code", "0") != "0":
+            raise RuntimeError(getattr(login_result, "error_msg", "BaoStock 登录失败"))
+
+        rs = bs.query_history_k_data_plus(
+            bs_code,
+            "date,open,high,low,close,volume",
+            start_date=start_date.strftime("%Y-%m-%d"),
+            end_date=end_date.strftime("%Y-%m-%d"),
+            frequency="d",
+            adjustflag="2",
+        )
+        if getattr(rs, "error_code", "0") != "0":
+            raise RuntimeError(getattr(rs, "error_msg", "BaoStock 查询失败"))
+
+        rows = []
+        while rs.next():
+            rows.append(rs.get_row_data())
+        if not rows:
+            empty = pd.DataFrame()
+            empty.attrs.update(
+                {
+                    "query_symbol": query_symbol,
+                    "baostock_code": bs_code,
+                    "attempt_params": f"BaoStock({bs_code}, adjustflag=2)",
+                    "failure_stage": "BaoStock 返回空数据",
+                    "error_message": "BaoStock 未返回可用历史行情。",
+                }
+            )
+            return empty
+
+        raw = pd.DataFrame(rows, columns=rs.fields)
+        raw = raw.rename(
+            columns={
+                "date": "Date",
+                "open": "Open",
+                "high": "High",
+                "low": "Low",
+                "close": "Close",
+                "volume": "Volume",
+            }
+        )
+        data = normalize_price_dataframe(raw)
+        if not data.empty:
+            data = keep_recent_rows(data, 120)
+        data.attrs.update(
+            {
+                "query_symbol": query_symbol,
+                "baostock_code": bs_code,
+                "attempt_params": f"BaoStock({bs_code}, adjustflag=2)",
+                "successful_adjust": "BaoStock 后复权 adjustflag=2",
+                "actual_query_symbol": bs_code,
+            }
+        )
+        return data
+    except Exception as exc:
+        empty = pd.DataFrame()
+        empty.attrs.update(
+            {
+                "query_symbol": query_symbol,
+                "baostock_code": bs_code,
+                "attempt_params": f"BaoStock({bs_code}, adjustflag=2)",
+                "failure_stage": "BaoStock 请求失败",
+                "error_message": str(exc),
+            }
+        )
+        return empty
+    finally:
+        try:
+            if login_result is not None and bs is not None:
+                bs.logout()
+        except Exception:
+            pass
+
+
+def fetch_a_share_history(symbol, period_label, lookback_days=None, limit_rows=None):
     end_date = date.today()
-    start_date = end_date - pd.DateOffset(months=PERIOD_MONTHS[period_label])
-    raw = ak.stock_zh_a_hist(
-        symbol=symbol,
-        period="daily",
-        start_date=start_date.strftime("%Y%m%d"),
-        end_date=end_date.strftime("%Y%m%d"),
-        adjust="qfq",
+    start_date = (
+        end_date - pd.DateOffset(days=lookback_days)
+        if lookback_days
+        else end_date - pd.DateOffset(months=PERIOD_MONTHS[period_label])
     )
-    if raw.empty:
-        return pd.DataFrame()
-    return normalize_price_dataframe(raw)
+    query_symbol = normalize_a_share_symbol_for_akshare(symbol)
+    attempts = []
+    last_error = ""
+
+    if not re.fullmatch(r"\d{6}", query_symbol):
+        empty = pd.DataFrame()
+        empty.attrs.update(
+            {
+                "query_symbol": query_symbol,
+                "attempt_params": "未请求",
+                "failure_stage": "代码标准化失败",
+                "error_message": "A股 AkShare 查询代码必须为 6 位数字。",
+            }
+        )
+        return empty
+
+    for adjust in ["", "qfq", "hfq"]:
+        adjust_label = 'adjust=""' if adjust == "" else f'adjust="{adjust}"'
+        attempts.append(adjust_label)
+        try:
+            raw = ak.stock_zh_a_hist(
+                symbol=query_symbol,
+                period="daily",
+                start_date=start_date.strftime("%Y%m%d"),
+                end_date=end_date.strftime("%Y%m%d"),
+                adjust=adjust,
+            )
+        except Exception as exc:
+            last_error = str(exc)
+            if is_network_error_message(last_error):
+                last_error = f"AkShare 网络连接异常：{last_error}"
+            continue
+
+        if raw is None or raw.empty:
+            last_error = "AkShare 返回空数据"
+            continue
+
+        data = normalize_price_dataframe(raw)
+        data.attrs["query_symbol"] = query_symbol
+        data.attrs["attempt_params"] = ", ".join(attempts)
+        data.attrs["successful_adjust"] = adjust_label
+
+        if data.empty:
+            data.attrs["failure_stage"] = "数据清洗后为空"
+            data.attrs["error_message"] = "AkShare 返回数据在日期清洗后为空。"
+            last_error = data.attrs["error_message"]
+            continue
+        if "Date" not in data.columns:
+            data.attrs["failure_stage"] = "Date 字段缺失"
+            data.attrs["error_message"] = "字段映射后缺少 Date 字段。"
+            last_error = data.attrs["error_message"]
+            continue
+        if "Close" not in data.columns:
+            data.attrs["failure_stage"] = "Close 字段缺失"
+            data.attrs["error_message"] = "字段映射后缺少 Close 字段。"
+            last_error = data.attrs["error_message"]
+            continue
+        if "Volume" not in data.columns:
+            data["Volume"] = math.nan
+            data.attrs["volume_warning"] = "Volume 字段缺失，已用空值占位。"
+
+        if limit_rows:
+            data = data.tail(limit_rows)
+            data.attrs["query_symbol"] = query_symbol
+            data.attrs["attempt_params"] = ", ".join(attempts)
+            data.attrs["successful_adjust"] = adjust_label
+            data.attrs["volume_warning"] = data.attrs.get("volume_warning", "")
+        return data
+
+    empty = pd.DataFrame()
+    empty.attrs.update(
+        {
+            "query_symbol": query_symbol,
+            "attempt_params": ", ".join(attempts),
+            "failure_stage": (
+                "AkShare 网络请求失败"
+                if is_network_error_message(last_error)
+                else "AkShare 返回空数据" if last_error == "AkShare 返回空数据" else "AkShare 请求失败"
+            ),
+            "error_message": last_error or "AkShare 未返回可用数据。",
+        }
+    )
+    return empty
 
 
 def fetch_hk_akshare_history(symbol, period_label):
@@ -532,7 +797,7 @@ def fetch_market_data(symbol, market, period_label):
                 primary_source,
                 fallback_source,
                 "AkShare" if not data.empty else "无",
-                adjustment="前复权 qfq",
+                adjustment=data.attrs.get("successful_adjust", "AkShare 参数自动尝试"),
             )
             return data
 
@@ -965,6 +1230,257 @@ def parse_screening_universe(input_text, market):
     }
 
 
+def keep_recent_rows(price_df, limit_rows=120):
+    if price_df is None or price_df.empty or not limit_rows:
+        return price_df
+    recent = price_df.tail(limit_rows).copy()
+    recent.attrs.update(price_df.attrs)
+    return recent
+
+
+def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动：AkShare → BaoStock → yfinance"):
+    original_input = ticker_item.get("原始输入", "")
+    display_ticker = ticker_item.get("展示代码", original_input)
+    query_ticker = ticker_item.get("内部查询代码", display_ticker)
+    base_result = {
+        "success": False,
+        "original_input": original_input,
+        "display_ticker": display_ticker,
+        "query_ticker": query_ticker,
+        "market": market,
+        "data_source": INSUFFICIENT,
+        "primary_source": get_primary_source(market),
+        "fallback_source": get_screening_fallback_source(market),
+        "fallback_used": False,
+        "latest_trade_date": INSUFFICIENT,
+        "valid_trading_days": 0,
+        "data_quality": "数据不足，请谨慎使用",
+        "price_df": pd.DataFrame(),
+        "error_message": "",
+        "attempt_params": "",
+        "failure_stage": "",
+        "network_diagnostic": "",
+        "source_mode": a_share_source_mode if market == "A股" else "默认",
+        "a_share_yfinance_ticker": "",
+    }
+
+    if not ticker_item.get("is_valid", False):
+        base_result["error_message"] = ticker_item.get("备注") or "代码格式需进一步确认"
+        base_result["failure_stage"] = "代码标准化失败"
+        return base_result
+
+    try:
+        if market == "A股":
+            query_ticker = normalize_a_share_symbol_for_akshare(query_ticker)
+            base_result["query_ticker"] = query_ticker
+            yf_symbol, yf_code_error = convert_a_share_to_yfinance_ticker(query_ticker)
+            base_result["a_share_yfinance_ticker"] = yf_symbol or ""
+            end_date = date.today()
+            start_date = end_date - pd.DateOffset(days=240)
+            attempts = []
+            errors = []
+
+            def record_failed_attempt(source_name, data_frame):
+                attempt = data_frame.attrs.get("attempt_params", source_name)
+                stage = data_frame.attrs.get("failure_stage", f"{source_name} 获取失败")
+                error = data_frame.attrs.get("error_message", f"{source_name} 未返回可用数据")
+                attempts.append(attempt)
+                errors.append(f"{source_name}: {stage} - {error}")
+
+            def try_akshare():
+                data_frame = fetch_a_share_history(query_ticker, "6个月", lookback_days=240, limit_rows=120)
+                if data_frame is not None and not data_frame.empty:
+                    data_frame.attrs["data_source_meta"] = build_data_source_meta(
+                        data_frame,
+                        market,
+                        "AkShare",
+                        "BaoStock / yfinance" if a_share_source_mode.startswith("自动") else "无",
+                        "AkShare",
+                        fallback_used=False,
+                        adjustment=data_frame.attrs.get("successful_adjust", "AkShare 参数自动尝试"),
+                    )
+                    return data_frame
+                record_failed_attempt("AkShare", data_frame if data_frame is not None else pd.DataFrame())
+                return pd.DataFrame()
+
+            def try_baostock():
+                data_frame = fetch_a_share_baostock_data(query_ticker, start_date, end_date)
+                if data_frame is not None and not data_frame.empty:
+                    data_frame.attrs["data_source_meta"] = build_data_source_meta(
+                        data_frame,
+                        market,
+                        "AkShare" if a_share_source_mode.startswith("自动") else "BaoStock",
+                        "BaoStock / yfinance" if a_share_source_mode.startswith("自动") else "无",
+                        "BaoStock",
+                        fallback_used=a_share_source_mode.startswith("自动"),
+                        adjustment=data_frame.attrs.get("successful_adjust", "BaoStock 默认口径"),
+                        source_warning="A股使用 BaoStock 数据源，字段和复权口径可能与 AkShare 不完全一致。",
+                    )
+                    return data_frame
+                record_failed_attempt("BaoStock", data_frame if data_frame is not None else pd.DataFrame())
+                return pd.DataFrame()
+
+            def try_yfinance():
+                if not yf_symbol:
+                    empty_frame = pd.DataFrame()
+                    empty_frame.attrs.update(
+                        {
+                            "attempt_params": "yfinance 未请求",
+                            "failure_stage": "yfinance 代码转换失败",
+                            "error_message": yf_code_error or "无法生成 yfinance A股代码。",
+                        }
+                    )
+                    record_failed_attempt("yfinance", empty_frame)
+                    return pd.DataFrame()
+                try:
+                    data_frame = keep_recent_rows(fetch_yfinance_history(yf_symbol, "1y"), 120)
+                    data_frame.attrs["attempt_params"] = f"yfinance({yf_symbol})"
+                    if data_frame is not None and not data_frame.empty:
+                        data_frame.attrs["actual_query_symbol"] = yf_symbol
+                        data_frame.attrs["data_source_meta"] = build_data_source_meta(
+                            data_frame,
+                            market,
+                            "AkShare" if a_share_source_mode.startswith("自动") else "yfinance",
+                            "BaoStock / yfinance" if a_share_source_mode.startswith("自动") else "无",
+                            "yfinance",
+                            fallback_used=a_share_source_mode.startswith("自动"),
+                            adjustment="yfinance 默认口径",
+                            source_warning="A股主数据源 AkShare 获取失败，当前使用 yfinance 备用数据源，字段和复权口径可能存在差异。",
+                        )
+                        return data_frame
+                    data_frame = data_frame if data_frame is not None else pd.DataFrame()
+                    data_frame.attrs["attempt_params"] = f"yfinance({yf_symbol})"
+                    data_frame.attrs["failure_stage"] = "yfinance 返回空数据"
+                    data_frame.attrs["error_message"] = "yfinance 未返回可用 A股行情。"
+                    record_failed_attempt("yfinance", data_frame)
+                    return pd.DataFrame()
+                except Exception as exc:
+                    empty_frame = pd.DataFrame()
+                    empty_frame.attrs.update(
+                        {
+                            "attempt_params": f"yfinance({yf_symbol})",
+                            "failure_stage": "yfinance 请求失败",
+                            "error_message": str(exc),
+                        }
+                    )
+                    record_failed_attempt("yfinance", empty_frame)
+                    return pd.DataFrame()
+
+            price_df = pd.DataFrame()
+            if a_share_source_mode == "仅 AkShare":
+                price_df = try_akshare()
+            elif a_share_source_mode == "仅 BaoStock":
+                price_df = try_baostock()
+            elif a_share_source_mode == "仅 yfinance":
+                price_df = try_yfinance()
+            else:
+                for fetcher in [try_akshare, try_baostock, try_yfinance]:
+                    price_df = fetcher()
+                    if price_df is not None and not price_df.empty:
+                        break
+
+            if price_df is None or price_df.empty:
+                price_df = pd.DataFrame()
+                price_df.attrs.update(
+                    {
+                        "attempt_params": "; ".join(attempts),
+                        "failure_stage": "A股可用数据源均失败",
+                        "error_message": "；".join(errors) or "A股数据源均未返回可用行情。",
+                    }
+                )
+        else:
+            price_df = fetch_market_data(query_ticker, market, "6个月")
+            price_df = keep_recent_rows(price_df, 120)
+
+        base_result["attempt_params"] = price_df.attrs.get("attempt_params", "")
+        base_result["failure_stage"] = price_df.attrs.get("failure_stage", "")
+
+        if price_df is None or price_df.empty:
+            base_result["data_source"] = price_df.attrs.get("data_source_meta", {}).get("actual_source", get_primary_source(market)) if price_df is not None else get_primary_source(market)
+            base_result["error_message"] = price_df.attrs.get("error_message", "数据源返回空数据") if price_df is not None else "数据源返回空数据"
+            base_result["failure_stage"] = price_df.attrs.get("failure_stage", "AkShare 返回空数据" if market == "A股" else "数据源返回空数据") if price_df is not None else "数据源返回空数据"
+            if is_network_error_message(base_result["error_message"]):
+                base_result["network_diagnostic"] = "检测到网络连接异常，可能与 AkShare 接口、代理/VPN、网络环境或请求频率有关。"
+            return base_result
+        if "Date" not in price_df.columns:
+            base_result["error_message"] = "行情数据缺少 Date 字段"
+            base_result["failure_stage"] = "Date 字段缺失"
+            return base_result
+        if "Close" not in price_df.columns:
+            base_result["error_message"] = "行情数据缺少 Close 字段"
+            base_result["failure_stage"] = "Close 字段缺失"
+            return base_result
+
+        close_prices = pd.to_numeric(price_df["Close"], errors="coerce").dropna()
+        if close_prices.empty:
+            base_result["error_message"] = "有效收盘价为空"
+            base_result["failure_stage"] = "数据清洗后为空"
+            return base_result
+
+        actual_query_ticker = price_df.attrs.get("actual_query_symbol", query_ticker)
+        metadata = get_price_data_metadata(price_df, actual_query_ticker, market)
+        quality_report = generate_data_quality_report(price_df)
+        valid_trading_days = int(len(close_prices))
+        base_result.update(
+            {
+                "success": True,
+                "query_ticker": actual_query_ticker,
+                "data_source": metadata["数据来源"],
+                "primary_source": metadata["主数据源"],
+                "fallback_source": metadata["备用数据源"],
+                "fallback_used": metadata["是否使用备用源"] == "是",
+                "latest_trade_date": metadata["最近更新时间"],
+                "valid_trading_days": valid_trading_days,
+                "data_quality": quality_report["数据质量结论"],
+                "price_df": price_df,
+                "error_message": "",
+                "attempt_params": price_df.attrs.get("attempt_params", ""),
+                "failure_stage": "有效交易日不足" if valid_trading_days < 60 else "",
+                "network_diagnostic": "",
+                "source_mode": a_share_source_mode if market == "A股" else "默认",
+                "a_share_yfinance_ticker": yf_symbol if market == "A股" and yf_symbol else "",
+            }
+        )
+        return base_result
+    except Exception as exc:
+        base_result["error_message"] = f"数据获取失败：{exc}"
+        base_result["failure_stage"] = "AkShare 请求失败" if market == "A股" else "数据源请求失败"
+        if is_network_error_message(str(exc)):
+            base_result["network_diagnostic"] = "检测到网络连接异常，可能与 AkShare 接口、代理/VPN、网络环境或请求频率有关。"
+        return base_result
+
+
+def screen_universe_data_fetch(parsed_items, market):
+    success_items = []
+    failed_items = []
+    insufficient_items = []
+
+    limited_items = parsed_items[:50]
+    for index, ticker_item in enumerate(limited_items):
+        result = fetch_screening_price_data(ticker_item, market)
+        if result["success"]:
+            success_items.append(result)
+            if result["valid_trading_days"] < 60:
+                insufficient_items.append(result)
+        else:
+            failed_items.append(result)
+        if market == "A股" and index < len(limited_items) - 1:
+            time.sleep(0.35)
+
+    summary = {
+        "股票池总数": len(limited_items),
+        "成功获取数量": len(success_items),
+        "失败数量": len(failed_items),
+        "数据不足数量": len(insufficient_items),
+    }
+    return {
+        "success_items": success_items,
+        "failed_items": failed_items,
+        "insufficient_items": insufficient_items,
+        "summary": summary,
+    }
+
+
 def get_comparison_trend_state(metrics):
     if metrics["data_points"] < 60:
         return "数据不足"
@@ -1216,7 +1732,7 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
         "不构成投资建议，也不代表买入、卖出或持有建议。"
     )
     st.caption(
-        "当前 V0.9.1 只完成股票池输入与代码解析，后续版本再加入批量数据获取、"
+        "当前 V0.9.2 完成股票池输入、代码解析和批量行情数据获取，后续版本再加入"
         "指标计算、研究优先级评分、入选理由和风险提示。"
     )
 
@@ -1247,7 +1763,83 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
     display_frame = pd.DataFrame(parsed_items)
     display_columns = ["原始输入", "展示代码", "内部查询代码", "市场", "备注"]
     st.dataframe(display_frame[display_columns], hide_index=True, use_container_width=True)
-    st.info("当前 V0.9.1 仅完成股票池解析。下一版本将加入批量行情获取和数据源状态记录。")
+
+    with st.spinner("正在获取股票池行情数据，请稍候..."):
+        fetch_result = screen_universe_data_fetch(parsed_items, market)
+
+    summary = fetch_result["summary"]
+    st.subheader("批量获取概览")
+    summary_cols = st.columns(4)
+    summary_cols[0].metric("股票池总数", summary["股票池总数"])
+    summary_cols[1].metric("成功获取数量", summary["成功获取数量"])
+    summary_cols[2].metric("失败数量", summary["失败数量"])
+    summary_cols[3].metric("数据不足数量", summary["数据不足数量"])
+
+    success_items = fetch_result["success_items"]
+    failed_items = fetch_result["failed_items"]
+    insufficient_items = fetch_result["insufficient_items"]
+
+    if success_items:
+        success_frame = pd.DataFrame(
+            [
+                {
+                    "股票代码": item["display_ticker"],
+                    "市场": item["market"],
+                    "实际查询代码": item["query_ticker"],
+                    "数据源": item["data_source"],
+                    "是否使用备用数据源": "是" if item["fallback_used"] else "否",
+                    "最新交易日": item["latest_trade_date"],
+                    "有效交易日数量": item["valid_trading_days"],
+                    "数据质量": item["data_quality"],
+                }
+                for item in success_items
+            ]
+        )
+        st.subheader("成功获取表")
+        st.dataframe(success_frame, hide_index=True, use_container_width=True)
+    else:
+        st.warning("本次股票池未成功获取到可用行情数据。")
+
+    if failed_items:
+        with st.expander("获取失败的股票及原因"):
+            if market == "A股":
+                st.info("如果大量 A股返回空数据，可能与 AkShare 接口、网络环境、日期范围或字段格式有关。请先测试少量代码，例如 600519、300750、000001。")
+            failed_frame = pd.DataFrame(
+                [
+                    {
+                        "股票代码": item["display_ticker"],
+                        "实际查询代码": item["query_ticker"],
+                        "市场": item["market"],
+                        "数据源": item["data_source"],
+                        "尝试参数": item.get("attempt_params", ""),
+                        "失败阶段": item.get("failure_stage", ""),
+                        "网络诊断": item.get("network_diagnostic", ""),
+                        "失败原因": item["error_message"] or "数据获取失败",
+                    }
+                    for item in failed_items
+                ]
+            )
+            st.dataframe(failed_frame, hide_index=True, use_container_width=True)
+
+    if insufficient_items:
+        with st.expander("数据不足的股票"):
+            insufficient_frame = pd.DataFrame(
+                [
+                    {
+                        "股票代码": item["display_ticker"],
+                        "市场": item["market"],
+                        "有效交易日数量": item["valid_trading_days"],
+                        "数据质量": item["data_quality"],
+                    }
+                    for item in insufficient_items
+                ]
+            )
+            st.dataframe(insufficient_frame, hide_index=True, use_container_width=True)
+
+    st.info(
+        "当前 V0.9.2 仅完成股票池解析与批量行情数据获取。下一版本将加入指标计算和研究优先级评分。"
+        "本结果不构成投资建议。"
+    )
 
 
 def is_valid_number(value):
@@ -1852,7 +2444,7 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
 
     st.title("FinScientist")
     st.subheader("AI-assisted financial research workspace")
-    st.caption("V0.9.1 新增自动研究对象筛选模块骨架；仍为本地规则化研究原型，不调用 AI API。")
+    st.caption("V0.9.2b 增强 A股批量行情获取降级、节流与网络诊断；仍为本地规则化研究原型，不调用 AI API。")
 
     with st.sidebar:
         st.header("研究参数")
