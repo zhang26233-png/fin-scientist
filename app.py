@@ -450,8 +450,8 @@ def build_data_source_meta(
 ):
     freshness = check_data_freshness(price_df, market)
     warning = source_warning or "免费数据源可能延迟、缺失，且不同来源的复权口径和字段口径可能不一致。"
-    if fallback_used:
-        warning = f"主数据源 AkShare 获取失败，当前使用备用数据源 yfinance。{warning}"
+    if fallback_used and source_warning is None:
+        warning = f"主数据源 {primary_source} 获取失败，当前使用备用数据源 {actual_source}。{warning}"
     return {
         "primary_source": primary_source,
         "fallback_source": fallback_source or "无",
@@ -1255,11 +1255,16 @@ def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动�
         "latest_trade_date": INSUFFICIENT,
         "valid_trading_days": 0,
         "data_quality": "数据不足，请谨慎使用",
+        "source_note": "",
         "price_df": pd.DataFrame(),
         "error_message": "",
         "attempt_params": "",
+        "attempted_sources": "",
         "failure_stage": "",
         "network_diagnostic": "",
+        "akshare_error_summary": "",
+        "baostock_error_summary": "",
+        "yfinance_error_summary": "",
         "source_mode": a_share_source_mode if market == "A股" else "默认",
         "a_share_yfinance_ticker": "",
     }
@@ -1279,13 +1284,16 @@ def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动�
             start_date = end_date - pd.DateOffset(days=240)
             attempts = []
             errors = []
+            source_errors = {"AkShare": "", "BaoStock": "", "yfinance": ""}
 
             def record_failed_attempt(source_name, data_frame):
                 attempt = data_frame.attrs.get("attempt_params", source_name)
                 stage = data_frame.attrs.get("failure_stage", f"{source_name} 获取失败")
                 error = data_frame.attrs.get("error_message", f"{source_name} 未返回可用数据")
+                summary = f"{stage}：{error}"
                 attempts.append(attempt)
-                errors.append(f"{source_name}: {stage} - {error}")
+                errors.append(f"{source_name}: {summary}")
+                source_errors[source_name] = summary
 
             def try_akshare():
                 data_frame = fetch_a_share_history(query_ticker, "6个月", lookback_days=240, limit_rows=120)
@@ -1298,7 +1306,9 @@ def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动�
                         "AkShare",
                         fallback_used=False,
                         adjustment=data_frame.attrs.get("successful_adjust", "AkShare 参数自动尝试"),
+                        source_warning="A股为本项目重点研究市场。免费数据源可能存在延迟、字段差异、复权口径差异和接口不稳定，本结果仅用于研究准备，不构成投资建议。",
                     )
+                    data_frame.attrs["source_note"] = "AkShare 获取成功"
                     return data_frame
                 record_failed_attempt("AkShare", data_frame if data_frame is not None else pd.DataFrame())
                 return pd.DataFrame()
@@ -1310,11 +1320,16 @@ def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动�
                         data_frame,
                         market,
                         "AkShare" if a_share_source_mode.startswith("自动") else "BaoStock",
-                        "BaoStock / yfinance" if a_share_source_mode.startswith("自动") else "无",
+                        "BaoStock" if a_share_source_mode.startswith("自动") else "无",
                         "BaoStock",
                         fallback_used=a_share_source_mode.startswith("自动"),
                         adjustment=data_frame.attrs.get("successful_adjust", "BaoStock 默认口径"),
-                        source_warning="A股使用 BaoStock 数据源，字段和复权口径可能与 AkShare 不完全一致。",
+                        source_warning="AkShare 失败后使用 BaoStock 备用数据源。A股免费数据源可能存在延迟、字段差异、复权口径差异和接口不稳定，本结果仅用于研究准备，不构成投资建议。",
+                    )
+                    data_frame.attrs["source_note"] = (
+                        "AkShare 失败后使用 BaoStock 备用数据源"
+                        if a_share_source_mode.startswith("自动")
+                        else "BaoStock 获取成功"
                     )
                     return data_frame
                 record_failed_attempt("BaoStock", data_frame if data_frame is not None else pd.DataFrame())
@@ -1345,7 +1360,12 @@ def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动�
                             "yfinance",
                             fallback_used=a_share_source_mode.startswith("自动"),
                             adjustment="yfinance 默认口径",
-                            source_warning="A股主数据源 AkShare 获取失败，当前使用 yfinance 备用数据源，字段和复权口径可能存在差异。",
+                            source_warning="AkShare 和 BaoStock 失败后使用 yfinance 兜底。A股免费数据源可能存在延迟、字段差异、复权口径差异和接口不稳定，本结果仅用于研究准备，不构成投资建议。",
+                        )
+                        data_frame.attrs["source_note"] = (
+                            "AkShare 和 BaoStock 失败后使用 yfinance 兜底"
+                            if a_share_source_mode.startswith("自动")
+                            else "yfinance 获取成功"
                         )
                         return data_frame
                     data_frame = data_frame if data_frame is not None else pd.DataFrame()
@@ -1386,6 +1406,10 @@ def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动�
                         "attempt_params": "; ".join(attempts),
                         "failure_stage": "A股可用数据源均失败",
                         "error_message": "；".join(errors) or "A股数据源均未返回可用行情。",
+                        "attempted_sources": "AkShare → BaoStock → yfinance",
+                        "akshare_error_summary": source_errors["AkShare"],
+                        "baostock_error_summary": source_errors["BaoStock"],
+                        "yfinance_error_summary": source_errors["yfinance"],
                     }
                 )
         else:
@@ -1393,12 +1417,17 @@ def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动�
             price_df = keep_recent_rows(price_df, 120)
 
         base_result["attempt_params"] = price_df.attrs.get("attempt_params", "")
+        base_result["attempted_sources"] = price_df.attrs.get("attempted_sources", "")
         base_result["failure_stage"] = price_df.attrs.get("failure_stage", "")
 
         if price_df is None or price_df.empty:
             base_result["data_source"] = price_df.attrs.get("data_source_meta", {}).get("actual_source", get_primary_source(market)) if price_df is not None else get_primary_source(market)
             base_result["error_message"] = price_df.attrs.get("error_message", "数据源返回空数据") if price_df is not None else "数据源返回空数据"
             base_result["failure_stage"] = price_df.attrs.get("failure_stage", "AkShare 返回空数据" if market == "A股" else "数据源返回空数据") if price_df is not None else "数据源返回空数据"
+            base_result["attempted_sources"] = price_df.attrs.get("attempted_sources", base_result["attempt_params"]) if price_df is not None else ""
+            base_result["akshare_error_summary"] = price_df.attrs.get("akshare_error_summary", "") if price_df is not None else ""
+            base_result["baostock_error_summary"] = price_df.attrs.get("baostock_error_summary", "") if price_df is not None else ""
+            base_result["yfinance_error_summary"] = price_df.attrs.get("yfinance_error_summary", "") if price_df is not None else ""
             if is_network_error_message(base_result["error_message"]):
                 base_result["network_diagnostic"] = "检测到网络连接异常，可能与 AkShare 接口、代理/VPN、网络环境或请求频率有关。"
             return base_result
@@ -1432,11 +1461,16 @@ def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动�
                 "latest_trade_date": metadata["最近更新时间"],
                 "valid_trading_days": valid_trading_days,
                 "data_quality": quality_report["数据质量结论"],
+                "source_note": price_df.attrs.get("source_note", metadata["数据源风险提示"]),
                 "price_df": price_df,
                 "error_message": "",
                 "attempt_params": price_df.attrs.get("attempt_params", ""),
+                "attempted_sources": price_df.attrs.get("attempted_sources", ""),
                 "failure_stage": "有效交易日不足" if valid_trading_days < 60 else "",
                 "network_diagnostic": "",
+                "akshare_error_summary": source_errors["AkShare"] if market == "A股" else "",
+                "baostock_error_summary": source_errors["BaoStock"] if market == "A股" else "",
+                "yfinance_error_summary": source_errors["yfinance"] if market == "A股" else "",
                 "source_mode": a_share_source_mode if market == "A股" else "默认",
                 "a_share_yfinance_ticker": yf_symbol if market == "A股" and yf_symbol else "",
             }
@@ -1732,9 +1766,14 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
         "不构成投资建议，也不代表买入、卖出或持有建议。"
     )
     st.caption(
-        "当前 V0.9.2 完成股票池输入、代码解析和批量行情数据获取，后续版本再加入"
+        "当前 V0.9.2c 完成股票池输入、代码解析和批量行情数据获取，后续版本再加入"
         "指标计算、研究优先级评分、入选理由和风险提示。"
     )
+    if market == "A股":
+        st.info(
+            "A股为本项目重点研究市场。当前版本使用 AkShare、BaoStock、yfinance 进行多数据源降级。"
+            "免费数据源可能存在延迟、字段差异、复权口径差异和接口不稳定，本结果仅用于研究准备，不构成投资建议。"
+        )
 
     if pool_source == "默认示例股票池":
         source_text = " ".join(get_default_universe(market))
@@ -1787,10 +1826,13 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
                     "市场": item["market"],
                     "实际查询代码": item["query_ticker"],
                     "数据源": item["data_source"],
+                    "主数据源": item["primary_source"],
+                    "备用数据源": item["fallback_source"],
                     "是否使用备用数据源": "是" if item["fallback_used"] else "否",
                     "最新交易日": item["latest_trade_date"],
                     "有效交易日数量": item["valid_trading_days"],
                     "数据质量": item["data_quality"],
+                    "数据源说明": item.get("source_note", ""),
                 }
                 for item in success_items
             ]
@@ -1803,18 +1845,19 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
     if failed_items:
         with st.expander("获取失败的股票及原因"):
             if market == "A股":
-                st.info("如果大量 A股返回空数据，可能与 AkShare 接口、网络环境、日期范围或字段格式有关。请先测试少量代码，例如 600519、300750、000001。")
+                st.info("如果大量 A股返回空数据，请先用少量代码测试 AkShare、BaoStock、yfinance 的连接状态，例如 600519、300750、000001。")
             failed_frame = pd.DataFrame(
                 [
                     {
                         "股票代码": item["display_ticker"],
                         "实际查询代码": item["query_ticker"],
                         "市场": item["market"],
-                        "数据源": item["data_source"],
-                        "尝试参数": item.get("attempt_params", ""),
+                        "尝试过的数据源": item.get("attempted_sources", item.get("attempt_params", "")),
                         "失败阶段": item.get("failure_stage", ""),
-                        "网络诊断": item.get("network_diagnostic", ""),
-                        "失败原因": item["error_message"] or "数据获取失败",
+                        "失败原因摘要": item["error_message"] or "数据获取失败",
+                        "AkShare 错误摘要": item.get("akshare_error_summary", ""),
+                        "BaoStock 错误摘要": item.get("baostock_error_summary", ""),
+                        "yfinance 错误摘要": item.get("yfinance_error_summary", ""),
                     }
                     for item in failed_items
                 ]
@@ -1837,7 +1880,7 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
             st.dataframe(insufficient_frame, hide_index=True, use_container_width=True)
 
     st.info(
-        "当前 V0.9.2 仅完成股票池解析与批量行情数据获取。下一版本将加入指标计算和研究优先级评分。"
+        "当前 V0.9.2c 仅完成股票池解析与批量行情数据获取。下一版本将加入指标计算和研究优先级评分。"
         "本结果不构成投资建议。"
     )
 
@@ -2444,7 +2487,7 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
 
     st.title("FinScientist")
     st.subheader("AI-assisted financial research workspace")
-    st.caption("V0.9.2b 增强 A股批量行情获取降级、节流与网络诊断；仍为本地规则化研究原型，不调用 AI API。")
+    st.caption("V0.9.2c 增强 A股批量行情 AkShare、BaoStock、yfinance 多数据源降级；仍为本地规则化研究原型，不调用 AI API。")
 
     with st.sidebar:
         st.header("研究参数")
@@ -2863,7 +2906,7 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
 
     st.divider()
     st.header("风险提示")
-    st.write("- yfinance / akshare 数据可能延迟、缺失或口径不一致。")
+    st.write("- yfinance / akshare / baostock 数据可能延迟、缺失或口径不一致。")
     st.write("- A股、港股、美股的数据字段存在差异，跨市场指标不能简单横向比较。")
     st.write("- 公司基本面字段可能存在缺失、滞后或数据源映射错误。")
     st.write("- 新闻数据可能延迟、缺失或来源不完整。")

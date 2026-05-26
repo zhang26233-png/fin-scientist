@@ -4,6 +4,48 @@
 
 ### 本次目标
 
+- 完成 V0.9.2c：A股自动研究对象筛选模块新增 BaoStock 备用数据源。
+- 暂不进入研究优先级评分、入选理由、风险提示或 OpenAI API 接入，只优化 A股批量行情数据源稳定性。
+
+### 修改文件
+
+- `app.py`
+- `requirements.txt`（确认已包含 `baostock>=0.8.9`）
+- `README.md`
+- `docs/DEV_LOG.md`
+- `docs/ROADMAP.md`
+
+### 主要修改
+
+- A股筛选模块数据源顺序调整为 `AkShare → BaoStock → yfinance`。
+- 新增 BaoStock A股代码转换与历史日线获取链路，标准化为 `Date`、`Open`、`High`、`Low`、`Close`、`Volume`。
+- BaoStock 请求使用 `login` / `logout`，异常情况下也会尝试 `logout`。
+- 成功获取表增加主数据源、备用数据源和数据源说明。
+- 失败表增加尝试过的数据源、失败原因摘要、AkShare 错误摘要、BaoStock 错误摘要和 yfinance 错误摘要。
+- 页面增加 A股多数据源降级说明，并保留“不构成投资建议”的边界。
+
+### 测试结果
+
+- `python -m py_compile app.py` 通过。
+- `python -m pytest -q` 通过，6 passed。
+- 尚未手动启动 `streamlit run app.py` 测试 A股默认股票池。
+
+### 遗留问题
+
+- 免费数据源仍可能受网络环境、代理/VPN、接口限流、字段变化和节假日影响。
+- BaoStock 适合历史行情学习和研究，不适合实盘级实时交易。
+- yfinance 的 A股覆盖度和时效性可能弱于 A股本地数据源。
+
+### 下一步
+
+- 使用 A股默认股票池和少量自定义代码测试三源降级链路。
+- 如仍大量失败，分别单独测试 AkShare、BaoStock 登录和 yfinance A股后缀代码。
+- 后续可评估 Tushare Pro 可选接入，但需要 token 和权限配置。
+
+## 2026-05-25
+
+### 本次目标
+
 - 完成 V0.9.2b：增强 A股数据源降级、请求节流与网络诊断。
 
 ### 修改文件
