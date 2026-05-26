@@ -14,7 +14,7 @@ try:
 except Exception:
     bs = None
 
-APP_VERSION = "V0.9.6"
+APP_VERSION = "V1.0"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
@@ -151,6 +151,45 @@ A_SHARE_SECTOR_INFO_MAP = {
     "000002.SZ": ("房地产", "地产链", "地产开发"), "000333.SZ": ("家电", "消费制造", "白电"),
     "000651.SZ": ("家电", "消费制造", "白电"), "300124.SZ": ("工业自动化", "高端制造", "机器人;新能源产业链"),
     "002415.SZ": ("安防设备", "科技制造", "AI视觉;物联网"),
+}
+FUNDAMENTAL_SAMPLE_DATA = {
+    "600519.SH": (21000, 24, 8.5, 0.31, 0.16, 0.18, 0.91, 0.52, 0.19, 0.025),
+    "300750.SZ": (9000, 22, 4.8, 0.21, 0.18, 0.12, 0.23, 0.11, 0.62, 0.010),
+    "601318.SH": (7600, 9, 0.9, 0.10, 0.04, 0.08, 0.00, 0.08, 0.88, 0.050),
+    "600036.SH": (8600, 6, 0.9, 0.14, 0.02, 0.04, 0.00, 0.36, 0.91, 0.055),
+    "000858.SZ": (5200, 18, 4.0, 0.24, 0.12, 0.14, 0.78, 0.38, 0.24, 0.030),
+    "002594.SZ": (7600, 20, 4.2, 0.22, 0.22, 0.18, 0.21, 0.05, 0.73, 0.012),
+    "688981.SH": (5200, 75, 2.6, 0.04, 0.03, -0.08, 0.20, 0.07, 0.36, 0.000),
+    "300760.SZ": (3300, 28, 8.0, 0.28, 0.11, 0.13, 0.64, 0.32, 0.26, 0.018),
+    "600276.SH": (3000, 40, 5.0, 0.13, 0.08, 0.12, 0.84, 0.20, 0.12, 0.006),
+    "000333.SZ": (5200, 13, 2.7, 0.21, 0.09, 0.11, 0.27, 0.09, 0.65, 0.045),
+    "601899.SH": (4800, 18, 3.4, 0.19, 0.10, 0.14, 0.16, 0.09, 0.57, 0.025),
+    "601088.SH": (7600, 10, 1.6, 0.16, 0.03, 0.02, 0.35, 0.22, 0.34, 0.060),
+    "600900.SH": (7200, 20, 3.0, 0.14, 0.04, 0.05, 0.58, 0.42, 0.56, 0.035),
+    "601012.SH": (1700, 18, 1.8, 0.08, -0.12, -0.30, 0.18, 0.05, 0.61, 0.020),
+    "600887.SH": (1900, 17, 3.0, 0.17, 0.03, 0.06, 0.33, 0.08, 0.58, 0.040),
+    "600309.SH": (2500, 15, 2.5, 0.16, 0.04, 0.05, 0.28, 0.10, 0.59, 0.035),
+    "000651.SZ": (2300, 8, 1.9, 0.22, 0.02, 0.05, 0.30, 0.12, 0.68, 0.070),
+    "000001.SZ": (2100, 5, 0.5, 0.10, 0.01, 0.03, 0.00, 0.29, 0.92, 0.025),
+    "601166.SH": (3600, 5, 0.6, 0.12, 0.01, 0.02, 0.00, 0.35, 0.92, 0.060),
+    "600031.SH": (1500, 19, 2.4, 0.10, 0.08, 0.12, 0.27, 0.08, 0.58, 0.020),
+    "002415.SZ": (3000, 24, 3.2, 0.14, 0.05, 0.08, 0.44, 0.14, 0.42, 0.018),
+    "000938.SZ": (900, 35, 3.0, 0.08, 0.10, 0.08, 0.21, 0.04, 0.55, 0.004),
+    "002230.SZ": (1300, 80, 5.5, 0.05, 0.12, -0.05, 0.40, 0.03, 0.44, 0.002),
+    "300308.SZ": (1800, 45, 8.0, 0.18, 0.45, 0.40, 0.31, 0.15, 0.38, 0.002),
+    "300033.SZ": (1400, 38, 12.0, 0.28, 0.15, 0.20, 0.86, 0.42, 0.18, 0.008),
+    "688111.SH": (1500, 60, 9.0, 0.12, 0.14, 0.15, 0.84, 0.25, 0.20, 0.004),
+    "688012.SH": (1200, 65, 8.0, 0.13, 0.25, 0.30, 0.45, 0.18, 0.28, 0.003),
+    "688041.SH": (2600, 90, 14.0, 0.08, 0.30, 0.20, 0.60, 0.16, 0.20, 0.000),
+    "603501.SH": (1300, 42, 5.5, 0.10, 0.08, 0.12, 0.32, 0.10, 0.36, 0.006),
+    "002371.SZ": (2300, 55, 10.0, 0.15, 0.28, 0.25, 0.43, 0.18, 0.45, 0.002),
+    "300124.SZ": (2200, 30, 6.0, 0.20, 0.18, 0.22, 0.35, 0.14, 0.52, 0.007),
+    "002049.SZ": (900, 48, 5.0, 0.09, 0.08, 0.10, 0.55, 0.18, 0.25, 0.005),
+    "002050.SZ": (1100, 28, 5.0, 0.18, 0.12, 0.15, 0.30, 0.10, 0.55, 0.010),
+    "300274.SZ": (1500, 25, 4.8, 0.22, 0.20, 0.18, 0.32, 0.12, 0.62, 0.012),
+    "300502.SZ": (1300, 50, 9.0, 0.16, 0.40, 0.35, 0.28, 0.13, 0.40, 0.001),
+    "688008.SH": (900, 70, 7.0, 0.09, 0.20, 0.12, 0.58, 0.15, 0.23, 0.002),
+    "688256.SH": (2200, 120, 18.0, 0.02, 0.35, -0.20, 0.65, -0.05, 0.18, 0.000),
 }
 
 NAME_MAP = {
@@ -1296,6 +1335,148 @@ def calculate_research_priority_score(metrics):
     return {"研究优先级评分": max(0, min(100, int(score))), "无法评分原因": ""}
 
 
+FUNDAMENTAL_FIELDS = [
+    "market_cap",
+    "pe_ttm",
+    "pb",
+    "roe",
+    "revenue_yoy",
+    "net_profit_yoy",
+    "gross_margin",
+    "net_margin",
+    "debt_asset_ratio",
+    "dividend_yield",
+]
+
+
+def build_fundamental_record(values, source, error_message=""):
+    data = dict(zip(FUNDAMENTAL_FIELDS, values)) if isinstance(values, tuple) else {}
+    for field in FUNDAMENTAL_FIELDS:
+        data.setdefault(field, MISSING)
+    data["fundamental_source"] = source
+    data["fundamental_error"] = error_message
+    return data
+
+
+def get_fundamental_sample_data(display_ticker):
+    normalized = str(display_ticker or "").strip().upper()
+    sample = FUNDAMENTAL_SAMPLE_DATA.get(normalized)
+    if sample is None and re.fullmatch(r"\d{6}", normalized):
+        suffix = infer_a_share_suffix(normalized)[0]
+        sample = FUNDAMENTAL_SAMPLE_DATA.get(f"{normalized}{suffix}")
+    if sample is None:
+        return None
+    return build_fundamental_record(sample, "内置示例数据")
+
+
+def fetch_a_share_fundamental_data(display_ticker, query_ticker):
+    try:
+        info = fetch_a_share_info(query_ticker)
+        if not info:
+            return None, "AkShare 未返回基础信息。"
+        values = (
+            to_number(safe_get(info, "总市值")) / 100000000 if not pd.isna(to_number(safe_get(info, "总市值"))) else MISSING,
+            safe_get(info, "市盈率"),
+            safe_get(info, "市净率"),
+            MISSING,
+            MISSING,
+            MISSING,
+            MISSING,
+            MISSING,
+            MISSING,
+            MISSING,
+        )
+        data = build_fundamental_record(values, "AkShare")
+        if all(is_missing(data[field]) for field in FUNDAMENTAL_FIELDS):
+            return None, "AkShare 基本面字段为空。"
+        return data, ""
+    except Exception as exc:
+        return None, str(exc)
+
+
+def get_fundamental_data(display_ticker, query_ticker, market):
+    if market != "A股":
+        return build_fundamental_record((), "数据暂缺", "港股和美股基本面筛选暂未启用。")
+    ak_data, ak_error = fetch_a_share_fundamental_data(display_ticker, query_ticker)
+    if ak_data:
+        sample_data = get_fundamental_sample_data(display_ticker)
+        if sample_data:
+            for field in FUNDAMENTAL_FIELDS:
+                if is_missing(ak_data.get(field)):
+                    ak_data[field] = sample_data.get(field, MISSING)
+            ak_data["fundamental_source"] = "AkShare + 内置示例数据"
+            ak_data["fundamental_error"] = ak_error
+        return ak_data
+    sample_data = get_fundamental_sample_data(display_ticker)
+    if sample_data:
+        sample_data["fundamental_error"] = ak_error
+        return sample_data
+    return build_fundamental_record((), "数据暂缺", ak_error or "未找到可用基本面数据。")
+
+
+def calculate_fundamental_quality_score(fundamental_data):
+    if not isinstance(fundamental_data, dict):
+        return "无法评分"
+    available_count = sum(0 if is_missing(fundamental_data.get(field)) else 1 for field in FUNDAMENTAL_FIELDS)
+    if available_count == 0:
+        return "无法评分"
+
+    score = 0
+    roe = to_number(fundamental_data.get("roe"))
+    revenue_yoy = to_number(fundamental_data.get("revenue_yoy"))
+    net_profit_yoy = to_number(fundamental_data.get("net_profit_yoy"))
+    gross_margin = to_number(fundamental_data.get("gross_margin"))
+    net_margin = to_number(fundamental_data.get("net_margin"))
+    debt_asset_ratio = to_number(fundamental_data.get("debt_asset_ratio"))
+    pe_ttm = to_number(fundamental_data.get("pe_ttm"))
+    pb = to_number(fundamental_data.get("pb"))
+    dividend_yield = to_number(fundamental_data.get("dividend_yield"))
+
+    if not pd.isna(roe) and roe >= 0.15:
+        score += 20
+    elif not pd.isna(roe) and roe >= 0.10:
+        score += 10
+    elif not pd.isna(roe) and roe < 0.05:
+        score -= 10
+    if not pd.isna(revenue_yoy) and revenue_yoy > 0.15:
+        score += 10
+    elif not pd.isna(revenue_yoy) and revenue_yoy < 0:
+        score -= 10
+    if not pd.isna(net_profit_yoy) and net_profit_yoy > 0.15:
+        score += 10
+    elif not pd.isna(net_profit_yoy) and net_profit_yoy < 0:
+        score -= 10
+    if not pd.isna(gross_margin) and gross_margin > 0.30:
+        score += 10
+    if not pd.isna(net_margin) and net_margin > 0.10:
+        score += 10
+    if not pd.isna(debt_asset_ratio) and debt_asset_ratio < 0.50:
+        score += 10
+    elif not pd.isna(debt_asset_ratio) and debt_asset_ratio > 0.70:
+        score -= 10
+    if not pd.isna(pe_ttm) and pe_ttm > 80:
+        score -= 10
+    if not pd.isna(pb) and pb > 10:
+        score -= 10
+    if not pd.isna(dividend_yield) and dividend_yield > 0.02:
+        score += 5
+    if available_count < len(FUNDAMENTAL_FIELDS) / 2:
+        score -= 20
+    return max(0, min(100, int(score)))
+
+
+def calculate_composite_research_score(research_score, fundamental_score):
+    research_number = to_number(research_score)
+    fundamental_number = to_number(fundamental_score)
+    if not pd.isna(research_number) and not pd.isna(fundamental_number):
+        return round(research_number * 0.6 + fundamental_number * 0.4, 1)
+    if not pd.isna(research_number):
+        return int(research_number)
+    if not pd.isna(fundamental_number):
+        return int(fundamental_number)
+    return "无法评分"
+
+
 def join_explanation_items(items):
     clean_items = [str(item).strip() for item in items if str(item or "").strip()]
     return "；".join(clean_items)
@@ -1355,6 +1536,10 @@ def generate_screening_risk_warnings(metrics):
         warnings.append("成交量数据缺失或不足，流动性判断不充分。")
     if metrics.get("使用备用数据源"):
         warnings.append("该标的数据来自备用数据源，不同数据源在复权口径和字段完整性上可能存在差异。")
+    if "内置示例数据" in str(metrics.get("基本面数据源", "")):
+        warnings.append("基本面数据来自内置示例，可能与最新真实财务数据不一致，需进一步核验。")
+    if metrics.get("基本面字段缺失较多"):
+        warnings.append("基本面字段缺失较多，当前基本面质量判断可靠性有限。")
 
     if not warnings:
         warnings.append("暂未触发主要风险阈值，但仍需结合基本面、消息面、板块环境和市场情绪进一步验证。")
@@ -1416,11 +1601,31 @@ def generate_screening_summary(result_df, failed_items=None, insufficient_items=
         risk_traits.append("数据质量存在差异")
     summary_parts.append("主要风险特征：" + ("；".join(risk_traits) if risk_traits else "暂未观察到集中触发的主要风险阈值。"))
 
+    if "基本面数据源" in result_df:
+        source_text = result_df["基本面数据源"].fillna("").astype(str)
+        fundamental_count = int((source_text != "数据暂缺").sum())
+        akshare_count = int(source_text.str.contains("AkShare", regex=False).sum())
+        sample_count = int(source_text.str.contains("内置示例数据", regex=False).sum())
+        summary_parts.append(
+            f"基本面数据覆盖：本次有 {fundamental_count} 只股票获得基本面数据，其中 AkShare 基本面数据 {akshare_count} 只，内置示例数据 {sample_count} 只。"
+        )
+    if {"研究优先级评分", "基本面质量评分", "股票代码"}.issubset(result_df.columns):
+        strong_df = result_df[
+            (result_df["研究优先级评分"].apply(to_number) >= 50)
+            & (result_df["基本面质量评分"].apply(to_number) >= 50)
+        ]
+        strong_symbols = strong_df["股票代码"].head(5).tolist()
+        summary_parts.append(
+            "同时具备较高研究优先级评分和较高基本面质量评分的候选对象："
+            + (format_symbol_list(strong_symbols) if strong_symbols else "暂无明显对象")
+            + "。"
+        )
+
     summary_parts.append(
         "下一步研究方向：核查公司基本面；核查行业和板块强度；核查近期公告和消息催化；"
         "核查估值水平和财务质量；用回测模块验证规则有效性。"
     )
-    summary_parts.append("该结果仅代表研究优先级排序，不构成投资建议或交易指令。")
+    summary_parts.append("综合研究观察评分只是量价与基本面维度的研究排序，不构成投资建议或交易指令。")
     return "\n\n".join(summary_parts)
 
 
@@ -2200,6 +2405,13 @@ def build_screening_priority_rows(success_items):
             metrics["使用备用数据源"] = bool(item.get("fallback_used", False))
             score_result = calculate_research_priority_score(metrics)
             score = score_result["研究优先级评分"]
+            fundamental_data = get_fundamental_data(item["display_ticker"], item["query_ticker"], item["market"])
+            fundamental_score = calculate_fundamental_quality_score(fundamental_data)
+            composite_score = calculate_composite_research_score(score, fundamental_score)
+            fundamental_summary = generate_fundamental_summary(fundamental_data)
+            missing_fundamental_count = sum(1 for field in FUNDAMENTAL_FIELDS if is_missing(fundamental_data.get(field)))
+            metrics["基本面数据源"] = fundamental_data.get("fundamental_source", "数据暂缺")
+            metrics["基本面字段缺失较多"] = missing_fundamental_count > len(FUNDAMENTAL_FIELDS) / 2
             try:
                 selection_reasons = generate_selection_reasons(metrics)
             except Exception:
@@ -2235,9 +2447,24 @@ def build_screening_priority_rows(success_items):
                 "有效交易日数量": metrics["有效交易日数量"],
                 "数据质量": item["data_quality"],
                 "研究优先级评分": score,
+                "总市值": format_large_number(to_number(fundamental_data.get("market_cap")) * 100000000) if not pd.isna(to_number(fundamental_data.get("market_cap"))) else MISSING,
+                "PE_TTM": format_metric(fundamental_data.get("pe_ttm")),
+                "PB": format_metric(fundamental_data.get("pb")),
+                "ROE": format_percent(fundamental_data.get("roe"), MISSING),
+                "营收同比增长率": format_percent(fundamental_data.get("revenue_yoy"), MISSING),
+                "归母净利润同比增长率": format_percent(fundamental_data.get("net_profit_yoy"), MISSING),
+                "毛利率": format_percent(fundamental_data.get("gross_margin"), MISSING),
+                "净利率": format_percent(fundamental_data.get("net_margin"), MISSING),
+                "资产负债率": format_percent(fundamental_data.get("debt_asset_ratio"), MISSING),
+                "股息率": format_percent(fundamental_data.get("dividend_yield"), MISSING),
+                "基本面数据源": fundamental_data.get("fundamental_source", "数据暂缺"),
+                "基本面质量评分": fundamental_score,
+                "综合研究观察评分": composite_score,
+                "基本面观察摘要": fundamental_summary,
                 "入选理由": join_explanation_items(selection_reasons),
                 "风险提示": join_explanation_items(risk_warnings),
                 "_score": score if isinstance(score, int) else math.nan,
+                "_composite_score": composite_score if isinstance(composite_score, (int, float)) else math.nan,
                 "_unscored_reason": score_result.get("无法评分原因", ""),
             }
             if isinstance(score, int):
@@ -2264,7 +2491,7 @@ def build_screening_priority_rows(success_items):
                 }
             )
 
-    scored_rows = sorted(scored_rows, key=lambda row: row["_score"], reverse=True)
+    scored_rows = sorted(scored_rows, key=lambda row: (to_number(row.get("_composite_score")), to_number(row.get("_score"))), reverse=True)
     for index, row in enumerate(scored_rows, start=1):
         row["排名"] = index
     return scored_rows, unscored_rows
@@ -2350,13 +2577,17 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
         "不构成投资建议，也不代表买入、卖出或持有建议。"
     )
     st.caption(
-        "当前 V0.9.6 在 V0.9.5 股票池体系基础上新增 A股行业 / 板块 / 主题标签和板块强度初步统计。"
+        "当前 V1.0 在 V0.9.6 基础上新增 A股基本面质量观察、基本面质量评分和综合研究观察评分。"
         "所有内容均由本地规则生成。"
     )
     if market == "A股":
         st.info(
             "A股为本项目重点研究市场。当前版本使用 AkShare、BaoStock、yfinance 进行多数据源降级。"
             "免费数据源可能存在延迟、字段差异、复权口径差异和接口不稳定，本结果仅用于研究准备，不构成投资建议。"
+        )
+        st.info(
+            "V1.0 新增基本面质量观察。当前基本面数据可能来自 AkShare 或内置示例数据。"
+            "内置示例数据仅用于学习和原型演示，不代表最新真实财务数据。"
         )
 
     pool_info = {
@@ -2440,27 +2671,28 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
                 "行业",
                 "板块",
                 "主题标签",
-                "市场",
-                "实际查询代码",
                 "数据源",
                 "最新交易日",
+                "研究优先级评分",
+                "基本面质量评分",
+                "综合研究观察评分",
                 "最新价格",
-                "近 5 日涨跌幅",
                 "近 20 日涨跌幅",
                 "近 60 日涨跌幅",
-                "MA20",
-                "MA60",
-                "是否高于 MA20",
-                "是否高于 MA60",
-                "MA20 是否高于 MA60",
-                "成交量放大倍数",
-                "最大回撤",
-                "年化波动率",
-                "有效交易日数量",
-                "数据质量",
-                "研究优先级评分",
+                "总市值",
+                "ROE",
+                "PE_TTM",
+                "PB",
+                "营收同比增长率",
+                "归母净利润同比增长率",
+                "毛利率",
+                "净利率",
+                "资产负债率",
+                "股息率",
                 "入选理由",
                 "风险提示",
+                "基本面观察摘要",
+                "基本面数据源",
             ]
             st.subheader("Top N 研究候选池表格")
             st.dataframe(priority_frame[priority_columns], hide_index=True, use_container_width=True)
@@ -2492,8 +2724,11 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
                         "有效交易日数量",
                         "数据质量",
                         "研究优先级评分",
+                        "基本面质量评分",
+                        "综合研究观察评分",
                         "入选理由",
                         "风险提示",
+                        "基本面观察摘要",
                     ]
                     st.dataframe(lower_priority_frame[lower_priority_columns], hide_index=True, use_container_width=True)
         else:
@@ -2565,7 +2800,7 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
             st.dataframe(failed_frame, hide_index=True, use_container_width=True)
 
     st.info(
-        "当前 V0.9.6 在 V0.9.5 股票池体系基础上新增 A股行业 / 板块 / 主题标签和板块强度初步统计。"
+        "当前 V1.0 在 V0.9.6 基础上新增 A股基本面质量观察、基本面质量评分和综合研究观察评分。"
         "所有内容均由本地规则生成，仅用于学习和研究，不构成投资建议。"
     )
 
@@ -2941,7 +3176,30 @@ def generate_technical_summary(metrics, analysis_style):
     }
 
 
-def generate_fundamental_summary(valuation, financial):
+def generate_fundamental_summary(valuation, financial=None):
+    if financial is None:
+        fundamental_data = valuation if isinstance(valuation, dict) else {}
+        if not fundamental_data or all(is_missing(fundamental_data.get(field)) for field in FUNDAMENTAL_FIELDS):
+            return "基本面数据暂缺，需后续补充财务与估值信息。"
+        parts = []
+        roe = to_number(fundamental_data.get("roe"))
+        revenue_yoy = to_number(fundamental_data.get("revenue_yoy"))
+        net_profit_yoy = to_number(fundamental_data.get("net_profit_yoy"))
+        debt_asset_ratio = to_number(fundamental_data.get("debt_asset_ratio"))
+        pe_ttm = to_number(fundamental_data.get("pe_ttm"))
+        pb = to_number(fundamental_data.get("pb"))
+        if not pd.isna(roe) and roe >= 0.15:
+            parts.append("ROE 水平较高，盈利能力相对较强。")
+        if not pd.isna(revenue_yoy) and revenue_yoy > 0 and not pd.isna(net_profit_yoy) and net_profit_yoy > 0:
+            parts.append("营收与利润保持增长，成长性表现较好。")
+        if not pd.isna(debt_asset_ratio) and debt_asset_ratio < 0.50:
+            parts.append("资产负债率较低，财务结构相对稳健。")
+        if (not pd.isna(pe_ttm) and pe_ttm > 80) or (not pd.isna(pb) and pb > 10):
+            parts.append("估值指标偏高，需关注估值消化压力。")
+        if "内置示例数据" in str(fundamental_data.get("fundamental_source", "")):
+            parts.append("当前基本面数据来自内置示例，仅用于学习和原型演示，需用正式数据源进一步核验。")
+        return " ".join(parts) if parts else "当前基本面字段可用于初步观察，但仍需结合正式财务数据进一步核验。"
+
     available = [value for value in list(valuation.values()) + list(financial.values()) if not is_missing(value)]
     if not available:
         return {"数据可信度提示": "当前可用基本面数据不足，不能形成完整判断。"}
@@ -3172,7 +3430,7 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
 
     st.title("FinScientist")
     st.subheader("AI-assisted financial research workspace")
-    st.caption("V0.9.6 增强 A股行业 / 板块 / 主题标签与板块强度初步统计；仍为本地规则化研究原型，不调用 AI API。")
+    st.caption("V1.0 增强 A股基本面质量筛选初版；仍为本地规则化研究原型，不调用 AI API。")
 
     with st.sidebar:
         st.header("研究参数")
