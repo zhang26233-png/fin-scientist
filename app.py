@@ -14,7 +14,7 @@ try:
 except Exception:
     bs = None
 
-APP_VERSION = "V0.9.5"
+APP_VERSION = "V0.9.6"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
@@ -115,6 +115,43 @@ A_SHARE_STOCK_NAME_MAP = {
     "300454.SZ": "深信服", "300496.SZ": "中科创达", "688525.SH": "佰维存储", "688327.SH": "云从科技",
     "688318.SH": "财富趋势",
 }
+A_SHARE_SECTOR_INFO_MAP = {
+    "600519.SH": ("白酒", "消费", "白酒龙头"), "000858.SZ": ("白酒", "消费", "白酒龙头"),
+    "600809.SH": ("白酒", "消费", "白酒"), "000568.SZ": ("白酒", "消费", "白酒"),
+    "600887.SH": ("乳制品", "消费", "必选消费"), "603288.SH": ("调味品", "消费", "食品饮料"),
+    "300750.SZ": ("动力电池", "新能源", "锂电池;储能"), "002594.SZ": ("新能源汽车", "新能源", "整车;动力电池"),
+    "601012.SH": ("光伏", "新能源", "光伏组件"), "300274.SZ": ("光伏逆变器", "新能源", "储能;光伏"),
+    "002050.SZ": ("热管理", "高端制造", "新能源汽车产业链"), "688981.SH": ("半导体", "科技成长", "晶圆代工;国产替代"),
+    "688012.SH": ("半导体设备", "科技成长", "国产替代"), "002371.SZ": ("半导体设备", "科技成长", "国产替代"),
+    "603501.SH": ("半导体设计", "科技成长", "图像传感器"), "688041.SH": ("AI芯片", "科技成长", "国产CPU/GPU"),
+    "688256.SH": ("AI芯片", "科技成长", "人工智能"), "688008.SH": ("半导体存储", "科技成长", "国产替代"),
+    "688525.SH": ("存储芯片", "科技成长", "AI硬件"), "002049.SZ": ("半导体设计", "科技成长", "国产替代"),
+    "002230.SZ": ("人工智能", "科技成长", "AI应用;语音识别"), "300033.SZ": ("金融科技", "科技成长", "互联网金融;AI应用"),
+    "688111.SH": ("办公软件", "科技成长", "信创;AI办公"), "000938.SZ": ("数字经济", "科技成长", "云计算;AI基础设施"),
+    "300308.SZ": ("光模块", "科技成长", "AI算力;数据中心"), "300502.SZ": ("光模块", "科技成长", "AI算力;数据中心"),
+    "300418.SZ": ("AI应用", "科技成长", "AIGC;游戏"), "300454.SZ": ("网络安全", "科技成长", "云安全"),
+    "300496.SZ": ("操作系统", "科技成长", "智能汽车;操作系统"), "688327.SH": ("人工智能", "科技成长", "AI应用"),
+    "688318.SH": ("金融科技", "科技成长", "证券软件"), "600276.SH": ("创新药", "医药", "创新药"),
+    "300760.SZ": ("医疗器械", "医药", "医疗设备"), "603259.SH": ("CXO", "医药", "医药外包"),
+    "300015.SZ": ("眼科医疗", "医药", "医疗服务"), "000538.SZ": ("中药", "医药", "品牌中药"),
+    "600436.SH": ("中药", "医药", "品牌中药"), "000661.SZ": ("生物药", "医药", "生长激素"),
+    "002821.SZ": ("CXO", "医药", "医药外包"), "688271.SH": ("医疗器械", "医药", "医学影像"),
+    "300122.SZ": ("疫苗", "医药", "生物制品"), "600763.SH": ("医疗服务", "医药", "口腔医疗"),
+    "002422.SZ": ("化学制药", "医药", "输液;创新药"), "601318.SH": ("保险", "金融", "综合金融"),
+    "600036.SH": ("银行", "金融", "股份行"), "000001.SZ": ("银行", "金融", "股份行"),
+    "601166.SH": ("银行", "金融", "股份行"), "601398.SH": ("银行", "金融", "国有大行"),
+    "601939.SH": ("银行", "金融", "国有大行"), "600030.SH": ("证券", "金融", "券商"),
+    "601688.SH": ("证券", "金融", "券商"), "600999.SH": ("证券", "金融", "券商"),
+    "601601.SH": ("保险", "金融", "保险"), "601899.SH": ("有色金属", "周期资源", "黄金;铜"),
+    "601088.SH": ("煤炭", "周期资源", "高股息"), "600900.SH": ("电力", "公用事业", "水电;高股息"),
+    "600028.SH": ("石油化工", "周期资源", "能源"), "601857.SH": ("石油", "周期资源", "能源"),
+    "600019.SH": ("钢铁", "周期资源", "制造业"), "600585.SH": ("水泥", "周期资源", "地产链"),
+    "600309.SH": ("化工", "周期资源", "化工龙头"), "601390.SH": ("基建", "建筑央企", "中特估"),
+    "601668.SH": ("基建", "建筑央企", "中特估"), "600031.SH": ("工程机械", "高端制造", "基建;出口链"),
+    "000002.SZ": ("房地产", "地产链", "地产开发"), "000333.SZ": ("家电", "消费制造", "白电"),
+    "000651.SZ": ("家电", "消费制造", "白电"), "300124.SZ": ("工业自动化", "高端制造", "机器人;新能源产业链"),
+    "002415.SZ": ("安防设备", "科技制造", "AI视觉;物联网"),
+}
 
 NAME_MAP = {
     "英伟达": ("美股", "NVDA"),
@@ -212,6 +249,15 @@ def to_number(value):
         return float(value)
     except (TypeError, ValueError):
         return math.nan
+
+
+def parse_display_percent(value):
+    if is_missing(value):
+        return math.nan
+    text = str(value).strip()
+    if text.endswith("%"):
+        return to_number(text[:-1]) / 100
+    return to_number(value)
 
 
 def format_price(value):
@@ -1446,11 +1492,41 @@ def get_stock_display_name(ticker, market):
     return "名称暂缺"
 
 
+def get_stock_sector_info(ticker, market):
+    if market == "A股":
+        normalized = str(ticker or "").strip().upper()
+        clean_code = normalized.replace(".SH", "").replace(".SZ", "")
+        if re.fullmatch(r"\d{6}", clean_code):
+            suffix = ".SH" if normalized.endswith(".SH") else ".SZ" if normalized.endswith(".SZ") else infer_a_share_suffix(clean_code)[0]
+            display_code = f"{clean_code}{suffix}" if suffix else clean_code
+            industry, sector, themes = A_SHARE_SECTOR_INFO_MAP.get(
+                display_code,
+                ("行业暂缺", "板块暂缺", "主题暂缺"),
+            )
+            return {"industry": industry, "sector": sector, "themes": themes}
+    return {"industry": "行业暂缺", "sector": "板块暂缺", "themes": "主题暂缺"}
+
+
+def attach_sector_fields(record, ticker, market):
+    sector_info = get_stock_sector_info(ticker, market)
+    record.update(
+        {
+            "行业": sector_info["industry"],
+            "板块": sector_info["sector"],
+            "主题标签": sector_info["themes"],
+            "industry": sector_info["industry"],
+            "sector": sector_info["sector"],
+            "themes": sector_info["themes"],
+        }
+    )
+    return record
+
+
 def normalize_screening_ticker(ticker, market):
     raw_value = str(ticker or "").strip()
     normalized = raw_value.upper()
     if not normalized:
-        return {
+        return attach_sector_fields({
             "原始输入": raw_value,
             "股票名称": "名称暂缺",
             "stock_name": "名称暂缺",
@@ -1459,7 +1535,7 @@ def normalize_screening_ticker(ticker, market):
             "市场": market,
             "备注": "空代码，已跳过",
             "is_valid": False,
-        }
+        }, raw_value, market)
 
     if market == "A股":
         clean_code = normalized.replace(".SH", "").replace(".SZ", "")
@@ -1474,7 +1550,7 @@ def normalize_screening_ticker(ticker, market):
                 suffix, note = infer_a_share_suffix(clean_code)
             display_code = f"{clean_code}{suffix}" if suffix else raw_value
             stock_name = get_stock_display_name(display_code, market)
-            return {
+            return attach_sector_fields({
                 "原始输入": raw_value,
                 "股票名称": stock_name,
                 "stock_name": stock_name,
@@ -1483,8 +1559,8 @@ def normalize_screening_ticker(ticker, market):
                 "市场": market,
                 "备注": note,
                 "is_valid": bool(suffix),
-            }
-        return {
+            }, display_code, market)
+        return attach_sector_fields({
             "原始输入": raw_value,
             "股票名称": "名称暂缺",
             "stock_name": "名称暂缺",
@@ -1493,13 +1569,13 @@ def normalize_screening_ticker(ticker, market):
             "市场": market,
             "备注": "格式需进一步确认",
             "is_valid": False,
-        }
+        }, raw_value, market)
 
     if market == "港股":
         clean_code = normalized.replace(".HK", "")
         if re.fullmatch(r"\d{1,5}", clean_code):
             display_code = f"{clean_code.zfill(4)}.HK"
-            return {
+            return attach_sector_fields({
                 "原始输入": raw_value,
                 "股票名称": get_stock_display_name(display_code, market),
                 "stock_name": get_stock_display_name(display_code, market),
@@ -1508,8 +1584,8 @@ def normalize_screening_ticker(ticker, market):
                 "市场": market,
                 "备注": "已标准化",
                 "is_valid": True,
-            }
-        return {
+            }, display_code, market)
+        return attach_sector_fields({
             "原始输入": raw_value,
             "股票名称": "名称暂缺",
             "stock_name": "名称暂缺",
@@ -1518,11 +1594,11 @@ def normalize_screening_ticker(ticker, market):
             "市场": market,
             "备注": "格式需进一步确认",
             "is_valid": False,
-        }
+        }, raw_value, market)
 
     clean_code = normalized.strip()
     if re.fullmatch(r"[A-Z0-9.\-]{1,12}", clean_code):
-        return {
+        return attach_sector_fields({
             "原始输入": raw_value,
             "股票名称": get_stock_display_name(clean_code, market),
             "stock_name": get_stock_display_name(clean_code, market),
@@ -1531,9 +1607,9 @@ def normalize_screening_ticker(ticker, market):
             "市场": market,
             "备注": "已标准化",
             "is_valid": True,
-        }
+        }, clean_code, market)
 
-    return {
+    return attach_sector_fields({
         "原始输入": raw_value,
         "股票名称": "名称暂缺",
         "stock_name": "名称暂缺",
@@ -1542,7 +1618,7 @@ def normalize_screening_ticker(ticker, market):
         "市场": market,
         "备注": "格式需进一步确认",
         "is_valid": False,
-    }
+    }, raw_value, market)
 
 
 def parse_screening_universe(input_text, market):
@@ -1592,6 +1668,9 @@ def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动�
         "success": False,
         "original_input": original_input,
         "stock_name": stock_name,
+        "industry": ticker_item.get("industry", "行业暂缺"),
+        "sector": ticker_item.get("sector", "板块暂缺"),
+        "themes": ticker_item.get("themes", "主题暂缺"),
         "display_ticker": display_ticker,
         "query_ticker": query_ticker,
         "market": market,
@@ -2132,6 +2211,9 @@ def build_screening_priority_rows(success_items):
             row = {
                 "股票代码": item["display_ticker"],
                 "股票名称": item.get("stock_name", "名称暂缺"),
+                "行业": item.get("industry", "行业暂缺"),
+                "板块": item.get("sector", "板块暂缺"),
+                "主题标签": item.get("themes", "主题暂缺"),
                 "市场": item["market"],
                 "实际查询代码": item["query_ticker"],
                 "数据源": item["data_source"],
@@ -2168,6 +2250,9 @@ def build_screening_priority_rows(success_items):
                 {
                     "股票代码": item.get("display_ticker", ""),
                     "股票名称": item.get("stock_name", "名称暂缺"),
+                    "行业": item.get("industry", "行业暂缺"),
+                    "板块": item.get("sector", "板块暂缺"),
+                    "主题标签": item.get("themes", "主题暂缺"),
                     "市场": item.get("market", ""),
                     "实际查询代码": item.get("query_ticker", ""),
                     "数据源": item.get("data_source", ""),
@@ -2185,6 +2270,78 @@ def build_screening_priority_rows(success_items):
     return scored_rows, unscored_rows
 
 
+def generate_sector_strength_summary(result_df, all_scored_df=None):
+    source_df = all_scored_df if isinstance(all_scored_df, pd.DataFrame) and not all_scored_df.empty else result_df
+    if source_df is None or source_df.empty or "板块" not in source_df.columns:
+        return pd.DataFrame()
+
+    rows = []
+    for sector, group in source_df.groupby("板块", dropna=False):
+        sector_name = sector if str(sector or "").strip() else "板块暂缺"
+        score_values = group["研究优先级评分"].apply(to_number) if "研究优先级评分" in group else pd.Series(dtype=float)
+        score_values = score_values.dropna()
+        score_positive_count = int((score_values > 0).sum())
+        stock_count = len(group)
+
+        def mean_percent(column):
+            if column not in group:
+                return math.nan
+            return group[column].apply(parse_display_percent).dropna().mean()
+
+        def mean_number(column):
+            if column not in group:
+                return math.nan
+            return group[column].apply(to_number).dropna().mean()
+
+        note = "样本较少，仅作参考。" if stock_count < 2 else "基于当前股票池样本的初步统计。"
+        rows.append(
+            {
+                "板块": sector_name,
+                "股票数量": stock_count,
+                "平均研究优先级评分": format_metric(score_values.mean()) if len(score_values) else INSUFFICIENT,
+                "触发研究优先级条件数量": score_positive_count,
+                "触发比例": format_percent(score_positive_count / stock_count if stock_count else math.nan),
+                "平均近 20 日涨跌幅": format_percent(mean_percent("近 20 日涨跌幅")),
+                "平均近 60 日涨跌幅": format_percent(mean_percent("近 60 日涨跌幅")),
+                "平均成交量放大倍数": format_metric(mean_number("成交量放大倍数")) if not pd.isna(mean_number("成交量放大倍数")) else INSUFFICIENT,
+                "平均年化波动率": format_percent(mean_percent("年化波动率")),
+                "平均最大回撤": format_percent(mean_percent("最大回撤")),
+                "说明": note,
+                "_sort_score": score_values.mean() if len(score_values) else -1,
+            }
+        )
+    sector_df = pd.DataFrame(rows)
+    if not sector_df.empty:
+        sector_df = sector_df.sort_values("_sort_score", ascending=False).drop(columns=["_sort_score"])
+    return sector_df
+
+
+def generate_sector_strength_text(sector_df):
+    if sector_df is None or sector_df.empty:
+        return "当前股票池暂无可用于板块强度初步统计的数据。该统计仅基于当前股票池样本，不代表全市场板块强弱，也不构成投资建议。"
+
+    top_score = sector_df.head(3)["板块"].tolist()
+    trigger_df = sector_df.copy()
+    trigger_df["_trigger_count"] = trigger_df["触发研究优先级条件数量"].apply(to_number)
+    top_trigger = trigger_df.sort_values("_trigger_count", ascending=False).head(3)["板块"].tolist()
+
+    high_risk = []
+    for _, row in sector_df.iterrows():
+        vol = parse_display_percent(row.get("平均年化波动率"))
+        drawdown = parse_display_percent(row.get("平均最大回撤"))
+        if (not pd.isna(vol) and vol > 0.60) or (not pd.isna(drawdown) and abs(drawdown) > 0.25):
+            high_risk.append(row["板块"])
+
+    return "\n\n".join(
+        [
+            f"当前股票池中平均研究优先级评分相对较高的板块包括：{format_symbol_list(top_score)}。",
+            f"触发研究优先级条件的股票数量相对较多的板块包括：{format_symbol_list(top_trigger)}。",
+            f"波动率或最大回撤相对较高的板块包括：{format_symbol_list(high_risk[:3])}。",
+            "该统计仅基于当前股票池样本，不代表全市场板块强弱，也不构成投资建议。",
+        ]
+    )
+
+
 def render_screening_section(market, pool_source, top_n_label, input_text, pool_type=None, max_process_count=20):
     st.divider()
     st.header("自动研究对象筛选")
@@ -2193,7 +2350,7 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
         "不构成投资建议，也不代表买入、卖出或持有建议。"
     )
     st.caption(
-        "当前 V0.9.5 在 V0.9.4 解释层基础上新增 A股多类型研究股票池和股票中文名称展示。"
+        "当前 V0.9.6 在 V0.9.5 股票池体系基础上新增 A股行业 / 板块 / 主题标签和板块强度初步统计。"
         "所有内容均由本地规则生成。"
     )
     if market == "A股":
@@ -2251,7 +2408,7 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
     info_cols[3].metric("解析后股票数量", len(parsed_items))
 
     display_frame = pd.DataFrame(parsed_items)
-    display_columns = ["原始输入", "股票名称", "展示代码", "内部查询代码", "市场", "备注"]
+    display_columns = ["原始输入", "股票名称", "行业", "板块", "主题标签", "展示代码", "内部查询代码", "市场", "备注"]
     st.dataframe(display_frame[display_columns], hide_index=True, use_container_width=True)
 
     with st.spinner("正在获取股票池行情数据，请稍候..."):
@@ -2280,6 +2437,9 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
                 "排名",
                 "股票代码",
                 "股票名称",
+                "行业",
+                "板块",
+                "主题标签",
                 "市场",
                 "实际查询代码",
                 "数据源",
@@ -2304,6 +2464,16 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
             ]
             st.subheader("Top N 研究候选池表格")
             st.dataframe(priority_frame[priority_columns], hide_index=True, use_container_width=True)
+            sector_df = generate_sector_strength_summary(priority_frame, all_scored_df=all_scored_frame)
+            st.subheader("板块强度初步统计")
+            if not sector_df.empty:
+                st.dataframe(sector_df, hide_index=True, use_container_width=True)
+                if (sector_df["股票数量"].apply(to_number) < 2).any():
+                    st.caption("部分板块样本数量少于 2，只能作为研究观察参考。")
+                st.subheader("板块强度解释")
+                st.write(generate_sector_strength_text(sector_df))
+            else:
+                st.info("当前结果暂无可用于板块强度初步统计的数据。")
             lower_priority_rows = scored_rows[top_n:]
             if lower_priority_rows:
                 with st.expander("低优先级或未触发主要筛选条件的股票"):
@@ -2312,6 +2482,9 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
                         "排名",
                         "股票代码",
                         "股票名称",
+                        "行业",
+                        "板块",
+                        "主题标签",
                         "市场",
                         "实际查询代码",
                         "数据源",
@@ -2332,7 +2505,7 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
         if unscored_rows:
             with st.expander("无法评分或未纳入候选池的股票"):
                 unscored_frame = pd.DataFrame(unscored_rows)
-                unscored_columns = ["股票代码", "股票名称", "市场", "数据源", "有效交易日数量", "数据质量", "未纳入原因"]
+                unscored_columns = ["股票代码", "股票名称", "行业", "板块", "主题标签", "市场", "数据源", "有效交易日数量", "数据质量", "未纳入原因"]
                 display_columns = [col for col in unscored_columns if col in unscored_frame.columns]
                 st.dataframe(unscored_frame[display_columns], hide_index=True, use_container_width=True)
 
@@ -2341,6 +2514,9 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
                 {
                     "股票代码": item["display_ticker"],
                     "股票名称": item.get("stock_name", "名称暂缺"),
+                    "行业": item.get("industry", "行业暂缺"),
+                    "板块": item.get("sector", "板块暂缺"),
+                    "主题标签": item.get("themes", "主题暂缺"),
                     "市场": item["market"],
                     "实际查询代码": item["query_ticker"],
                     "数据源": item["data_source"],
@@ -2371,6 +2547,9 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
                     {
                         "股票代码": item["display_ticker"],
                         "股票名称": item.get("stock_name", "名称暂缺"),
+                        "行业": item.get("industry", "行业暂缺"),
+                        "板块": item.get("sector", "板块暂缺"),
+                        "主题标签": item.get("themes", "主题暂缺"),
                         "实际查询代码": item["query_ticker"],
                         "市场": item["market"],
                         "尝试过的数据源": item.get("attempted_sources", item.get("attempt_params", "")),
@@ -2386,7 +2565,7 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
             st.dataframe(failed_frame, hide_index=True, use_container_width=True)
 
     st.info(
-        "当前 V0.9.5 在 V0.9.4 解释层基础上新增 A股多类型研究股票池和股票中文名称展示。"
+        "当前 V0.9.6 在 V0.9.5 股票池体系基础上新增 A股行业 / 板块 / 主题标签和板块强度初步统计。"
         "所有内容均由本地规则生成，仅用于学习和研究，不构成投资建议。"
     )
 
@@ -2993,7 +3172,7 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
 
     st.title("FinScientist")
     st.subheader("AI-assisted financial research workspace")
-    st.caption("V0.9.5 增强 A股研究股票池体系与股票中文名称展示；仍为本地规则化研究原型，不调用 AI API。")
+    st.caption("V0.9.6 增强 A股行业 / 板块 / 主题标签与板块强度初步统计；仍为本地规则化研究原型，不调用 AI API。")
 
     with st.sidebar:
         st.header("研究参数")
