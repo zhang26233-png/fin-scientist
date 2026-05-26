@@ -14,7 +14,7 @@ try:
 except Exception:
     bs = None
 
-APP_VERSION = "V1.0"
+APP_VERSION = "V1.1"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
@@ -29,6 +29,7 @@ SCREENING_MARKET_OPTIONS = ["A股", "港股", "美股"]
 SCREENING_POOL_OPTIONS = ["默认示例股票池", "自定义股票池"]
 SCREENING_TOP_OPTIONS = ["Top 10", "Top 20", "Top 30"]
 SCREENING_MAX_PROCESS_OPTIONS = [10, 20, 30, 50]
+SCREENING_RUN_MODE_OPTIONS = ["快速模式", "完整模式"]
 A_SHARE_SCREENING_SOURCE_MODES = [
     "自动：AkShare → BaoStock → yfinance",
     "仅 AkShare",
@@ -1394,6 +1395,7 @@ def fetch_a_share_fundamental_data(display_ticker, query_ticker):
         return None, str(exc)
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
 def get_fundamental_data(display_ticker, query_ticker, market):
     if market != "A股":
         return build_fundamental_record((), "数据暂缺", "港股和美股基本面筛选暂未启用。")
@@ -1864,6 +1866,7 @@ def keep_recent_rows(price_df, limit_rows=120):
     return recent
 
 
+@st.cache_data(ttl=1800, show_spinner=False)
 def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动：AkShare → BaoStock → yfinance"):
     original_input = ticker_item.get("原始输入", "")
     display_ticker = ticker_item.get("展示代码", original_input)
@@ -2115,12 +2118,13 @@ def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动�
         return base_result
 
 
-def screen_universe_data_fetch(parsed_items, market, max_process_count=50):
+def screen_universe_data_fetch(parsed_items, market, max_process_count=50, run_mode="快速模式", progress_callback=None):
     success_items = []
     failed_items = []
     insufficient_items = []
 
     limited_items = parsed_items[:max_process_count]
+    sleep_seconds = 0.2 if run_mode == "快速模式" else 0.5
     for index, ticker_item in enumerate(limited_items):
         result = fetch_screening_price_data(ticker_item, market)
         if result["success"]:
@@ -2129,8 +2133,10 @@ def screen_universe_data_fetch(parsed_items, market, max_process_count=50):
                 insufficient_items.append(result)
         else:
             failed_items.append(result)
+        if progress_callback:
+            progress_callback(index + 1, len(limited_items), ticker_item)
         if market == "A股" and index < len(limited_items) - 1:
-            time.sleep(0.35)
+            time.sleep(sleep_seconds)
 
     summary = {
         "股票池总数": len(limited_items),
@@ -2394,9 +2400,10 @@ def parse_screening_top_n(top_n_label):
     return int(match.group()) if match else 10
 
 
-def build_screening_priority_rows(success_items):
+def build_screening_priority_rows(success_items, run_mode="快速模式"):
     scored_rows = []
     unscored_rows = []
+    include_fundamentals = run_mode == "完整模式"
 
     for item in success_items:
         try:
@@ -2405,10 +2412,14 @@ def build_screening_priority_rows(success_items):
             metrics["使用备用数据源"] = bool(item.get("fallback_used", False))
             score_result = calculate_research_priority_score(metrics)
             score = score_result["研究优先级评分"]
-            fundamental_data = get_fundamental_data(item["display_ticker"], item["query_ticker"], item["market"])
-            fundamental_score = calculate_fundamental_quality_score(fundamental_data)
+            if include_fundamentals:
+                fundamental_data = get_fundamental_data(item["display_ticker"], item["query_ticker"], item["market"])
+                fundamental_score = calculate_fundamental_quality_score(fundamental_data)
+            else:
+                fundamental_data = build_fundamental_record((), "快速模式未获取")
+                fundamental_score = "无法评分"
             composite_score = calculate_composite_research_score(score, fundamental_score)
-            fundamental_summary = generate_fundamental_summary(fundamental_data)
+            fundamental_summary = generate_fundamental_summary(fundamental_data) if include_fundamentals else "快速模式暂不获取基本面明细。"
             missing_fundamental_count = sum(1 for field in FUNDAMENTAL_FIELDS if is_missing(fundamental_data.get(field)))
             metrics["基本面数据源"] = fundamental_data.get("fundamental_source", "数据暂缺")
             metrics["基本面字段缺失较多"] = missing_fundamental_count > len(FUNDAMENTAL_FIELDS) / 2
@@ -2569,7 +2580,7 @@ def generate_sector_strength_text(sector_df):
     )
 
 
-def render_screening_section(market, pool_source, top_n_label, input_text, pool_type=None, max_process_count=20):
+def render_screening_section(market, pool_source, top_n_label, input_text, pool_type=None, max_process_count=10, run_mode="快速模式"):
     st.divider()
     st.header("自动研究对象筛选")
     st.write(
@@ -2577,8 +2588,12 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
         "不构成投资建议，也不代表买入、卖出或持有建议。"
     )
     st.caption(
-        "当前 V1.0 在 V0.9.6 基础上新增 A股基本面质量观察、基本面质量评分和综合研究观察评分。"
+        "当前 V1.1 在 V1.0 基础上新增性能优化、缓存机制、快速模式和完整模式。"
         "所有内容均由本地规则生成。"
+    )
+    st.info(
+        "为提升运行速度，系统会缓存部分行情和基本面数据。免费数据源可能存在延迟、缺失、限流或接口不稳定。"
+        "若结果异常，可清除缓存后重试。"
     )
     if market == "A股":
         st.info(
@@ -2589,6 +2604,8 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
             "V1.0 新增基本面质量观察。当前基本面数据可能来自 AkShare 或内置示例数据。"
             "内置示例数据仅用于学习和原型演示，不代表最新真实财务数据。"
         )
+    if max_process_count >= 30:
+        st.warning("处理数量较大，免费数据源请求可能较慢，建议先用快速模式测试。")
 
     pool_info = {
         "pool_name": "自定义研究股票池",
@@ -2642,8 +2659,22 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
     display_columns = ["原始输入", "股票名称", "行业", "板块", "主题标签", "展示代码", "内部查询代码", "市场", "备注"]
     st.dataframe(display_frame[display_columns], hide_index=True, use_container_width=True)
 
+    progress_bar = st.progress(0)
+    progress_text = st.empty()
+
+    def update_screening_progress(done, total, ticker_item):
+        progress_bar.progress(done / total if total else 1)
+        progress_text.caption(f"正在处理 {done}/{total}：{ticker_item.get('展示代码', '')} {ticker_item.get('stock_name', '')}")
+
     with st.spinner("正在获取股票池行情数据，请稍候..."):
-        fetch_result = screen_universe_data_fetch(parsed_items, market, max_process_count=max_process_count)
+        fetch_result = screen_universe_data_fetch(
+            parsed_items,
+            market,
+            max_process_count=max_process_count,
+            run_mode=run_mode,
+            progress_callback=update_screening_progress,
+        )
+    progress_text.caption("批量处理完成。")
 
     summary = fetch_result["summary"]
     st.subheader("批量获取概览")
@@ -2658,54 +2689,51 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
     insufficient_items = fetch_result["insufficient_items"]
 
     if success_items:
-        scored_rows, unscored_rows = build_screening_priority_rows(success_items)
+        scored_rows, unscored_rows = build_screening_priority_rows(success_items, run_mode=run_mode)
         top_n = parse_screening_top_n(top_n_label)
         all_scored_frame = pd.DataFrame(scored_rows)
         all_scored_frame.attrs["total_count"] = summary["股票池总数"]
         if scored_rows:
             priority_frame = pd.DataFrame(scored_rows[:top_n])
             priority_columns = [
-                "排名",
                 "股票代码",
                 "股票名称",
                 "行业",
                 "板块",
-                "主题标签",
                 "数据源",
                 "最新交易日",
                 "研究优先级评分",
                 "基本面质量评分",
                 "综合研究观察评分",
-                "最新价格",
                 "近 20 日涨跌幅",
                 "近 60 日涨跌幅",
-                "总市值",
-                "ROE",
-                "PE_TTM",
-                "PB",
-                "营收同比增长率",
-                "归母净利润同比增长率",
-                "毛利率",
-                "净利率",
-                "资产负债率",
-                "股息率",
+                "成交量放大倍数",
                 "入选理由",
                 "风险提示",
-                "基本面观察摘要",
-                "基本面数据源",
             ]
             st.subheader("Top N 研究候选池表格")
             st.dataframe(priority_frame[priority_columns], hide_index=True, use_container_width=True)
-            sector_df = generate_sector_strength_summary(priority_frame, all_scored_df=all_scored_frame)
-            st.subheader("板块强度初步统计")
-            if not sector_df.empty:
-                st.dataframe(sector_df, hide_index=True, use_container_width=True)
-                if (sector_df["股票数量"].apply(to_number) < 2).any():
-                    st.caption("部分板块样本数量少于 2，只能作为研究观察参考。")
-                st.subheader("板块强度解释")
-                st.write(generate_sector_strength_text(sector_df))
-            else:
-                st.info("当前结果暂无可用于板块强度初步统计的数据。")
+            with st.expander("完整指标表"):
+                detail_columns = [col for col in priority_frame.columns if not col.startswith("_")]
+                st.dataframe(priority_frame[detail_columns], hide_index=True, use_container_width=True)
+            if run_mode == "完整模式":
+                with st.expander("基本面详细字段", expanded=False):
+                    fundamental_columns = [
+                        "股票代码", "股票名称", "总市值", "PE_TTM", "PB", "ROE", "营收同比增长率",
+                        "归母净利润同比增长率", "毛利率", "净利率", "资产负债率", "股息率",
+                        "基本面数据源", "基本面质量评分", "综合研究观察评分", "基本面观察摘要",
+                    ]
+                    st.dataframe(priority_frame[fundamental_columns], hide_index=True, use_container_width=True)
+                sector_df = generate_sector_strength_summary(priority_frame, all_scored_df=all_scored_frame)
+                st.subheader("板块强度初步统计")
+                if not sector_df.empty:
+                    st.dataframe(sector_df, hide_index=True, use_container_width=True)
+                    if (sector_df["股票数量"].apply(to_number) < 2).any():
+                        st.caption("部分板块样本数量少于 2，只能作为研究观察参考。")
+                    st.subheader("板块强度解释")
+                    st.write(generate_sector_strength_text(sector_df))
+                else:
+                    st.info("当前结果暂无可用于板块强度初步统计的数据。")
             lower_priority_rows = scored_rows[top_n:]
             if lower_priority_rows:
                 with st.expander("低优先级或未触发主要筛选条件的股票"):
@@ -2734,8 +2762,9 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
         else:
             st.warning("本次成功获取行情的候选对象均无法评分，请查看指标不足说明。")
 
-        st.subheader("筛选总结")
-        st.write(generate_screening_summary(all_scored_frame, failed_items=failed_items, insufficient_items=insufficient_items))
+        if run_mode == "完整模式":
+            st.subheader("筛选总结")
+            st.write(generate_screening_summary(all_scored_frame, failed_items=failed_items, insufficient_items=insufficient_items))
 
         if unscored_rows:
             with st.expander("无法评分或未纳入候选池的股票"):
@@ -2766,14 +2795,16 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
                 for item in success_items
             ]
         )
-        with st.expander("成功获取明细"):
-            st.dataframe(success_frame, hide_index=True, use_container_width=True)
+        if run_mode == "完整模式":
+            with st.expander("数据源诊断 / 成功获取明细"):
+                st.dataframe(success_frame, hide_index=True, use_container_width=True)
     else:
         st.warning("本次股票池未成功获取到可用行情数据。")
-        st.subheader("筛选总结")
-        st.write(generate_screening_summary(pd.DataFrame(), failed_items=failed_items, insufficient_items=insufficient_items))
+        if run_mode == "完整模式":
+            st.subheader("筛选总结")
+            st.write(generate_screening_summary(pd.DataFrame(), failed_items=failed_items, insufficient_items=insufficient_items))
 
-    if failed_items:
+    if failed_items and run_mode == "完整模式":
         with st.expander("获取失败的股票及原因"):
             if market == "A股":
                 st.info("如果大量 A股返回空数据，请先用少量代码测试 AkShare、BaoStock、yfinance 的连接状态，例如 600519、300750、000001。")
@@ -2798,9 +2829,11 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
                 ]
             )
             st.dataframe(failed_frame, hide_index=True, use_container_width=True)
+    elif failed_items:
+        st.warning(f"本次有 {len(failed_items)} 只股票获取失败。切换到完整模式可查看详细诊断。")
 
     st.info(
-        "当前 V1.0 在 V0.9.6 基础上新增 A股基本面质量观察、基本面质量评分和综合研究观察评分。"
+        "当前 V1.1 在 V1.0 基础上新增性能优化、缓存机制、快速模式和完整模式。"
         "所有内容均由本地规则生成，仅用于学习和研究，不构成投资建议。"
     )
 
@@ -3430,7 +3463,7 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
 
     st.title("FinScientist")
     st.subheader("AI-assisted financial research workspace")
-    st.caption("V1.0 增强 A股基本面质量筛选初版；仍为本地规则化研究原型，不调用 AI API。")
+    st.caption("V1.1 增强性能优化与缓存机制；仍为本地规则化研究原型，不调用 AI API。")
 
     with st.sidebar:
         st.header("研究参数")
@@ -3508,6 +3541,7 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
         st.divider()
         st.header("自动研究对象筛选")
         screening_market = st.selectbox("筛选市场", options=SCREENING_MARKET_OPTIONS, index=0)
+        screening_run_mode = st.selectbox("运行模式", options=SCREENING_RUN_MODE_OPTIONS, index=0)
         screening_pool_source = st.selectbox("股票池选择", options=SCREENING_POOL_OPTIONS, index=0)
         screening_a_share_pool_type = DEFAULT_A_SHARE_POOL_TYPE
         if screening_market == "A股" and screening_pool_source == "默认示例股票池":
@@ -3524,12 +3558,19 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
             disabled=screening_pool_source == "默认示例股票池",
         )
         screening_top_n = st.selectbox("筛选数量", options=SCREENING_TOP_OPTIONS, index=0)
-        screening_max_process_count = st.selectbox("最大处理数量", options=SCREENING_MAX_PROCESS_OPTIONS, index=1)
+        screening_max_process_count = st.selectbox("最大处理数量", options=SCREENING_MAX_PROCESS_OPTIONS, index=0)
+        clear_screening_cache_button = st.button("清除缓存并重新获取数据")
         run_screening_button = st.button("生成研究候选池")
 
     if clear_watchlist_button:
         clear_watchlist()
         st.success("已清空自选股列表。")
+    if clear_screening_cache_button:
+        try:
+            st.cache_data.clear()
+            st.success("缓存已清除，请重新运行筛选。")
+        except Exception as exc:
+            st.warning(f"缓存清除失败，请稍后重试：{exc}")
 
     selected_market = market
     raw_symbol = ""
@@ -3584,6 +3625,7 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
                 screening_custom_input,
                 screening_a_share_pool_type,
                 screening_max_process_count,
+                screening_run_mode,
             )
         elif comparison_tickers:
             render_watchlist_panel()
@@ -3857,6 +3899,7 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
                 screening_custom_input,
                 screening_a_share_pool_type,
                 screening_max_process_count,
+                screening_run_mode,
             )
 
     st.divider()
