@@ -14,7 +14,7 @@ try:
 except Exception:
     bs = None
 
-APP_VERSION = "V0.9.2c"
+APP_VERSION = "V0.9.5"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
@@ -28,25 +28,48 @@ BACKTEST_PERIOD_OPTIONS = ["6个月", "1年", "2年", "5年"]
 SCREENING_MARKET_OPTIONS = ["A股", "港股", "美股"]
 SCREENING_POOL_OPTIONS = ["默认示例股票池", "自定义股票池"]
 SCREENING_TOP_OPTIONS = ["Top 10", "Top 20", "Top 30"]
+SCREENING_MAX_PROCESS_OPTIONS = [10, 20, 30, 50]
 A_SHARE_SCREENING_SOURCE_MODES = [
     "自动：AkShare → BaoStock → yfinance",
     "仅 AkShare",
     "仅 BaoStock",
     "仅 yfinance",
 ]
+DEFAULT_A_SHARE_POOL_TYPE = "A股核心资产观察池"
+A_SHARE_SCREENING_POOLS = {
+    "A股核心资产观察池": {
+        "pool_name": "A股核心资产观察池",
+        "pool_description": "大盘蓝筹、行业龙头、长期观察。",
+        "pool_warning": "该股票池仅作为研究样本，不代表投资建议。",
+        "tickers": ["600519.SH", "300750.SZ", "601318.SH", "600036.SH", "000858.SZ", "002594.SZ", "688981.SH", "300760.SZ", "600276.SH", "000333.SZ", "601899.SH", "601088.SH", "600900.SH", "601012.SH", "600887.SH", "600309.SH", "000651.SZ", "000001.SZ", "601166.SH", "600031.SH"],
+    },
+    "A股科技成长观察池": {
+        "pool_name": "A股科技成长观察池",
+        "pool_description": "半导体、AI、电子、计算机、新能源、高端制造等成长方向。",
+        "pool_warning": "成长方向标的波动可能较高，仅用于研究观察，不代表投资建议。",
+        "tickers": ["688981.SH", "300750.SZ", "002594.SZ", "002415.SZ", "000938.SZ", "002230.SZ", "300308.SZ", "300033.SZ", "688111.SH", "688012.SH", "688041.SH", "603501.SH", "002371.SZ", "300124.SZ", "002049.SZ", "002050.SZ", "300274.SZ", "300502.SZ", "688008.SH", "688256.SH"],
+    },
+    "A股消费医药观察池": {
+        "pool_name": "A股消费医药观察池",
+        "pool_description": "消费、白酒、医药、医疗器械、CXO、中药等方向。",
+        "pool_warning": "消费与医药标的仍需结合估值、政策、业绩和行业景气继续验证。",
+        "tickers": ["600519.SH", "000858.SZ", "600809.SH", "000568.SZ", "600887.SH", "603288.SH", "000333.SZ", "000651.SZ", "600276.SH", "300760.SZ", "603259.SH", "300015.SZ", "000538.SZ", "600436.SH", "000661.SZ", "002821.SZ", "688271.SH", "300122.SZ", "600763.SH", "002422.SZ"],
+    },
+    "A股金融地产周期观察池": {
+        "pool_name": "A股金融地产周期观察池",
+        "pool_description": "银行、保险、券商、地产链、资源周期、基建等方向。",
+        "pool_warning": "金融、地产链和周期方向受宏观、信用、政策和商品价格影响较大，仅用于研究观察。",
+        "tickers": ["601318.SH", "600036.SH", "000001.SZ", "601166.SH", "601398.SH", "601939.SH", "600030.SH", "601688.SH", "600999.SH", "601601.SH", "601899.SH", "601088.SH", "600028.SH", "601857.SH", "600019.SH", "600585.SH", "600309.SH", "601390.SH", "601668.SH", "000002.SZ"],
+    },
+    "A股高弹性主题观察池": {
+        "pool_name": "A股高弹性主题观察池",
+        "pool_description": "短期主题、成长弹性和波动较高标的，仅用于研究观察。",
+        "pool_warning": "A股高弹性主题观察池中的标的波动可能较高，仅用于研究观察，不代表投资建议。",
+        "tickers": ["300308.SZ", "300033.SZ", "300274.SZ", "300502.SZ", "688256.SH", "688041.SH", "688012.SH", "688111.SH", "002230.SZ", "002415.SZ", "002371.SZ", "300124.SZ", "300418.SZ", "300454.SZ", "300496.SZ", "688008.SH", "688981.SH", "688525.SH", "688327.SH", "688318.SH"],
+    },
+}
 DEFAULT_SCREENING_UNIVERSES = {
-    "A股": [
-        "600519.SH",
-        "300750.SZ",
-        "601318.SH",
-        "600036.SH",
-        "000858.SZ",
-        "002594.SZ",
-        "688981.SH",
-        "300760.SZ",
-        "600276.SH",
-        "000333.SZ",
-    ],
+    "A股": A_SHARE_SCREENING_POOLS[DEFAULT_A_SHARE_POOL_TYPE]["tickers"],
     "港股": [
         "0700.HK",
         "9988.HK",
@@ -71,6 +94,26 @@ DEFAULT_SCREENING_UNIVERSES = {
         "AVGO",
         "NFLX",
     ],
+}
+A_SHARE_STOCK_NAME_MAP = {
+    "600519.SH": "贵州茅台", "300750.SZ": "宁德时代", "601318.SH": "中国平安", "600036.SH": "招商银行",
+    "000858.SZ": "五粮液", "002594.SZ": "比亚迪", "688981.SH": "中芯国际", "300760.SZ": "迈瑞医疗",
+    "600276.SH": "恒瑞医药", "000333.SZ": "美的集团", "601899.SH": "紫金矿业", "601088.SH": "中国神华",
+    "600900.SH": "长江电力", "601012.SH": "隆基绿能", "600887.SH": "伊利股份", "600309.SH": "万华化学",
+    "000651.SZ": "格力电器", "000001.SZ": "平安银行", "601166.SH": "兴业银行", "600031.SH": "三一重工",
+    "002415.SZ": "海康威视", "000938.SZ": "紫光股份", "002230.SZ": "科大讯飞", "300308.SZ": "中际旭创",
+    "300033.SZ": "同花顺", "688111.SH": "金山办公", "688012.SH": "中微公司", "688041.SH": "海光信息",
+    "603501.SH": "韦尔股份", "002371.SZ": "北方华创", "300124.SZ": "汇川技术", "002049.SZ": "紫光国微",
+    "002050.SZ": "三花智控", "300274.SZ": "阳光电源", "300502.SZ": "新易盛", "688008.SH": "澜起科技",
+    "688256.SH": "寒武纪", "600809.SH": "山西汾酒", "000568.SZ": "泸州老窖", "603288.SH": "海天味业",
+    "603259.SH": "药明康德", "300015.SZ": "爱尔眼科", "000538.SZ": "云南白药", "600436.SH": "片仔癀",
+    "000661.SZ": "长春高新", "002821.SZ": "凯莱英", "688271.SH": "联影医疗", "300122.SZ": "智飞生物",
+    "600763.SH": "通策医疗", "002422.SZ": "科伦药业", "601398.SH": "工商银行", "601939.SH": "建设银行",
+    "600030.SH": "中信证券", "601688.SH": "华泰证券", "600999.SH": "招商证券", "601601.SH": "中国太保",
+    "600028.SH": "中国石化", "601857.SH": "中国石油", "600019.SH": "宝钢股份", "600585.SH": "海螺水泥",
+    "601390.SH": "中国中铁", "601668.SH": "中国建筑", "000002.SZ": "万科A", "300418.SZ": "昆仑万维",
+    "300454.SZ": "深信服", "300496.SZ": "中科创达", "688525.SH": "佰维存储", "688327.SH": "云从科技",
+    "688318.SH": "财富趋势",
 }
 
 NAME_MAP = {
@@ -1075,6 +1118,266 @@ def calculate_indicators(data):
     }
 
 
+def clean_metric_value(value):
+    number = to_number(value)
+    return number if not pd.isna(number) and math.isfinite(number) else math.nan
+
+
+def format_screening_bool(value):
+    if value is True:
+        return "是"
+    if value is False:
+        return "否"
+    return INSUFFICIENT
+
+
+def calculate_screening_metrics(price_df):
+    metrics = {
+        "最新价格": math.nan,
+        "近 5 日涨跌幅": math.nan,
+        "近 20 日涨跌幅": math.nan,
+        "近 60 日涨跌幅": math.nan,
+        "MA20": math.nan,
+        "MA60": math.nan,
+        "当前价格是否高于 MA20": None,
+        "当前价格是否高于 MA60": None,
+        "MA20 是否高于 MA60": None,
+        "最近 5 日平均成交量": math.nan,
+        "最近 20 日平均成交量": math.nan,
+        "成交量放大倍数": math.nan,
+        "年化波动率": math.nan,
+        "最大回撤": math.nan,
+        "有效交易日数量": 0,
+        "成交量数据缺失": True,
+        "无法评分原因": "",
+    }
+
+    if price_df is None or price_df.empty:
+        metrics["无法评分原因"] = "行情数据为空"
+        return metrics
+    if "Close" not in price_df.columns:
+        metrics["无法评分原因"] = "Close 字段缺失"
+        return metrics
+
+    close_prices = pd.to_numeric(price_df["Close"], errors="coerce").dropna()
+    close_prices = close_prices.replace([math.inf, -math.inf], math.nan).dropna()
+    metrics["有效交易日数量"] = int(len(close_prices))
+    if close_prices.empty:
+        metrics["无法评分原因"] = "Close 字段无有效数据"
+        return metrics
+
+    latest_price = clean_metric_value(close_prices.iloc[-1])
+    metrics["最新价格"] = latest_price
+    metrics["近 5 日涨跌幅"] = clean_metric_value(calculate_return(close_prices, 5))
+    metrics["近 20 日涨跌幅"] = clean_metric_value(calculate_return(close_prices, 20))
+    metrics["近 60 日涨跌幅"] = clean_metric_value(calculate_return(close_prices, 60))
+    metrics["MA20"] = clean_metric_value(close_prices.tail(20).mean()) if len(close_prices) >= 20 else math.nan
+    metrics["MA60"] = clean_metric_value(close_prices.tail(60).mean()) if len(close_prices) >= 60 else math.nan
+    metrics["年化波动率"] = clean_metric_value(
+        close_prices.pct_change(fill_method=None).replace([math.inf, -math.inf], math.nan).dropna().std() * math.sqrt(252)
+        if len(close_prices) >= 21
+        else math.nan
+    )
+    metrics["最大回撤"] = clean_metric_value(calculate_max_drawdown(close_prices))
+
+    if not pd.isna(latest_price) and not pd.isna(metrics["MA20"]):
+        metrics["当前价格是否高于 MA20"] = latest_price > metrics["MA20"]
+    if not pd.isna(latest_price) and not pd.isna(metrics["MA60"]):
+        metrics["当前价格是否高于 MA60"] = latest_price > metrics["MA60"]
+    if not pd.isna(metrics["MA20"]) and not pd.isna(metrics["MA60"]):
+        metrics["MA20 是否高于 MA60"] = metrics["MA20"] > metrics["MA60"]
+
+    if "Volume" in price_df.columns:
+        volume = pd.to_numeric(price_df["Volume"], errors="coerce").replace([math.inf, -math.inf], math.nan).dropna()
+        volume = volume[volume >= 0]
+        if not volume.empty:
+            metrics["成交量数据缺失"] = False
+            metrics["最近 5 日平均成交量"] = clean_metric_value(volume.tail(5).mean()) if len(volume) >= 5 else math.nan
+            metrics["最近 20 日平均成交量"] = clean_metric_value(volume.tail(20).mean()) if len(volume) >= 20 else math.nan
+            avg_20 = metrics["最近 20 日平均成交量"]
+            if not pd.isna(metrics["最近 5 日平均成交量"]) and not pd.isna(avg_20) and avg_20 > 0:
+                metrics["成交量放大倍数"] = clean_metric_value(metrics["最近 5 日平均成交量"] / avg_20)
+
+    if metrics["有效交易日数量"] < 20:
+        metrics["无法评分原因"] = "有效交易日少于 20"
+    return metrics
+
+
+def calculate_research_priority_score(metrics):
+    if not isinstance(metrics, dict):
+        return {"研究优先级评分": "无法评分", "无法评分原因": "指标为空"}
+    if metrics.get("无法评分原因"):
+        return {"研究优先级评分": "无法评分", "无法评分原因": metrics["无法评分原因"]}
+    if metrics.get("有效交易日数量", 0) < 20 or pd.isna(to_number(metrics.get("最新价格"))):
+        return {"研究优先级评分": "无法评分", "无法评分原因": "核心价格数据不足"}
+
+    score = 0
+    if metrics.get("当前价格是否高于 MA20") is True:
+        score += 15
+    if metrics.get("当前价格是否高于 MA60") is True:
+        score += 15
+    if metrics.get("MA20 是否高于 MA60") is True:
+        score += 15
+
+    return_20d = to_number(metrics.get("近 20 日涨跌幅"))
+    return_60d = to_number(metrics.get("近 60 日涨跌幅"))
+    volume_ratio = to_number(metrics.get("成交量放大倍数"))
+    max_drawdown = to_number(metrics.get("最大回撤"))
+    annual_volatility = to_number(metrics.get("年化波动率"))
+
+    if not pd.isna(return_20d) and return_20d > 0.10:
+        score += 10
+    if not pd.isna(return_60d) and return_60d > 0.20:
+        score += 10
+    if not pd.isna(volume_ratio) and volume_ratio > 1.3:
+        score += 10
+    if not pd.isna(volume_ratio) and volume_ratio > 1.8:
+        score += 5
+
+    if not pd.isna(return_20d) and return_20d > 0.40:
+        score -= 15
+    if not pd.isna(max_drawdown) and abs(max_drawdown) > 0.35:
+        score -= 15
+    if not pd.isna(annual_volatility) and annual_volatility > 0.80:
+        score -= 10
+    if metrics.get("有效交易日数量", 0) < 60:
+        score -= 30
+    if metrics.get("成交量数据缺失"):
+        score -= 20
+    if metrics.get("数据质量") == "数据不足，请谨慎使用":
+        score -= 20
+
+    return {"研究优先级评分": max(0, min(100, int(score))), "无法评分原因": ""}
+
+
+def join_explanation_items(items):
+    clean_items = [str(item).strip() for item in items if str(item or "").strip()]
+    return "；".join(clean_items)
+
+
+def generate_selection_reasons(metrics):
+    if not isinstance(metrics, dict):
+        return ["当前指标未形成足够明确的研究优先级理由。"]
+
+    reasons = []
+    return_20d = to_number(metrics.get("近 20 日涨跌幅"))
+    return_60d = to_number(metrics.get("近 60 日涨跌幅"))
+    volume_ratio = to_number(metrics.get("成交量放大倍数"))
+    data_quality = str(metrics.get("数据质量", ""))
+
+    if metrics.get("当前价格是否高于 MA20") is True:
+        reasons.append("当前价格站上 20 日均线，短期趋势相对较强。")
+    if metrics.get("当前价格是否高于 MA60") is True:
+        reasons.append("当前价格站上 60 日均线，中期趋势相对健康。")
+    if metrics.get("MA20 是否高于 MA60") is True:
+        reasons.append("MA20 高于 MA60，均线结构相对偏强。")
+    if not pd.isna(return_20d) and return_20d > 0.10:
+        reasons.append("近 20 日涨幅超过 10%，近期动能较强。")
+    if not pd.isna(return_60d) and return_60d > 0.20:
+        reasons.append("近 60 日涨幅超过 20%，中期表现较强。")
+    if not pd.isna(volume_ratio) and volume_ratio > 1.8:
+        reasons.append("近期成交量明显放大，说明短期交易活跃度提升。")
+    elif not pd.isna(volume_ratio) and volume_ratio > 1.3:
+        reasons.append("最近 5 日平均成交量高于 20 日均量，市场关注度有所上升。")
+    if "数据较完整" in data_quality:
+        reasons.append("当前行情样本较完整，指标计算基础相对充分。")
+
+    if not reasons:
+        return ["当前指标未形成足够明确的研究优先级理由。"]
+    return reasons[:4]
+
+
+def generate_screening_risk_warnings(metrics):
+    warnings = []
+    if not isinstance(metrics, dict):
+        return ["当前指标不足，无法生成完整风险提示。", "当前结果只代表研究优先级，不代表买入、卖出或持有建议。"]
+
+    return_20d = to_number(metrics.get("近 20 日涨跌幅"))
+    max_drawdown = to_number(metrics.get("最大回撤"))
+    annual_volatility = to_number(metrics.get("年化波动率"))
+    volume_ratio = to_number(metrics.get("成交量放大倍数"))
+
+    if not pd.isna(return_20d) and return_20d > 0.40:
+        warnings.append("近 20 日涨幅较高，存在短期追高风险。")
+    if not pd.isna(max_drawdown) and abs(max_drawdown) > 0.35:
+        warnings.append("历史最大回撤超过 35%，该标的波动和回撤风险较高。")
+    if not pd.isna(annual_volatility) and annual_volatility > 0.80:
+        warnings.append("年化波动率较高，不适合低风险偏好者。")
+    if metrics.get("有效交易日数量", 0) < 60:
+        warnings.append("有效交易日不足 60 个，指标可靠性有限。")
+    if metrics.get("成交量数据缺失") or pd.isna(volume_ratio):
+        warnings.append("成交量数据缺失或不足，流动性判断不充分。")
+    if metrics.get("使用备用数据源"):
+        warnings.append("该标的数据来自备用数据源，不同数据源在复权口径和字段完整性上可能存在差异。")
+
+    if not warnings:
+        warnings.append("暂未触发主要风险阈值，但仍需结合基本面、消息面、板块环境和市场情绪进一步验证。")
+    warnings.append("当前结果只代表研究优先级，不代表买入、卖出或持有建议。")
+    return warnings
+
+
+def generate_screening_summary(result_df, failed_items=None, insufficient_items=None):
+    failed_items = failed_items or []
+    insufficient_items = insufficient_items or []
+    total_attr = result_df.attrs.get("total_count") if isinstance(result_df, pd.DataFrame) else None
+    if result_df is None or result_df.empty:
+        total_count = total_attr if isinstance(total_attr, int) else len(failed_items) + len(insufficient_items)
+        return (
+            f"本次共覆盖 {total_count} 只股票，其中成功生成研究优先级评分 0 只。\n\n"
+            "本次未形成可排序的研究候选池，请先检查行情数据、字段完整性和数据源状态。\n\n"
+            "下一步研究方向：核查公司基本面；核查行业和板块强度；核查近期公告和消息催化；"
+            "核查估值水平和财务质量；用回测模块验证规则有效性。\n\n"
+            "该结果仅代表研究优先级排序，不构成投资建议或交易指令。"
+        )
+
+    total_count = total_attr if isinstance(total_attr, int) else len(result_df) + len(failed_items)
+    scored_count = len(result_df)
+    summary_parts = [f"本次共覆盖 {total_count} 只股票，其中成功生成研究优先级评分 {scored_count} 只。"]
+
+    ma20_count = int((result_df.get("是否高于 MA20") == "是").sum()) if "是否高于 MA20" in result_df else 0
+    ma60_count = int((result_df.get("是否高于 MA60") == "是").sum()) if "是否高于 MA60" in result_df else 0
+    volume_count = 0
+    return_20_count = 0
+    if "成交量放大倍数" in result_df:
+        volume_values = result_df["成交量放大倍数"].apply(to_number)
+        volume_count = int((volume_values > 1.3).sum())
+    if "近 20 日涨跌幅" in result_df:
+        return_20_values = result_df["近 20 日涨跌幅"].astype(str).str.rstrip("%").apply(to_number) / 100
+        return_20_count = int((return_20_values > 0.10).sum())
+
+    common_traits = []
+    if ma20_count >= max(1, math.ceil(scored_count / 2)):
+        common_traits.append("多数候选对象站上 MA20")
+    if ma60_count >= max(1, math.ceil(scored_count / 2)):
+        common_traits.append("多数候选对象站上 MA60")
+    if volume_count > 0:
+        common_traits.append("部分候选对象成交量放大")
+    if return_20_count > 0:
+        common_traits.append("部分候选对象近 20 日涨幅较高")
+    summary_parts.append("Top 候选池共性：" + ("；".join(common_traits) if common_traits else "当前候选对象未形成特别集中的量价共性。"))
+
+    risk_text = "；".join(result_df["风险提示"].fillna("").astype(str).tolist()) if "风险提示" in result_df else ""
+    risk_traits = []
+    if "短期追高风险" in risk_text:
+        risk_traits.append("短期涨幅较高")
+    if "回撤风险较高" in risk_text:
+        risk_traits.append("历史回撤较大")
+    if "年化波动率较高" in risk_text:
+        risk_traits.append("波动率较高")
+    if "备用数据源" in risk_text:
+        risk_traits.append("数据源使用备用源")
+    if "指标可靠性有限" in risk_text or "流动性判断不充分" in risk_text:
+        risk_traits.append("数据质量存在差异")
+    summary_parts.append("主要风险特征：" + ("；".join(risk_traits) if risk_traits else "暂未观察到集中触发的主要风险阈值。"))
+
+    summary_parts.append(
+        "下一步研究方向：核查公司基本面；核查行业和板块强度；核查近期公告和消息催化；"
+        "核查估值水平和财务质量；用回测模块验证规则有效性。"
+    )
+    summary_parts.append("该结果仅代表研究优先级排序，不构成投资建议或交易指令。")
+    return "\n\n".join(summary_parts)
+
+
 def parse_ticker_list(input_text, market_type="美股"):
     raw_items = re.split(r"[,，\s]+", input_text or "")
     tickers = []
@@ -1104,8 +1407,23 @@ def parse_ticker_list(input_text, market_type="美股"):
     return tickers
 
 
-def get_default_universe(market):
-    return DEFAULT_SCREENING_UNIVERSES.get(market, []).copy()
+def get_default_universe(market, pool_type=None):
+    if market == "A股":
+        selected_pool_type = pool_type if pool_type in A_SHARE_SCREENING_POOLS else DEFAULT_A_SHARE_POOL_TYPE
+        pool = A_SHARE_SCREENING_POOLS[selected_pool_type]
+        return {
+            "tickers": pool["tickers"].copy(),
+            "pool_name": pool["pool_name"],
+            "pool_description": pool["pool_description"],
+            "pool_warning": pool["pool_warning"],
+        }
+    tickers = DEFAULT_SCREENING_UNIVERSES.get(market, []).copy()
+    return {
+        "tickers": tickers,
+        "pool_name": f"{market}默认示例股票池",
+        "pool_description": "默认示例股票池，保留当前简化配置。",
+        "pool_warning": "该股票池仅作为研究样本，不代表投资建议。",
+    }
 
 
 def infer_a_share_suffix(ticker_digits):
@@ -1116,12 +1434,26 @@ def infer_a_share_suffix(ticker_digits):
     return "", "格式需进一步确认"
 
 
+def get_stock_display_name(ticker, market):
+    if market == "A股":
+        normalized = str(ticker or "").strip().upper()
+        clean_code = normalized.replace(".SH", "").replace(".SZ", "")
+        if not re.fullmatch(r"\d{6}", clean_code):
+            return "名称暂缺"
+        suffix = ".SH" if normalized.endswith(".SH") else ".SZ" if normalized.endswith(".SZ") else infer_a_share_suffix(clean_code)[0]
+        display_code = f"{clean_code}{suffix}" if suffix else clean_code
+        return A_SHARE_STOCK_NAME_MAP.get(display_code, "名称暂缺")
+    return "名称暂缺"
+
+
 def normalize_screening_ticker(ticker, market):
     raw_value = str(ticker or "").strip()
     normalized = raw_value.upper()
     if not normalized:
         return {
             "原始输入": raw_value,
+            "股票名称": "名称暂缺",
+            "stock_name": "名称暂缺",
             "展示代码": "",
             "内部查询代码": "",
             "市场": market,
@@ -1141,8 +1473,11 @@ def normalize_screening_ticker(ticker, market):
             else:
                 suffix, note = infer_a_share_suffix(clean_code)
             display_code = f"{clean_code}{suffix}" if suffix else raw_value
+            stock_name = get_stock_display_name(display_code, market)
             return {
                 "原始输入": raw_value,
+                "股票名称": stock_name,
+                "stock_name": stock_name,
                 "展示代码": display_code,
                 "内部查询代码": clean_code,
                 "市场": market,
@@ -1151,6 +1486,8 @@ def normalize_screening_ticker(ticker, market):
             }
         return {
             "原始输入": raw_value,
+            "股票名称": "名称暂缺",
+            "stock_name": "名称暂缺",
             "展示代码": raw_value,
             "内部查询代码": clean_code or raw_value,
             "市场": market,
@@ -1164,6 +1501,8 @@ def normalize_screening_ticker(ticker, market):
             display_code = f"{clean_code.zfill(4)}.HK"
             return {
                 "原始输入": raw_value,
+                "股票名称": get_stock_display_name(display_code, market),
+                "stock_name": get_stock_display_name(display_code, market),
                 "展示代码": display_code,
                 "内部查询代码": display_code,
                 "市场": market,
@@ -1172,6 +1511,8 @@ def normalize_screening_ticker(ticker, market):
             }
         return {
             "原始输入": raw_value,
+            "股票名称": "名称暂缺",
+            "stock_name": "名称暂缺",
             "展示代码": raw_value,
             "内部查询代码": raw_value,
             "市场": market,
@@ -1183,6 +1524,8 @@ def normalize_screening_ticker(ticker, market):
     if re.fullmatch(r"[A-Z0-9.\-]{1,12}", clean_code):
         return {
             "原始输入": raw_value,
+            "股票名称": get_stock_display_name(clean_code, market),
+            "stock_name": get_stock_display_name(clean_code, market),
             "展示代码": clean_code,
             "内部查询代码": clean_code,
             "市场": market,
@@ -1192,6 +1535,8 @@ def normalize_screening_ticker(ticker, market):
 
     return {
         "原始输入": raw_value,
+        "股票名称": "名称暂缺",
+        "stock_name": "名称暂缺",
         "展示代码": raw_value,
         "内部查询代码": raw_value,
         "市场": market,
@@ -1242,9 +1587,11 @@ def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动�
     original_input = ticker_item.get("原始输入", "")
     display_ticker = ticker_item.get("展示代码", original_input)
     query_ticker = ticker_item.get("内部查询代码", display_ticker)
+    stock_name = ticker_item.get("stock_name") or ticker_item.get("股票名称") or get_stock_display_name(display_ticker, market)
     base_result = {
         "success": False,
         "original_input": original_input,
+        "stock_name": stock_name,
         "display_ticker": display_ticker,
         "query_ticker": query_ticker,
         "market": market,
@@ -1484,12 +1831,12 @@ def fetch_screening_price_data(ticker_item, market, a_share_source_mode="自动�
         return base_result
 
 
-def screen_universe_data_fetch(parsed_items, market):
+def screen_universe_data_fetch(parsed_items, market, max_process_count=50):
     success_items = []
     failed_items = []
     insufficient_items = []
 
-    limited_items = parsed_items[:50]
+    limited_items = parsed_items[:max_process_count]
     for index, ticker_item in enumerate(limited_items):
         result = fetch_screening_price_data(ticker_item, market)
         if result["success"]:
@@ -1758,7 +2105,87 @@ def render_comparison_section(tickers, market_type, period_label):
         st.info("本次可用于绘制归一化价格走势的数据不足。")
 
 
-def render_screening_section(market, pool_source, top_n_label, input_text):
+def parse_screening_top_n(top_n_label):
+    match = re.search(r"\d+", str(top_n_label or ""))
+    return int(match.group()) if match else 10
+
+
+def build_screening_priority_rows(success_items):
+    scored_rows = []
+    unscored_rows = []
+
+    for item in success_items:
+        try:
+            metrics = calculate_screening_metrics(item.get("price_df"))
+            metrics["数据质量"] = item.get("data_quality", "")
+            metrics["使用备用数据源"] = bool(item.get("fallback_used", False))
+            score_result = calculate_research_priority_score(metrics)
+            score = score_result["研究优先级评分"]
+            try:
+                selection_reasons = generate_selection_reasons(metrics)
+            except Exception:
+                selection_reasons = ["入选理由生成失败，请检查指标完整性。"]
+            try:
+                risk_warnings = generate_screening_risk_warnings(metrics)
+            except Exception:
+                risk_warnings = ["风险提示生成失败，请检查指标完整性。", "当前结果只代表研究优先级，不代表买入、卖出或持有建议。"]
+            row = {
+                "股票代码": item["display_ticker"],
+                "股票名称": item.get("stock_name", "名称暂缺"),
+                "市场": item["market"],
+                "实际查询代码": item["query_ticker"],
+                "数据源": item["data_source"],
+                "最新交易日": item["latest_trade_date"],
+                "最新价格": format_price(metrics["最新价格"]),
+                "近 5 日涨跌幅": format_percent(metrics["近 5 日涨跌幅"]),
+                "近 20 日涨跌幅": format_percent(metrics["近 20 日涨跌幅"]),
+                "近 60 日涨跌幅": format_percent(metrics["近 60 日涨跌幅"]),
+                "MA20": format_price(metrics["MA20"]),
+                "MA60": format_price(metrics["MA60"]),
+                "是否高于 MA20": format_screening_bool(metrics["当前价格是否高于 MA20"]),
+                "是否高于 MA60": format_screening_bool(metrics["当前价格是否高于 MA60"]),
+                "MA20 是否高于 MA60": format_screening_bool(metrics["MA20 是否高于 MA60"]),
+                "成交量放大倍数": format_metric(metrics["成交量放大倍数"])
+                if not pd.isna(to_number(metrics["成交量放大倍数"]))
+                else INSUFFICIENT,
+                "最大回撤": format_percent(metrics["最大回撤"]),
+                "年化波动率": format_percent(metrics["年化波动率"]),
+                "有效交易日数量": metrics["有效交易日数量"],
+                "数据质量": item["data_quality"],
+                "研究优先级评分": score,
+                "入选理由": join_explanation_items(selection_reasons),
+                "风险提示": join_explanation_items(risk_warnings),
+                "_score": score if isinstance(score, int) else math.nan,
+                "_unscored_reason": score_result.get("无法评分原因", ""),
+            }
+            if isinstance(score, int):
+                scored_rows.append(row)
+            else:
+                row["未纳入原因"] = score_result.get("无法评分原因", "无法评分")
+                unscored_rows.append(row)
+        except Exception as exc:
+            unscored_rows.append(
+                {
+                    "股票代码": item.get("display_ticker", ""),
+                    "股票名称": item.get("stock_name", "名称暂缺"),
+                    "市场": item.get("market", ""),
+                    "实际查询代码": item.get("query_ticker", ""),
+                    "数据源": item.get("data_source", ""),
+                    "有效交易日数量": item.get("valid_trading_days", 0),
+                    "最新交易日": item.get("latest_trade_date", INSUFFICIENT),
+                    "数据质量": item.get("data_quality", INSUFFICIENT),
+                    "研究优先级评分": "无法评分",
+                    "未纳入原因": f"指标计算失败：{exc}",
+                }
+            )
+
+    scored_rows = sorted(scored_rows, key=lambda row: row["_score"], reverse=True)
+    for index, row in enumerate(scored_rows, start=1):
+        row["排名"] = index
+    return scored_rows, unscored_rows
+
+
+def render_screening_section(market, pool_source, top_n_label, input_text, pool_type=None, max_process_count=20):
     st.divider()
     st.header("自动研究对象筛选")
     st.write(
@@ -1766,8 +2193,8 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
         "不构成投资建议，也不代表买入、卖出或持有建议。"
     )
     st.caption(
-        "当前 V0.9.2c 完成股票池输入、代码解析和批量行情数据获取，后续版本再加入"
-        "指标计算、研究优先级评分、入选理由和风险提示。"
+        "当前 V0.9.5 在 V0.9.4 解释层基础上新增 A股多类型研究股票池和股票中文名称展示。"
+        "所有内容均由本地规则生成。"
     )
     if market == "A股":
         st.info(
@@ -1775,8 +2202,15 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
             "免费数据源可能存在延迟、字段差异、复权口径差异和接口不稳定，本结果仅用于研究准备，不构成投资建议。"
         )
 
+    pool_info = {
+        "pool_name": "自定义研究股票池",
+        "pool_description": "用户输入的自定义股票池。",
+        "pool_warning": "自定义股票池仅作为研究样本，不代表投资建议。",
+        "tickers": [],
+    }
     if pool_source == "默认示例股票池":
-        source_text = " ".join(get_default_universe(market))
+        pool_info = get_default_universe(market, pool_type=pool_type)
+        source_text = " ".join(pool_info["tickers"])
     else:
         source_text = input_text or ""
         if not source_text.strip():
@@ -1791,6 +2225,23 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
     if not parsed_items:
         st.warning("解析后没有可展示的候选对象。")
         return
+    total_pool_count = len(parsed_items)
+    process_count = min(max_process_count, total_pool_count)
+
+    st.subheader("股票池信息")
+    pool_cols = st.columns(5)
+    pool_cols[0].metric("股票池名称", pool_info["pool_name"])
+    pool_cols[1].metric("股票池总数", total_pool_count)
+    pool_cols[2].metric("本次处理数量", process_count)
+    pool_cols[3].metric("最大处理数量", max_process_count)
+    pool_cols[4].metric("市场类型", market)
+    st.caption(f"股票池定位：{pool_info['pool_description']}")
+    st.info(pool_info["pool_warning"])
+    if total_pool_count > process_count:
+        st.warning(
+            f"当前股票池共 {total_pool_count} 只，本次处理前 {process_count} 只。"
+            "可调整最大处理数量，但免费数据源批量请求可能较慢。"
+        )
 
     st.subheader("初筛结果")
     info_cols = st.columns(4)
@@ -1800,11 +2251,11 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
     info_cols[3].metric("解析后股票数量", len(parsed_items))
 
     display_frame = pd.DataFrame(parsed_items)
-    display_columns = ["原始输入", "展示代码", "内部查询代码", "市场", "备注"]
+    display_columns = ["原始输入", "股票名称", "展示代码", "内部查询代码", "市场", "备注"]
     st.dataframe(display_frame[display_columns], hide_index=True, use_container_width=True)
 
     with st.spinner("正在获取股票池行情数据，请稍候..."):
-        fetch_result = screen_universe_data_fetch(parsed_items, market)
+        fetch_result = screen_universe_data_fetch(parsed_items, market, max_process_count=max_process_count)
 
     summary = fetch_result["summary"]
     st.subheader("批量获取概览")
@@ -1819,10 +2270,77 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
     insufficient_items = fetch_result["insufficient_items"]
 
     if success_items:
+        scored_rows, unscored_rows = build_screening_priority_rows(success_items)
+        top_n = parse_screening_top_n(top_n_label)
+        all_scored_frame = pd.DataFrame(scored_rows)
+        all_scored_frame.attrs["total_count"] = summary["股票池总数"]
+        if scored_rows:
+            priority_frame = pd.DataFrame(scored_rows[:top_n])
+            priority_columns = [
+                "排名",
+                "股票代码",
+                "股票名称",
+                "市场",
+                "实际查询代码",
+                "数据源",
+                "最新交易日",
+                "最新价格",
+                "近 5 日涨跌幅",
+                "近 20 日涨跌幅",
+                "近 60 日涨跌幅",
+                "MA20",
+                "MA60",
+                "是否高于 MA20",
+                "是否高于 MA60",
+                "MA20 是否高于 MA60",
+                "成交量放大倍数",
+                "最大回撤",
+                "年化波动率",
+                "有效交易日数量",
+                "数据质量",
+                "研究优先级评分",
+                "入选理由",
+                "风险提示",
+            ]
+            st.subheader("Top N 研究候选池表格")
+            st.dataframe(priority_frame[priority_columns], hide_index=True, use_container_width=True)
+            lower_priority_rows = scored_rows[top_n:]
+            if lower_priority_rows:
+                with st.expander("低优先级或未触发主要筛选条件的股票"):
+                    lower_priority_frame = pd.DataFrame(lower_priority_rows)
+                    lower_priority_columns = [
+                        "排名",
+                        "股票代码",
+                        "股票名称",
+                        "市场",
+                        "实际查询代码",
+                        "数据源",
+                        "最新交易日",
+                        "有效交易日数量",
+                        "数据质量",
+                        "研究优先级评分",
+                        "入选理由",
+                        "风险提示",
+                    ]
+                    st.dataframe(lower_priority_frame[lower_priority_columns], hide_index=True, use_container_width=True)
+        else:
+            st.warning("本次成功获取行情的候选对象均无法评分，请查看指标不足说明。")
+
+        st.subheader("筛选总结")
+        st.write(generate_screening_summary(all_scored_frame, failed_items=failed_items, insufficient_items=insufficient_items))
+
+        if unscored_rows:
+            with st.expander("无法评分或未纳入候选池的股票"):
+                unscored_frame = pd.DataFrame(unscored_rows)
+                unscored_columns = ["股票代码", "股票名称", "市场", "数据源", "有效交易日数量", "数据质量", "未纳入原因"]
+                display_columns = [col for col in unscored_columns if col in unscored_frame.columns]
+                st.dataframe(unscored_frame[display_columns], hide_index=True, use_container_width=True)
+
         success_frame = pd.DataFrame(
             [
                 {
                     "股票代码": item["display_ticker"],
+                    "股票名称": item.get("stock_name", "名称暂缺"),
                     "市场": item["market"],
                     "实际查询代码": item["query_ticker"],
                     "数据源": item["data_source"],
@@ -1837,10 +2355,12 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
                 for item in success_items
             ]
         )
-        st.subheader("成功获取表")
-        st.dataframe(success_frame, hide_index=True, use_container_width=True)
+        with st.expander("成功获取明细"):
+            st.dataframe(success_frame, hide_index=True, use_container_width=True)
     else:
         st.warning("本次股票池未成功获取到可用行情数据。")
+        st.subheader("筛选总结")
+        st.write(generate_screening_summary(pd.DataFrame(), failed_items=failed_items, insufficient_items=insufficient_items))
 
     if failed_items:
         with st.expander("获取失败的股票及原因"):
@@ -1850,6 +2370,7 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
                 [
                     {
                         "股票代码": item["display_ticker"],
+                        "股票名称": item.get("stock_name", "名称暂缺"),
                         "实际查询代码": item["query_ticker"],
                         "市场": item["market"],
                         "尝试过的数据源": item.get("attempted_sources", item.get("attempt_params", "")),
@@ -1864,24 +2385,9 @@ def render_screening_section(market, pool_source, top_n_label, input_text):
             )
             st.dataframe(failed_frame, hide_index=True, use_container_width=True)
 
-    if insufficient_items:
-        with st.expander("数据不足的股票"):
-            insufficient_frame = pd.DataFrame(
-                [
-                    {
-                        "股票代码": item["display_ticker"],
-                        "市场": item["market"],
-                        "有效交易日数量": item["valid_trading_days"],
-                        "数据质量": item["data_quality"],
-                    }
-                    for item in insufficient_items
-                ]
-            )
-            st.dataframe(insufficient_frame, hide_index=True, use_container_width=True)
-
     st.info(
-        "当前 V0.9.2c 仅完成股票池解析与批量行情数据获取。下一版本将加入指标计算和研究优先级评分。"
-        "本结果不构成投资建议。"
+        "当前 V0.9.5 在 V0.9.4 解释层基础上新增 A股多类型研究股票池和股票中文名称展示。"
+        "所有内容均由本地规则生成，仅用于学习和研究，不构成投资建议。"
     )
 
 
@@ -2487,7 +2993,7 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
 
     st.title("FinScientist")
     st.subheader("AI-assisted financial research workspace")
-    st.caption("V0.9.2c 增强 A股批量行情 AkShare、BaoStock、yfinance 多数据源降级；仍为本地规则化研究原型，不调用 AI API。")
+    st.caption("V0.9.5 增强 A股研究股票池体系与股票中文名称展示；仍为本地规则化研究原型，不调用 AI API。")
 
     with st.sidebar:
         st.header("研究参数")
@@ -2566,6 +3072,13 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
         st.header("自动研究对象筛选")
         screening_market = st.selectbox("筛选市场", options=SCREENING_MARKET_OPTIONS, index=0)
         screening_pool_source = st.selectbox("股票池选择", options=SCREENING_POOL_OPTIONS, index=0)
+        screening_a_share_pool_type = DEFAULT_A_SHARE_POOL_TYPE
+        if screening_market == "A股" and screening_pool_source == "默认示例股票池":
+            screening_a_share_pool_type = st.selectbox(
+                "股票池类型",
+                options=list(A_SHARE_SCREENING_POOLS.keys()),
+                index=0,
+            )
         screening_custom_input = st.text_area(
             "自定义股票池",
             value="",
@@ -2574,6 +3087,7 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
             disabled=screening_pool_source == "默认示例股票池",
         )
         screening_top_n = st.selectbox("筛选数量", options=SCREENING_TOP_OPTIONS, index=0)
+        screening_max_process_count = st.selectbox("最大处理数量", options=SCREENING_MAX_PROCESS_OPTIONS, index=1)
         run_screening_button = st.button("生成研究候选池")
 
     if clear_watchlist_button:
@@ -2631,6 +3145,8 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
                 screening_pool_source,
                 screening_top_n,
                 screening_custom_input,
+                screening_a_share_pool_type,
+                screening_max_process_count,
             )
         elif comparison_tickers:
             render_watchlist_panel()
@@ -2897,12 +3413,14 @@ if os.environ.get("FINSCIENTIST_SKIP_UI") != "1":
     if run_backtest_button:
         run_backtest_section(symbol, selected_market, backtest_strategy, backtest_period_label, initial_capital, trading_cost)
     if run_screening_button:
-        render_screening_section(
-            screening_market,
-            screening_pool_source,
-            screening_top_n,
-            screening_custom_input,
-        )
+            render_screening_section(
+                screening_market,
+                screening_pool_source,
+                screening_top_n,
+                screening_custom_input,
+                screening_a_share_pool_type,
+                screening_max_process_count,
+            )
 
     st.divider()
     st.header("风险提示")
