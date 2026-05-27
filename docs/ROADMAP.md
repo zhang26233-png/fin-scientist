@@ -91,7 +91,15 @@
 - `config/sector_mapping.py` owns industry / sector / theme mappings and helper.
 - `config/fundamental_samples.py` owns built-in sample fundamental data.
 - No business features, data sources, scoring rules, stock-pool contents, or fallback order are changed.
-- Next step: continue with a small `core/` migration batch in V1.2.3, or write tests for the selected functions before moving them.
+- Completed by V1.2.3; next migration batch can continue with explanation or sector-strength pure functions.
+
+## v1.2.3 Core Scoring Migration
+
+- Migrates low-risk scoring logic into `core/scoring.py`.
+- `calculate_research_priority_score`, `calculate_fundamental_quality_score`, and `calculate_composite_research_score` now live in `core/scoring.py`.
+- `legacy_app.py` imports these functions to preserve the old call path.
+- No scoring rules, data sources, stock-pool contents, or fallback order are changed.
+- Next step: V1.2.4 can migrate a small explanation-text or sector-strength pure logic batch after focused tests.
 
 ## v1.3 交易纪律模块
 

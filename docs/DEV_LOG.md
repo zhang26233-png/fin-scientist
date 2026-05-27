@@ -4,6 +4,41 @@
 
 ### Target
 
+- Complete V1.2.3 architecture cleanup.
+- Migrate one small low-risk `core` pure logic batch from `legacy_app.py`.
+- Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.
+
+### Migrated From `legacy_app.py`
+
+- `calculate_research_priority_score` moved to `core/scoring.py`.
+- `calculate_fundamental_quality_score` moved to `core/scoring.py`.
+- `calculate_composite_research_score` moved to `core/scoring.py`.
+- `FUNDAMENTAL_FIELDS` moved to `core/scoring.py`.
+
+### Compatibility
+
+- `legacy_app.py` imports the migrated scoring functions from `core.scoring`.
+- Existing call sites can still use `legacy_app.calculate_research_priority_score`, `legacy_app.calculate_fundamental_quality_score`, and `legacy_app.calculate_composite_research_score`.
+
+### Tests
+
+- Added scoring tests for typical input, empty or invalid input, and legacy compatibility path.
+- Existing module import, forbidden phrase, screening contract, core metric, and backtest tests remain active.
+
+### Pending Migration List
+
+- `core/explanations.py` and `core/sector_strength.py` still re-export pure logic from `legacy_app.py`.
+- `data/market_data.py` and `data/fundamental_data.py` still re-export data functions from `legacy_app.py`.
+- `ui/screening_ui.py` still calls the legacy screening renderer.
+
+### Next Step
+
+- V1.2.4 should migrate one small explanation-text or sector-strength pure logic batch after focused tests.
+
+## 2026-05-27
+
+### Target
+
 - Complete V1.2.2 architecture cleanup.
 - Start reducing `legacy_app.py` responsibilities in small, low-risk batches.
 - Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.
