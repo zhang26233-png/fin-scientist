@@ -4,6 +4,40 @@
 
 ### Target
 
+- Complete V1.2.7 architecture cleanup.
+- Migrate one small low-risk fundamental-data helper batch from `legacy_app.py`.
+- Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.
+
+### Migrated From `legacy_app.py`
+
+- `clean_metric_value` moved to `data/fundamental_data.py`.
+- `build_fundamental_record` moved to `data/fundamental_data.py`.
+- `get_fundamental_sample_data` moved to `data/fundamental_data.py`.
+
+### Compatibility
+
+- `legacy_app.py` imports the migrated helpers from `data.fundamental_data`.
+- `data/fundamental_data.py` keeps lazy wrappers for real fundamental-data fetch functions that still live in `legacy_app.py`.
+- No data-source order or fallback behavior changed.
+
+### Tests
+
+- Added fundamental-data tests for field completion, missing-field defaults, built-in sample lookup, suffix inference, numeric cleaning, invalid values, and legacy compatibility paths.
+
+### Pending Migration List
+
+- Real network data fetch implementations still live in `legacy_app.py`.
+- `ui/screening_ui.py` still calls the legacy screening renderer.
+- Other legacy workbench summaries and UI-bound helpers remain in `legacy_app.py`.
+
+### Next Step
+
+- V1.2.8 can isolate data-fetch boundaries with focused mocked tests, or migrate another small pure-helper batch.
+
+## 2026-05-27
+
+### Target
+
 - Complete V1.2.6 architecture cleanup.
 - Migrate one small low-risk market-data helper batch from `legacy_app.py`.
 - Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.
@@ -34,13 +68,13 @@
 ### Pending Migration List
 
 - Real network data fetch implementations still live in `legacy_app.py`.
-- `data/fundamental_data.py` still re-exports data functions from `legacy_app.py`.
+- `data/fundamental_data.py` now owns basic helper functions; real fetch functions remain lazy wrappers to `legacy_app.py`.
 - `ui/screening_ui.py` still calls the legacy screening renderer.
 - Other legacy workbench summaries and UI-bound helpers remain in `legacy_app.py`.
 
 ### Next Step
 
-- V1.2.7 can migrate another small data-helper batch or begin isolating data-fetch boundaries with focused mocked tests.
+- V1.2.7 migrated the fundamental-data helper batch; the next batch can isolate data-fetch boundaries with focused mocked tests.
 
 ## 2026-05-27
 

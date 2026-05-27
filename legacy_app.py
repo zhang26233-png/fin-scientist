@@ -1,6 +1,6 @@
 """Compatibility layer for the pre-module FinScientist implementation.
 
-This file is not a backup. In V1.2.6 it still carries legacy core logic and UI
+This file is not a backup. In V1.2.7 it still carries legacy core logic and UI
 that are imported by the lightweight entrypoint and the new modules. Keep
 changes conservative here; future releases should move functions into
 config/, data/, core/, and ui/ in small batches.
@@ -22,7 +22,7 @@ try:
 except Exception:
     bs = None
 
-APP_VERSION = "V1.2.6"
+APP_VERSION = "V1.2.7"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
@@ -52,6 +52,7 @@ from core.scoring import FUNDAMENTAL_FIELDS, calculate_composite_research_score,
 from core.sector_strength import generate_sector_strength_summary, generate_sector_strength_text
 from core.explanations import generate_fundamental_summary, generate_screening_risk_warnings, generate_screening_summary, generate_selection_reasons, join_explanation_items
 from data.market_data import convert_a_share_to_baostock_code, convert_a_share_to_yfinance_ticker, get_screening_fallback_source, infer_a_share_yfinance_suffix, keep_recent_rows, normalize_a_share_symbol_for_akshare, normalize_a_share_symbol_for_yfinance, normalize_hk_symbol_for_akshare, normalize_price_dataframe, normalize_yfinance_data
+from data.fundamental_data import build_fundamental_record, clean_metric_value, get_fundamental_sample_data
 NAME_MAP = {
     "英伟达": ("美股", "NVDA"),
     "苹果": ("美股", "AAPL"),
@@ -968,9 +969,6 @@ def calculate_indicators(data):
     }
 
 
-def clean_metric_value(value):
-    number = to_number(value)
-    return number if not pd.isna(number) and math.isfinite(number) else math.nan
 
 
 def format_screening_bool(value):
@@ -1053,24 +1051,6 @@ def calculate_screening_metrics(price_df):
     return metrics
 
 
-def build_fundamental_record(values, source, error_message=""):
-    data = dict(zip(FUNDAMENTAL_FIELDS, values)) if isinstance(values, tuple) else {}
-    for field in FUNDAMENTAL_FIELDS:
-        data.setdefault(field, MISSING)
-    data["fundamental_source"] = source
-    data["fundamental_error"] = error_message
-    return data
-
-
-def get_fundamental_sample_data(display_ticker):
-    normalized = str(display_ticker or "").strip().upper()
-    sample = FUNDAMENTAL_SAMPLE_DATA.get(normalized)
-    if sample is None and re.fullmatch(r"\d{6}", normalized):
-        suffix = infer_a_share_suffix(normalized)[0]
-        sample = FUNDAMENTAL_SAMPLE_DATA.get(f"{normalized}{suffix}")
-    if sample is None:
-        return None
-    return build_fundamental_record(sample, "内置示例数据")
 
 
 def fetch_a_share_fundamental_data(display_ticker, query_ticker):

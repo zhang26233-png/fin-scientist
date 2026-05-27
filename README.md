@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.2.6
+Current version: V1.2.7
 
-V1.2.6 is an architecture cleanup release that migrates a small batch of low-risk market-data formatting and cleaning helpers out of `legacy_app.py` into `data/market_data.py`. It does not add business features, add data sources, change scoring rules, change stock pools, or change the safety boundary that results do not constitute investment advice.
+V1.2.7 is an architecture cleanup release that migrates a small batch of low-risk fundamental-data formatting, sample handling, and numeric cleaning helpers out of `legacy_app.py` into `data/fundamental_data.py`. It does not add business features, add data sources, change scoring rules, change stock pools, or change the safety boundary that results do not constitute investment advice.
 
 Startup command remains:
 
@@ -23,9 +23,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.2.6 it remains a compatibility layer that carries part of the old core logic so existing pages stay stable. Configuration ownership has moved into `config/`; scoring, sector-strength, and explanation-text ownership have started moving into `core/`; market-data helper ownership has started moving into `data/`. Future releases should continue migrating functions from `legacy_app.py` into `data/`, `core/`, and `ui/` in small batches.
+`legacy_app.py` is not an unused backup. In V1.2.7 it remains a compatibility layer that carries part of the old core logic so existing pages stay stable. Configuration ownership has moved into `config/`; scoring, sector-strength, and explanation-text ownership have started moving into `core/`; market-data and fundamental-data helper ownership have started moving into `data/`. Future releases should continue migrating functions from `legacy_app.py` into `data/`, `core/`, and `ui/` in small batches.
 
-FinScientist V1.2.6 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.2.7 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
 
@@ -35,7 +35,15 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.2.6
+当前版本：V1.2.7
+
+V1.2.7 architecture cleanup:
+
+- Migrated `clean_metric_value` to `data/fundamental_data.py`.
+- Migrated `build_fundamental_record` to `data/fundamental_data.py`.
+- Migrated `get_fundamental_sample_data` to `data/fundamental_data.py`.
+- Kept real fundamental-data fetch implementations in `legacy_app.py`; `data/fundamental_data.py` exposes lazy compatibility wrappers for those paths.
+- No business features, data sources, scoring rules, or stock-pool contents were changed.
 
 V1.2.6 architecture cleanup:
 

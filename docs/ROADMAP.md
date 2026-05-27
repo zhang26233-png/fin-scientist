@@ -123,7 +123,15 @@
 - Symbol normalization, A-share ticker conversion, price DataFrame normalization, and recent-row trimming now live in `data/market_data.py`.
 - Network fetch implementations remain in `legacy_app.py`; lazy wrappers preserve import compatibility and fallback behavior.
 - No business features, data sources, scoring rules, stock-pool contents, or fallback order are changed.
-- Next step: V1.2.7 can migrate another small data-helper batch or begin carefully isolating data-fetch boundaries with tests.
+- Completed by V1.2.7; next migration batch can continue with carefully isolated data-fetch boundaries or remaining pure helpers.
+
+## v1.2.7 Fundamental Data Helper Migration
+
+- Migrates low-risk fundamental-data formatting and sample helpers into `data/fundamental_data.py`.
+- `clean_metric_value`, `build_fundamental_record`, and `get_fundamental_sample_data` now live in `data/fundamental_data.py`.
+- Real fundamental-data fetch implementations remain in `legacy_app.py`; lazy wrappers preserve import compatibility.
+- No business features, data sources, scoring rules, stock-pool contents, or fallback order are changed.
+- Next step: V1.2.8 can isolate data-fetch boundaries with mocked tests or migrate another small pure-helper batch.
 
 ## v1.3 交易纪律模块
 
