@@ -115,7 +115,15 @@
 - `generate_selection_reasons`, `generate_screening_risk_warnings`, `generate_screening_summary`, `generate_fundamental_summary`, and `join_explanation_items` now live in `core/explanations.py`.
 - `legacy_app.py` imports these functions to preserve the old call path.
 - No business features, data sources, scoring rules, stock-pool contents, or fallback order are changed.
-- Next step: V1.2.6 can migrate another small pure-helper batch or start data-boundary cleanup after focused tests.
+- Completed by V1.2.6; next migration batch can continue with data-boundary cleanup or remaining pure helpers.
+
+## v1.2.6 Market Data Helper Migration
+
+- Migrates low-risk market-data formatting and cleaning helpers into `data/market_data.py`.
+- Symbol normalization, A-share ticker conversion, price DataFrame normalization, and recent-row trimming now live in `data/market_data.py`.
+- Network fetch implementations remain in `legacy_app.py`; lazy wrappers preserve import compatibility and fallback behavior.
+- No business features, data sources, scoring rules, stock-pool contents, or fallback order are changed.
+- Next step: V1.2.7 can migrate another small data-helper batch or begin carefully isolating data-fetch boundaries with tests.
 
 ## v1.3 交易纪律模块
 

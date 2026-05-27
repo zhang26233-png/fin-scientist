@@ -4,6 +4,48 @@
 
 ### Target
 
+- Complete V1.2.6 architecture cleanup.
+- Migrate one small low-risk market-data helper batch from `legacy_app.py`.
+- Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.
+
+### Migrated From `legacy_app.py`
+
+- `normalize_yfinance_data` moved to `data/market_data.py`.
+- `normalize_hk_symbol_for_akshare` moved to `data/market_data.py`.
+- `normalize_a_share_symbol_for_akshare` moved to `data/market_data.py`.
+- `infer_a_share_yfinance_suffix` moved to `data/market_data.py`.
+- `normalize_a_share_symbol_for_yfinance` moved to `data/market_data.py`.
+- `convert_a_share_to_yfinance_ticker` moved to `data/market_data.py`.
+- `convert_a_share_to_baostock_code` moved to `data/market_data.py`.
+- `get_screening_fallback_source` moved to `data/market_data.py`.
+- `normalize_price_dataframe` moved to `data/market_data.py`.
+- `keep_recent_rows` moved to `data/market_data.py`.
+
+### Compatibility
+
+- `legacy_app.py` imports the migrated helpers from `data.market_data`.
+- `data/market_data.py` keeps lazy wrappers for network fetch functions that still live in `legacy_app.py`.
+- The AkShare -> BaoStock -> yfinance fallback order is unchanged.
+
+### Tests
+
+- Added market-data tests for symbol normalization, ticker conversion, price DataFrame normalization, empty inputs, MultiIndex columns, recent-row trimming, and legacy compatibility paths.
+
+### Pending Migration List
+
+- Real network data fetch implementations still live in `legacy_app.py`.
+- `data/fundamental_data.py` still re-exports data functions from `legacy_app.py`.
+- `ui/screening_ui.py` still calls the legacy screening renderer.
+- Other legacy workbench summaries and UI-bound helpers remain in `legacy_app.py`.
+
+### Next Step
+
+- V1.2.7 can migrate another small data-helper batch or begin isolating data-fetch boundaries with focused mocked tests.
+
+## 2026-05-27
+
+### Target
+
 - Complete V1.2.5 architecture cleanup.
 - Migrate one small low-risk explanation text pure logic batch from `legacy_app.py`.
 - Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.
@@ -28,13 +70,13 @@
 
 ### Pending Migration List
 
-- `data/market_data.py` and `data/fundamental_data.py` still re-export data functions from `legacy_app.py`.
+- `data/fundamental_data.py` still re-exports data functions from `legacy_app.py`; network fetch implementations in `data/market_data.py` remain lazy wrappers to `legacy_app.py`.
 - `ui/screening_ui.py` still calls the legacy screening renderer.
 - Other legacy workbench summaries and UI-bound helpers remain in `legacy_app.py`.
 
 ### Next Step
 
-- V1.2.6 can migrate another small pure-helper batch, or begin data-boundary cleanup only after focused tests.
+- V1.2.6 migrated the market-data helper batch; the next batch can continue data-boundary cleanup.
 
 ## 2026-05-27
 

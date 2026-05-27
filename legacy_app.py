@@ -1,6 +1,6 @@
 """Compatibility layer for the pre-module FinScientist implementation.
 
-This file is not a backup. In V1.2.5 it still carries legacy core logic and UI
+This file is not a backup. In V1.2.6 it still carries legacy core logic and UI
 that are imported by the lightweight entrypoint and the new modules. Keep
 changes conservative here; future releases should move functions into
 config/, data/, core/, and ui/ in small batches.
@@ -22,7 +22,7 @@ try:
 except Exception:
     bs = None
 
-APP_VERSION = "V1.2.5"
+APP_VERSION = "V1.2.6"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
@@ -51,6 +51,7 @@ from config.fundamental_samples import FUNDAMENTAL_SAMPLE_DATA
 from core.scoring import FUNDAMENTAL_FIELDS, calculate_composite_research_score, calculate_fundamental_quality_score, calculate_research_priority_score
 from core.sector_strength import generate_sector_strength_summary, generate_sector_strength_text
 from core.explanations import generate_fundamental_summary, generate_screening_risk_warnings, generate_screening_summary, generate_selection_reasons, join_explanation_items
+from data.market_data import convert_a_share_to_baostock_code, convert_a_share_to_yfinance_ticker, get_screening_fallback_source, infer_a_share_yfinance_suffix, keep_recent_rows, normalize_a_share_symbol_for_akshare, normalize_a_share_symbol_for_yfinance, normalize_hk_symbol_for_akshare, normalize_price_dataframe, normalize_yfinance_data
 NAME_MAP = {
     "英伟达": ("美股", "NVDA"),
     "苹果": ("美股", "AAPL"),
@@ -236,11 +237,6 @@ def normalize_ticker(raw_ticker, market):
     return ticker
 
 
-def normalize_yfinance_data(data):
-    if isinstance(data.columns, pd.MultiIndex):
-        data = data.copy()
-        data.columns = data.columns.get_level_values(0)
-    return data
 
 
 def get_data_source(market):
@@ -273,57 +269,6 @@ def get_fallback_source(market):
     return "yfinance" if market == "港股" else "无"
 
 
-def normalize_hk_symbol_for_akshare(symbol):
-    return symbol.upper().replace(".HK", "").zfill(5)
-
-
-def normalize_a_share_symbol_for_akshare(symbol):
-    return str(symbol or "").strip().upper().replace(".SH", "").replace(".SZ", "")
-
-
-def infer_a_share_yfinance_suffix(symbol):
-    query_symbol = normalize_a_share_symbol_for_akshare(symbol)
-    if query_symbol.startswith("6"):
-        return ".SS"
-    if query_symbol.startswith(("0", "3")):
-        return ".SZ"
-    return ""
-
-
-def normalize_a_share_symbol_for_yfinance(symbol):
-    query_symbol = normalize_a_share_symbol_for_akshare(symbol)
-    suffix = infer_a_share_yfinance_suffix(query_symbol)
-    return f"{query_symbol}{suffix}" if suffix else ""
-
-
-def convert_a_share_to_yfinance_ticker(query_ticker):
-    query_symbol = normalize_a_share_symbol_for_akshare(query_ticker)
-    if not re.fullmatch(r"\d{6}", query_symbol):
-        return None, "A股 yfinance 查询代码必须先标准化为 6 位数字。"
-    if query_symbol.startswith("6"):
-        return f"{query_symbol}.SS", ""
-    if query_symbol.startswith(("0", "2", "3")):
-        return f"{query_symbol}.SZ", ""
-    return None, "无法根据 A股代码首位判断 yfinance 后缀。"
-
-
-def convert_a_share_to_baostock_code(query_ticker):
-    query_symbol = normalize_a_share_symbol_for_akshare(query_ticker)
-    if not re.fullmatch(r"\d{6}", query_symbol):
-        return None, "A股 BaoStock 查询代码必须先标准化为 6 位数字。"
-    if query_symbol.startswith("6"):
-        return f"sh.{query_symbol}", ""
-    if query_symbol.startswith(("0", "2", "3")):
-        return f"sz.{query_symbol}", ""
-    return None, "无法根据 A股代码首位判断 BaoStock 市场前缀。"
-
-
-def get_screening_fallback_source(market):
-    if market == "A股":
-        return "BaoStock / yfinance"
-    if market == "港股":
-        return "yfinance"
-    return "无"
 
 
 def is_network_error_message(error_text):
@@ -348,45 +293,6 @@ def get_network_diagnostic_text():
     return "AkShare 网络连接失败或远端断开，可能与接口稳定性、请求频率、代理/VPN 或网络环境有关。"
 
 
-def normalize_price_dataframe(raw_data):
-    if raw_data is None or raw_data.empty:
-        return pd.DataFrame()
-
-    data = normalize_yfinance_data(raw_data.copy())
-    column_map = {
-        "日期": "Date",
-        "开盘": "Open",
-        "最高": "High",
-        "最低": "Low",
-        "收盘": "Close",
-        "成交量": "Volume",
-        "成交额": "Turnover",
-        "Adj Close": "Adj Close",
-    }
-    data = data.rename(columns=column_map)
-
-    if "Date" not in data.columns:
-        data = data.reset_index()
-        first_col = data.columns[0]
-        data = data.rename(columns={first_col: "Date"})
-
-    data["Date"] = pd.to_datetime(data["Date"], errors="coerce")
-    data = data.dropna(subset=["Date"])
-    data = data.sort_values("Date")
-    duplicate_dates_removed = int(data["Date"].duplicated().sum())
-    data = data.drop_duplicates(subset=["Date"], keep="last")
-
-    standard_columns = ["Date", "Open", "High", "Low", "Close", "Volume", "Turnover", "Adj Close"]
-    keep_columns = [col for col in standard_columns if col in data.columns]
-    data = data[keep_columns]
-
-    for col in ["Open", "High", "Low", "Close", "Volume", "Turnover", "Adj Close"]:
-        if col in data.columns:
-            data[col] = pd.to_numeric(data[col], errors="coerce")
-
-    data = data.set_index("Date", drop=False)
-    data.attrs["duplicate_dates_removed"] = duplicate_dates_removed
-    return data
 
 
 def check_data_freshness(price_df, market_type):
@@ -1381,12 +1287,6 @@ def parse_screening_universe(input_text, market):
     }
 
 
-def keep_recent_rows(price_df, limit_rows=120):
-    if price_df is None or price_df.empty or not limit_rows:
-        return price_df
-    recent = price_df.tail(limit_rows).copy()
-    recent.attrs.update(price_df.attrs)
-    return recent
 
 
 @st.cache_data(ttl=1800, show_spinner=False)
