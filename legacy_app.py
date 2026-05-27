@@ -1,6 +1,6 @@
 """Compatibility layer for the pre-module FinScientist implementation.
 
-This file is not a backup. In V1.2.7 it still carries legacy core logic and UI
+This file is not a backup. In V1.2.8 it still carries legacy core logic and UI
 that are imported by the lightweight entrypoint and the new modules. Keep
 changes conservative here; future releases should move functions into
 config/, data/, core/, and ui/ in small batches.
@@ -22,7 +22,7 @@ try:
 except Exception:
     bs = None
 
-APP_VERSION = "V1.2.7"
+APP_VERSION = "V1.2.8"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 

@@ -131,7 +131,15 @@
 - `clean_metric_value`, `build_fundamental_record`, and `get_fundamental_sample_data` now live in `data/fundamental_data.py`.
 - Real fundamental-data fetch implementations remain in `legacy_app.py`; lazy wrappers preserve import compatibility.
 - No business features, data sources, scoring rules, stock-pool contents, or fallback order are changed.
-- Next step: V1.2.8 can isolate data-fetch boundaries with mocked tests or migrate another small pure-helper batch.
+- Completed by V1.2.8; next migration batch can move only narrowly scoped fetch-boundary helpers after mocked tests.
+
+## v1.2.8 Data Fetch Boundary Tests
+
+- Adds focused mock tests around real data-fetch boundaries without changing the actual network call implementations.
+- Covers `fetch_a_share_fundamental_data`, `get_fundamental_data`, and `fetch_screening_price_data` empty data, exception, fallback, missing-field, and stable-return paths.
+- Real AkShare, BaoStock, and yfinance call flows remain in `legacy_app.py`.
+- No business features, data sources, scoring rules, stock-pool contents, or fallback order are changed.
+- Next step: V1.2.9 can migrate a very small fetch-boundary helper only where mocked coverage already exists.
 
 ## v1.3 交易纪律模块
 

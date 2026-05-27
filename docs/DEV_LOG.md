@@ -4,6 +4,44 @@
 
 ### Target
 
+- Complete V1.2.8 architecture cleanup.
+- Add mocked tests around real data-fetch boundaries before moving any network-adjacent logic.
+- Do not add business features, data sources, scoring changes, stock-pool changes, data-source order changes, or UI changes.
+
+### Boundary Coverage Added
+
+- `fetch_a_share_fundamental_data` empty-info and exception paths.
+- `get_fundamental_data` AkShare failure to built-in sample fallback.
+- `get_fundamental_data` non-A-share safe record path.
+- `fetch_screening_price_data` AkShare empty result falling back to BaoStock success.
+- `fetch_screening_price_data` all A-share sources returning empty data.
+- `fetch_screening_price_data` missing Close-column protection.
+
+### Compatibility
+
+- `legacy_app.py` remains the compatibility layer and still carries the real network fetch implementations.
+- `data/market_data.py` and `data/fundamental_data.py` continue to expose lazy wrappers for network-adjacent functions.
+- The AkShare -> BaoStock -> yfinance fallback order is unchanged.
+
+### Tests
+
+- Added `tests/test_data_fetch_boundaries.py` using monkeypatch-based mocks only.
+- Tests do not call real AkShare, BaoStock, or yfinance network interfaces.
+
+### Pending Migration List
+
+- Real network data fetch implementations still live in `legacy_app.py`.
+- `fetch_screening_price_data` is still a large legacy orchestration function and should only be split after additional mocked tests.
+- `ui/screening_ui.py` still calls the legacy screening renderer.
+
+### Next Step
+
+- V1.2.9 can migrate one very small fetch-boundary helper where mocked coverage already exists, or continue adding mock coverage for remaining failure paths.
+
+## 2026-05-27
+
+### Target
+
 - Complete V1.2.7 architecture cleanup.
 - Migrate one small low-risk fundamental-data helper batch from `legacy_app.py`.
 - Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.
@@ -32,7 +70,7 @@
 
 ### Next Step
 
-- V1.2.8 can isolate data-fetch boundaries with focused mocked tests, or migrate another small pure-helper batch.
+- V1.2.8 added mocked data-fetch boundary coverage; the next batch can migrate only narrowly scoped helper logic.
 
 ## 2026-05-27
 
