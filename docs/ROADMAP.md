@@ -81,7 +81,17 @@
 - Clarifies that `legacy_app.py` is not an unused backup.
 - Weakens the duplicate legacy screening entry and recommends `ui.screening_ui.render_screening_page()` as the screening entry.
 - Adds minimum tests for module imports, forbidden phrases, and screening field contracts.
-- Next step: V1.2.2 can continue migrating functions from `legacy_app.py` in small batches.
+- Completed by V1.2.2; next migration batch can continue in V1.2.3.
+
+## v1.2.2 Architecture Cleanup
+
+- Migrates the first low-risk configuration batch out of `legacy_app.py`.
+- `config/stock_pools.py` owns stock pools and default screening universes.
+- `config/stock_names.py` owns stock display-name mappings and lookup helper.
+- `config/sector_mapping.py` owns industry / sector / theme mappings and helper.
+- `config/fundamental_samples.py` owns built-in sample fundamental data.
+- No business features, data sources, scoring rules, stock-pool contents, or fallback order are changed.
+- Next step: continue with a small `core/` migration batch in V1.2.3, or write tests for the selected functions before moving them.
 
 ## v1.3 交易纪律模块
 

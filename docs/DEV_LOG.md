@@ -4,6 +4,43 @@
 
 ### Target
 
+- Complete V1.2.2 architecture cleanup.
+- Start reducing `legacy_app.py` responsibilities in small, low-risk batches.
+- Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.
+
+### Migrated From `legacy_app.py`
+
+- A-share screening pool constants and default screening universes moved to `config/stock_pools.py`.
+- A-share stock-name map and display-name helper moved to `config/stock_names.py`.
+- A-share industry / sector / theme map and sector-field helper moved to `config/sector_mapping.py`.
+- Built-in sample fundamental data moved to `config/fundamental_samples.py`.
+
+### Compatibility
+
+- `legacy_app.py` remains the compatibility layer and imports the migrated configuration.
+- Existing call sites can still use the same names through `legacy_app.py`.
+- `app.py` remains the Streamlit entrypoint.
+
+### Tests
+
+- Added a test assertion that `config` modules no longer import `legacy_app.py`.
+- Existing module import, forbidden phrase, screening contract, core metric, and backtest tests remain active.
+
+### Pending Migration List
+
+- `core/scoring.py` still re-exports scoring functions from `legacy_app.py`.
+- `core/explanations.py` and `core/sector_strength.py` still re-export pure logic from `legacy_app.py`.
+- `data/market_data.py` and `data/fundamental_data.py` still re-export data functions from `legacy_app.py`.
+- `ui/screening_ui.py` still calls the legacy screening renderer.
+
+### Next Step
+
+- V1.2.3 should migrate one small `core/` batch after adding focused tests for the selected functions.
+
+## 2026-05-27
+
+### Target
+
 - Complete V1.2.1 stability repair after the V1.2 modular refactor review.
 - Keep the release limited to stability, documentation, and tests.
 - Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.

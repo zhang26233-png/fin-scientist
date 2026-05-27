@@ -5,7 +5,7 @@ import os
 os.environ["FINSCIENTIST_SKIP_UI"] = "1"
 
 
-def test_v121_modules_import_cleanly():
+def test_v122_modules_import_cleanly():
     module_names = [
         "app",
         "ui.screening_ui",
@@ -24,3 +24,15 @@ def test_v121_modules_import_cleanly():
     for module_name in module_names:
         assert importlib.import_module(module_name)
 
+
+def test_config_modules_no_longer_import_legacy_app():
+    config_modules = [
+        "config/stock_pools.py",
+        "config/stock_names.py",
+        "config/sector_mapping.py",
+        "config/fundamental_samples.py",
+    ]
+
+    for module_path in config_modules:
+        with open(module_path, encoding="utf-8") as file:
+            assert "legacy_app" not in file.read()

@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.2.1
+Current version: V1.2.2
 
-V1.2.1 is a stability repair release after the V1.2 modular refactor. It does not add business features, add data sources, change scoring rules, change stock pools, or change the safety boundary that results do not constitute investment advice.
+V1.2.2 is an architecture cleanup release after the V1.2.1 stability repair. It migrates a small batch of configuration ownership out of `legacy_app.py` without adding business features, adding data sources, changing scoring rules, changing stock pools, or changing the safety boundary that results do not constitute investment advice.
 
 Startup command remains:
 
@@ -23,9 +23,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.2.1 it remains a compatibility layer that carries part of the old core logic so existing pages stay stable. Future releases should migrate functions from `legacy_app.py` into `config/`, `data/`, `core/`, and `ui/` in small batches.
+`legacy_app.py` is not an unused backup. In V1.2.2 it remains a compatibility layer that carries part of the old core logic so existing pages stay stable. Configuration ownership has started moving into `config/`; future releases should continue migrating functions from `legacy_app.py` into `data/`, `core/`, and `ui/` in small batches.
 
-FinScientist V1.2.1 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.2.2 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
 
@@ -35,9 +35,16 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.2.1
+当前版本：V1.2.2
 
-V1.2.1 稳定性修复：
+V1.2.2 架构清理：
+
+- 第一批迁移 `config` 层所有权：股票池、股票名称映射、行业/板块/主题映射、内置基本面样例数据。
+- `legacy_app.py` 继续作为兼容层导入这些配置，避免破坏旧调用路径。
+- 补充配置模块不依赖 `legacy_app.py` 的测试。
+- 不新增业务功能，不新增数据源，不修改评分规则，不改变股票池内容。
+
+V1.2.1 已完成：
 
 - 统一 README、ROADMAP 和 DEV_LOG 版本信息。
 - 明确 `legacy_app.py` 当前是兼容层 / 旧版核心逻辑承载层，不是无用备份。
