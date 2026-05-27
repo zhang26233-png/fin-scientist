@@ -4,6 +4,39 @@
 
 ### Target
 
+- Complete V1.2.4 architecture cleanup.
+- Migrate one small low-risk sector-strength pure logic batch from `legacy_app.py`.
+- Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.
+
+### Migrated From `legacy_app.py`
+
+- `generate_sector_strength_summary` moved to `core/sector_strength.py`.
+- `generate_sector_strength_text` moved to `core/sector_strength.py`.
+
+### Compatibility
+
+- `legacy_app.py` imports the migrated sector-strength functions from `core.sector_strength`.
+- Existing call sites can still use `legacy_app.generate_sector_strength_summary` and `legacy_app.generate_sector_strength_text`.
+
+### Tests
+
+- Added sector-strength tests for the direct core path, the legacy compatibility path, empty data, and missing fields.
+- Added an import-boundary assertion that `core/sector_strength.py` no longer imports `legacy_app.py`.
+
+### Pending Migration List
+
+- `core/explanations.py` still re-exports explanation text functions from `legacy_app.py`.
+- `data/market_data.py` and `data/fundamental_data.py` still re-export data functions from `legacy_app.py`.
+- `ui/screening_ui.py` still calls the legacy screening renderer.
+
+### Next Step
+
+- V1.2.5 should migrate one small explanation-text pure logic batch, or continue data-boundary cleanup only after focused tests.
+
+## 2026-05-27
+
+### Target
+
 - Complete V1.2.3 architecture cleanup.
 - Migrate one small low-risk `core` pure logic batch from `legacy_app.py`.
 - Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.
@@ -27,13 +60,13 @@
 
 ### Pending Migration List
 
-- `core/explanations.py` and `core/sector_strength.py` still re-export pure logic from `legacy_app.py`.
+- `core/explanations.py` still re-exports explanation text functions from `legacy_app.py`.
 - `data/market_data.py` and `data/fundamental_data.py` still re-export data functions from `legacy_app.py`.
 - `ui/screening_ui.py` still calls the legacy screening renderer.
 
 ### Next Step
 
-- V1.2.4 should migrate one small explanation-text or sector-strength pure logic batch after focused tests.
+- V1.2.4 migrated the sector-strength pure logic batch; the next batch can target explanation-text pure functions.
 
 ## 2026-05-27
 
@@ -64,7 +97,7 @@
 ### Pending Migration List
 
 - `core/scoring.py` still re-exports scoring functions from `legacy_app.py`.
-- `core/explanations.py` and `core/sector_strength.py` still re-export pure logic from `legacy_app.py`.
+- `core/explanations.py` still re-exports explanation text functions from `legacy_app.py`.
 - `data/market_data.py` and `data/fundamental_data.py` still re-export data functions from `legacy_app.py`.
 - `ui/screening_ui.py` still calls the legacy screening renderer.
 

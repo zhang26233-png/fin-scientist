@@ -1,6 +1,6 @@
 """Compatibility layer for the pre-module FinScientist implementation.
 
-This file is not a backup. In V1.2.3 it still carries legacy core logic and UI
+This file is not a backup. In V1.2.4 it still carries legacy core logic and UI
 that are imported by the lightweight entrypoint and the new modules. Keep
 changes conservative here; future releases should move functions into
 config/, data/, core/, and ui/ in small batches.
@@ -22,7 +22,7 @@ try:
 except Exception:
     bs = None
 
-APP_VERSION = "V1.2.3"
+APP_VERSION = "V1.2.4"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
@@ -49,6 +49,7 @@ from config.stock_names import A_SHARE_STOCK_NAME_MAP, get_stock_display_name
 from config.sector_mapping import A_SHARE_SECTOR_INFO_MAP, attach_sector_fields, get_stock_sector_info
 from config.fundamental_samples import FUNDAMENTAL_SAMPLE_DATA
 from core.scoring import FUNDAMENTAL_FIELDS, calculate_composite_research_score, calculate_fundamental_quality_score, calculate_research_priority_score
+from core.sector_strength import generate_sector_strength_summary, generate_sector_strength_text
 NAME_MAP = {
     "英伟达": ("美股", "NVDA"),
     "苹果": ("美股", "AAPL"),
@@ -2179,76 +2180,6 @@ def build_screening_priority_rows(success_items, run_mode="快速模式"):
     return scored_rows, unscored_rows
 
 
-def generate_sector_strength_summary(result_df, all_scored_df=None):
-    source_df = all_scored_df if isinstance(all_scored_df, pd.DataFrame) and not all_scored_df.empty else result_df
-    if source_df is None or source_df.empty or "板块" not in source_df.columns:
-        return pd.DataFrame()
-
-    rows = []
-    for sector, group in source_df.groupby("板块", dropna=False):
-        sector_name = sector if str(sector or "").strip() else "板块暂缺"
-        score_values = group["研究优先级评分"].apply(to_number) if "研究优先级评分" in group else pd.Series(dtype=float)
-        score_values = score_values.dropna()
-        score_positive_count = int((score_values > 0).sum())
-        stock_count = len(group)
-
-        def mean_percent(column):
-            if column not in group:
-                return math.nan
-            return group[column].apply(parse_display_percent).dropna().mean()
-
-        def mean_number(column):
-            if column not in group:
-                return math.nan
-            return group[column].apply(to_number).dropna().mean()
-
-        note = "样本较少，仅作参考。" if stock_count < 2 else "基于当前股票池样本的初步统计。"
-        rows.append(
-            {
-                "板块": sector_name,
-                "股票数量": stock_count,
-                "平均研究优先级评分": format_metric(score_values.mean()) if len(score_values) else INSUFFICIENT,
-                "触发研究优先级条件数量": score_positive_count,
-                "触发比例": format_percent(score_positive_count / stock_count if stock_count else math.nan),
-                "平均近 20 日涨跌幅": format_percent(mean_percent("近 20 日涨跌幅")),
-                "平均近 60 日涨跌幅": format_percent(mean_percent("近 60 日涨跌幅")),
-                "平均成交量放大倍数": format_metric(mean_number("成交量放大倍数")) if not pd.isna(mean_number("成交量放大倍数")) else INSUFFICIENT,
-                "平均年化波动率": format_percent(mean_percent("年化波动率")),
-                "平均最大回撤": format_percent(mean_percent("最大回撤")),
-                "说明": note,
-                "_sort_score": score_values.mean() if len(score_values) else -1,
-            }
-        )
-    sector_df = pd.DataFrame(rows)
-    if not sector_df.empty:
-        sector_df = sector_df.sort_values("_sort_score", ascending=False).drop(columns=["_sort_score"])
-    return sector_df
-
-
-def generate_sector_strength_text(sector_df):
-    if sector_df is None or sector_df.empty:
-        return "当前股票池暂无可用于板块强度初步统计的数据。该统计仅基于当前股票池样本，不代表全市场板块强弱，也不构成投资建议。"
-
-    top_score = sector_df.head(3)["板块"].tolist()
-    trigger_df = sector_df.copy()
-    trigger_df["_trigger_count"] = trigger_df["触发研究优先级条件数量"].apply(to_number)
-    top_trigger = trigger_df.sort_values("_trigger_count", ascending=False).head(3)["板块"].tolist()
-
-    high_risk = []
-    for _, row in sector_df.iterrows():
-        vol = parse_display_percent(row.get("平均年化波动率"))
-        drawdown = parse_display_percent(row.get("平均最大回撤"))
-        if (not pd.isna(vol) and vol > 0.60) or (not pd.isna(drawdown) and abs(drawdown) > 0.25):
-            high_risk.append(row["板块"])
-
-    return "\n\n".join(
-        [
-            f"当前股票池中平均研究优先级评分相对较高的板块包括：{format_symbol_list(top_score)}。",
-            f"触发研究优先级条件的股票数量相对较多的板块包括：{format_symbol_list(top_trigger)}。",
-            f"波动率或最大回撤相对较高的板块包括：{format_symbol_list(high_risk[:3])}。",
-            "该统计仅基于当前股票池样本，不代表全市场板块强弱，也不构成投资建议。",
-        ]
-    )
 
 
 def render_screening_section(market, pool_source, top_n_label, input_text, pool_type=None, max_process_count=10, run_mode="快速模式"):

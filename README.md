@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.2.3
+Current version: V1.2.4
 
-V1.2.3 is an architecture cleanup release that migrates a small batch of low-risk `core` scoring logic out of `legacy_app.py`. It does not add business features, add data sources, change scoring rules, change stock pools, or change the safety boundary that results do not constitute investment advice.
+V1.2.4 is an architecture cleanup release that migrates the low-risk sector-strength aggregation and summary text functions out of `legacy_app.py` into `core/sector_strength.py`. It does not add business features, add data sources, change scoring rules, change stock pools, or change the safety boundary that results do not constitute investment advice.
 
 Startup command remains:
 
@@ -23,9 +23,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.2.3 it remains a compatibility layer that carries part of the old core logic so existing pages stay stable. Configuration ownership has moved into `config/`, and scoring ownership has started moving into `core/`; future releases should continue migrating functions from `legacy_app.py` into `data/`, `core/`, and `ui/` in small batches.
+`legacy_app.py` is not an unused backup. In V1.2.4 it remains a compatibility layer that carries part of the old core logic so existing pages stay stable. Configuration ownership has moved into `config/`; scoring and sector-strength ownership have started moving into `core/`; future releases should continue migrating functions from `legacy_app.py` into `data/`, `core/`, and `ui/` in small batches.
 
-FinScientist V1.2.3 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.2.4 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
 
@@ -35,7 +35,15 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.2.3
+当前版本：V1.2.4
+
+V1.2.4 架构清理：
+
+- 迁移板块强度初步统计函数 `generate_sector_strength_summary` 到 `core/sector_strength.py`。
+- 迁移板块强度解释函数 `generate_sector_strength_text` 到 `core/sector_strength.py`。
+- `legacy_app.py` 继续作为兼容层导入这些函数，保持旧调用路径可用。
+- 补充板块强度 core 路径、legacy 兼容路径、空数据和缺失字段测试。
+- 不新增业务功能，不新增数据源，不修改评分规则，不改变股票池内容。
 
 V1.2.3 架构清理：
 

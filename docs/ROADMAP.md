@@ -99,7 +99,15 @@
 - `calculate_research_priority_score`, `calculate_fundamental_quality_score`, and `calculate_composite_research_score` now live in `core/scoring.py`.
 - `legacy_app.py` imports these functions to preserve the old call path.
 - No scoring rules, data sources, stock-pool contents, or fallback order are changed.
-- Next step: V1.2.4 can migrate a small explanation-text or sector-strength pure logic batch after focused tests.
+- Completed by V1.2.4; next migration batch can continue with explanation-text pure functions or data boundary cleanup.
+
+## v1.2.4 Sector Strength Core Migration
+
+- Migrates low-risk sector-strength pure logic into `core/sector_strength.py`.
+- `generate_sector_strength_summary` and `generate_sector_strength_text` now live in `core/sector_strength.py`.
+- `legacy_app.py` imports these functions to preserve the old call path.
+- No business features, data sources, scoring rules, stock-pool contents, or fallback order are changed.
+- Next step: V1.2.5 can migrate a small explanation-text pure logic batch or continue data-boundary cleanup after focused tests.
 
 ## v1.3 交易纪律模块
 
