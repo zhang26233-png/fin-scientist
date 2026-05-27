@@ -1,3 +1,11 @@
+"""Compatibility layer for the pre-module FinScientist implementation.
+
+This file is not a backup. In V1.2.1 it still carries legacy core logic and UI
+that are imported by the lightweight entrypoint and the new modules. Keep
+changes conservative here; future releases should move functions into
+config/, data/, core/, and ui/ in small batches.
+"""
+
 import math
 import os
 import re
@@ -14,7 +22,7 @@ try:
 except Exception:
     bs = None
 
-APP_VERSION = "V1.2"
+APP_VERSION = "V1.2.1"
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
@@ -3538,6 +3546,10 @@ def render_legacy_app():
             run_backtest_button = st.button("运行回测", disabled=not enable_backtest)
 
             st.divider()
+            st.info(
+                "该筛选区域是旧版兼容入口，建议使用页面导航中的"
+                "“自动研究对象筛选”模块。"
+            )
             st.header("自动研究对象筛选")
             screening_market = st.selectbox("筛选市场", options=SCREENING_MARKET_OPTIONS, index=0)
             screening_run_mode = st.selectbox("运行模式", options=SCREENING_RUN_MODE_OPTIONS, index=0)

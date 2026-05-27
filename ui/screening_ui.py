@@ -15,6 +15,10 @@ from legacy_app import (
 
 def render_screening_page():
     """Render the V1.2 screening page with the unchanged V1.1 workflow."""
+    st.caption(
+        "缓存用于提升批量筛选速度，不保证实时性。免费数据源可能失败，"
+        "如果结果异常，可清除缓存后重试。"
+    )
     with st.sidebar:
         st.header('\u81ea\u52a8\u7b5b\u9009\u53c2\u6570')
         screening_market = st.selectbox('\u7b5b\u9009\u5e02\u573a', options=SCREENING_MARKET_OPTIONS, index=0)

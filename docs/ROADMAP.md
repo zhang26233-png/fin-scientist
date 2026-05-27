@@ -69,34 +69,42 @@
 
 ## v1.2 Project Structure Split And Modular Refactor
 
-- V1.2 is complete.
+- V1.2 initial modular refactor is complete.
 - `app.py` remains the Streamlit startup entrypoint and handles page navigation.
 - Added module boundaries: `config/`, `data/`, `core/`, and `ui/`.
 - This release does not add features, add data sources, change scoring rules, or change the safety boundary.
-- Next steps can move into the event catalyst module, trading-discipline module, or formal data-source integration.
+- `legacy_app.py` remains a compatibility layer / legacy core logic carrier during the transition.
 
-## v1.2 交易纪律模块
+## v1.2.1 Stability Review And Repair
+
+- V1.2.1 unifies version documentation after the V1.2 refactor.
+- Clarifies that `legacy_app.py` is not an unused backup.
+- Weakens the duplicate legacy screening entry and recommends `ui.screening_ui.render_screening_page()` as the screening entry.
+- Adds minimum tests for module imports, forbidden phrases, and screening field contracts.
+- Next step: V1.2.2 can continue migrating functions from `legacy_app.py` in small batches.
+
+## v1.3 交易纪律模块
 
 - 建立学习型交易纪律清单。
 - 记录仓位、止损、复盘和风险控制原则。
 - 不接入真实交易账户。
 - 不输出自动买卖指令。
 
-## v1.3 回测验证增强
+## v1.4 回测验证增强
 
 - 增加更多策略模板和参数设置。
 - 完善交易成本、持仓比例和样本区间说明。
 - 增加回测结果的稳定性和局限性提示。
 - 强调回测结果不代表未来收益。
 
-## v1.4 AI 研究摘要模块
+## v1.5 AI 研究摘要模块
 
 - 探索 AI 辅助整理研究摘要的可能性。
 - 保留数据来源、指标依据和风险提示。
 - 不让 AI 直接生成交易结论。
 - 明确区分事实、规则判断和主观假设。
 
-## v1.5 项目结构拆分与工程化
+## v1.6 工程化增强
 
 - 将单文件原型逐步拆分为更清晰的模块。
 - 增加测试覆盖和文档规范。

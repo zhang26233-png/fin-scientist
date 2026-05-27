@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.2
+Current version: V1.2.1
 
-V1.2 completes project structure splitting and modular refactoring. This release does not add features, add data sources, change scoring rules, change the main page behavior, or change the safety boundary that results do not constitute investment advice.
+V1.2.1 is a stability repair release after the V1.2 modular refactor. It does not add business features, add data sources, change scoring rules, change stock pools, or change the safety boundary that results do not constitute investment advice.
 
 Startup command remains:
 
@@ -12,20 +12,20 @@ Startup command remains:
 streamlit run app.py
 ```
 
-### V1.2 Directory Structure
+### Project Structure
 
 ```text
 config/    Stock pools, stock names, sector labels, built-in fundamental samples
 data/      Market data and fundamental data access boundaries
 core/      Metrics, scoring, explanations, and sector-strength helpers
 ui/        Streamlit page entrypoints and screening page rendering
-app.py     Lightweight Streamlit entrypoint and page navigation
-legacy_app.py  Preserved legacy workbench implementation for existing features
+app.py     Main Streamlit entrypoint and page navigation
+legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-V1.2 makes `app.py` small so later development can continue through clearer module boundaries.
+`legacy_app.py` is not an unused backup. In V1.2.1 it remains a compatibility layer that carries part of the old core logic so existing pages stay stable. Future releases should migrate functions from `legacy_app.py` into `config/`, `data/`, `core/`, and `ui/` in small batches.
 
-FinScientist V1.1 是一个单文件 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，并为自动研究对象筛选模块增加 A股多数据源降级、量价指标计算、研究优先级评分、解释层、A股多类型研究股票池、股票中文名称展示、行业/板块/主题标签、板块强度初步统计、基本面质量筛选初版和缓存优化。
+FinScientist V1.2.1 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
 
@@ -35,9 +35,17 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.1
+当前版本：V1.2.1
 
-V1.1 新增：
+V1.2.1 稳定性修复：
+
+- 统一 README、ROADMAP 和 DEV_LOG 版本信息。
+- 明确 `legacy_app.py` 当前是兼容层 / 旧版核心逻辑承载层，不是无用备份。
+- 自动研究对象筛选推荐入口统一为 `ui.screening_ui.render_screening_page()`。
+- 补充模块导入、安全文案和筛选字段契约的最小测试。
+- 不新增业务功能，不新增数据源，不修改评分规则，不改变股票池内容。
+
+V1.1 已完成：
 
 - 自动研究对象筛选模块增加性能优化与缓存机制。
 - 行情筛选结果缓存 30 分钟，基本面数据缓存 1 小时。

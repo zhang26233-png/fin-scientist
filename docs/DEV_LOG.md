@@ -1,5 +1,32 @@
 # Development Log
 
+## 2026-05-27
+
+### Target
+
+- Complete V1.2.1 stability repair after the V1.2 modular refactor review.
+- Keep the release limited to stability, documentation, and tests.
+- Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.
+
+### Changes
+
+- Clarified `legacy_app.py` as a compatibility layer / legacy core logic carrier.
+- Unified README and ROADMAP version language around V1.2.1.
+- Weakened the duplicate legacy workbench screening entry with a compatibility notice.
+- Added minimum tests for module imports, forbidden phrases, and screening field contracts.
+- Added cache-risk wording to the screening page: cache improves speed but does not guarantee real-time data, and abnormal results can be retried after clearing cache.
+
+### Remaining Issues
+
+- `legacy_app.py` still carries part of the core implementation.
+- New modules currently provide stable boundaries, and more function bodies should be migrated gradually.
+- Browser-side manual regression should still be done before larger feature work.
+
+### Next Step
+
+- V1.2.2 should continue migrating core functions from `legacy_app.py` into `config/`, `data/`, `core/`, and `ui/` in small batches.
+- If entering V1.3 feature work, add focused tests first for the touched workflow.
+
 ## 2026-05-26
 
 ### Target
