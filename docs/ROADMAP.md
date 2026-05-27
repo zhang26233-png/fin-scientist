@@ -66,6 +66,15 @@
 - 增加缓存清除入口。
 - 下一步可进入事件催化、交易纪律模块或项目结构拆分。
 
+
+## v1.2 Project Structure Split And Modular Refactor
+
+- V1.2 is complete.
+- `app.py` remains the Streamlit startup entrypoint and handles page navigation.
+- Added module boundaries: `config/`, `data/`, `core/`, and `ui/`.
+- This release does not add features, add data sources, change scoring rules, or change the safety boundary.
+- Next steps can move into the event catalyst module, trading-discipline module, or formal data-source integration.
+
 ## v1.2 交易纪律模块
 
 - 建立学习型交易纪律清单。

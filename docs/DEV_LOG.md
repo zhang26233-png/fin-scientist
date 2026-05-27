@@ -2,6 +2,65 @@
 
 ## 2026-05-26
 
+### Target
+
+- Complete V1.2: project structure split and modular refactor.
+- Only adjust code organization boundaries; do not add features, add data sources, change scoring rules, or change the safety boundary.
+- Keep `streamlit run app.py` as the startup command.
+
+### Modified Files
+
+- `app.py`
+- `legacy_app.py`
+- `config/__init__.py`
+- `config/stock_pools.py`
+- `config/stock_names.py`
+- `config/sector_mapping.py`
+- `config/fundamental_samples.py`
+- `data/__init__.py`
+- `data/market_data.py`
+- `data/fundamental_data.py`
+- `core/__init__.py`
+- `core/metrics.py`
+- `core/scoring.py`
+- `core/explanations.py`
+- `core/sector_strength.py`
+- `ui/__init__.py`
+- `ui/screening_ui.py`
+- `tests/conftest.py`
+- `README.md`
+- `docs/ROADMAP.md`
+- `docs/DEV_LOG.md`
+
+### Main Changes
+
+- Refactored `app.py` into a lightweight Streamlit entrypoint for page navigation and dispatch.
+- Added `ui.screening_ui.render_screening_page()` as the automatic research-object screening page entrypoint.
+- Added stable module boundaries under `config/`, `data/`, `core/`, and `ui/`.
+- Preserved the legacy workbench in `legacy_app.py` to keep single-stock analysis, comparison, backtesting, and the existing screening workflow available.
+- Added `tests/conftest.py` so direct `pytest` runs can import the project root.
+
+### Test Results
+
+- `python -m py_compile app.py config/stock_pools.py config/stock_names.py config/sector_mapping.py config/fundamental_samples.py data/market_data.py data/fundamental_data.py core/metrics.py core/scoring.py core/explanations.py core/sector_strength.py ui/screening_ui.py legacy_app.py tests/conftest.py` passed.
+- `pytest` passed: 6 passed.
+- `$env:PYTHONPATH='.'; pytest` passed: 6 passed.
+- Short Streamlit startup check passed on `http://localhost:8503`.
+- Forbidden wording scan returned no matches for the checked source and docs set.
+
+### Remaining Issues
+
+- The new modules currently provide stable boundaries; much of the concrete implementation still lives in `legacy_app.py` and can be moved gradually.
+- Full browser-side manual regression has not been completed.
+- Free data-source availability still depends on network conditions, request limits, and upstream interface stability.
+
+### Next Step
+
+- Continue moving implementation bodies from `legacy_app.py` into the matching `config/`, `data/`, `core/`, and `ui/` modules in small steps.
+- Future features should enter the event catalyst module, trading-discipline module, or formal data-source integration while preserving the safety boundary.
+
+## 2026-05-26
+
 ### 本次目标
 
 - 完成 V1.1：自动研究对象筛选模块性能优化与缓存机制。
