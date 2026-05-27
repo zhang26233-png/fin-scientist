@@ -4,6 +4,42 @@
 
 ### Target
 
+- Complete V1.2.5 architecture cleanup.
+- Migrate one small low-risk explanation text pure logic batch from `legacy_app.py`.
+- Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.
+
+### Migrated From `legacy_app.py`
+
+- `generate_selection_reasons` moved to `core/explanations.py`.
+- `generate_screening_risk_warnings` moved to `core/explanations.py`.
+- `generate_screening_summary` moved to `core/explanations.py`.
+- `generate_fundamental_summary` moved to `core/explanations.py`.
+- `join_explanation_items` moved to `core/explanations.py`.
+
+### Compatibility
+
+- `legacy_app.py` imports the migrated explanation functions from `core.explanations`.
+- Existing call sites can still use the same functions through `legacy_app.py`.
+
+### Tests
+
+- Added explanation tests for direct core imports, legacy compatibility paths, typical inputs, empty inputs, missing fields, and invalid inputs.
+- Added an import-boundary assertion that `core/explanations.py` no longer imports `legacy_app.py`.
+
+### Pending Migration List
+
+- `data/market_data.py` and `data/fundamental_data.py` still re-export data functions from `legacy_app.py`.
+- `ui/screening_ui.py` still calls the legacy screening renderer.
+- Other legacy workbench summaries and UI-bound helpers remain in `legacy_app.py`.
+
+### Next Step
+
+- V1.2.6 can migrate another small pure-helper batch, or begin data-boundary cleanup only after focused tests.
+
+## 2026-05-27
+
+### Target
+
 - Complete V1.2.4 architecture cleanup.
 - Migrate one small low-risk sector-strength pure logic batch from `legacy_app.py`.
 - Do not add business features, data sources, scoring changes, stock-pool changes, or data-source order changes.
@@ -25,13 +61,12 @@
 
 ### Pending Migration List
 
-- `core/explanations.py` still re-exports explanation text functions from `legacy_app.py`.
 - `data/market_data.py` and `data/fundamental_data.py` still re-export data functions from `legacy_app.py`.
 - `ui/screening_ui.py` still calls the legacy screening renderer.
 
 ### Next Step
 
-- V1.2.5 should migrate one small explanation-text pure logic batch, or continue data-boundary cleanup only after focused tests.
+- V1.2.5 migrated the explanation-text pure logic batch; the next batch can target additional pure helpers or data-boundary cleanup.
 
 ## 2026-05-27
 
@@ -60,7 +95,6 @@
 
 ### Pending Migration List
 
-- `core/explanations.py` still re-exports explanation text functions from `legacy_app.py`.
 - `data/market_data.py` and `data/fundamental_data.py` still re-export data functions from `legacy_app.py`.
 - `ui/screening_ui.py` still calls the legacy screening renderer.
 
@@ -97,7 +131,6 @@
 ### Pending Migration List
 
 - `core/scoring.py` still re-exports scoring functions from `legacy_app.py`.
-- `core/explanations.py` still re-exports explanation text functions from `legacy_app.py`.
 - `data/market_data.py` and `data/fundamental_data.py` still re-export data functions from `legacy_app.py`.
 - `ui/screening_ui.py` still calls the legacy screening renderer.
 
