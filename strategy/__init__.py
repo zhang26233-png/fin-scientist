@@ -7,6 +7,7 @@ quantification. It is not wired into the Streamlit workflow in V1.3.0.
 __all__ = [
     "factors",
     "adapter",
+    "comparison",
     "filters",
     "presets",
     "report",

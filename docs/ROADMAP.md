@@ -187,7 +187,10 @@
 - V1.4.1 adds calibration tests for high-quality trend, low-liquidity, overheated-risk, missing-data, and neutral samples.
 - V1.4.1 adds score-distribution checks for 0-100 bounds, directional expectations, and row-order preservation.
 - V1.4.1 keeps strategy scores internal and does not change existing screening output, scoring rules, page display, or sorting logic.
-- Future V1.4.x work can add side-by-side internal comparison against existing research-priority scores without changing the current page flow.
+- V1.4.2 adds `strategy/comparison.py` for internal side-by-side comparison between existing research-priority scores and `strategy_score`.
+- V1.4.2 defines alignment labels for high consensus, research-high strategy-low, strategy-high research-low, low consensus, and insufficient data.
+- V1.4.2 keeps comparisons internal and does not change existing screening output, scoring rules, page display, or sorting logic.
+- Future V1.4.x work can add aggregate comparison summaries or drift checks without changing the current page flow.
 
 ## v1.5 交易纪律模块
 

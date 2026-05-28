@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.4.1
+Current version: V1.4.2
 
-V1.4.1 adds strategy-score calibration and distribution tests across representative internal samples. It keeps strategy scoring internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
+V1.4.2 adds an internal `strategy/comparison.py` layer for comparing existing research-priority scores with `strategy_score`. It keeps all comparison results internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
 
 Startup command remains:
 
@@ -18,15 +18,15 @@ streamlit run app.py
 config/    Stock pools, stock names, sector labels, built-in fundamental samples
 data/      Market data and fundamental data access boundaries
 core/      Metrics, scoring, explanations, and sector-strength helpers
-strategy/  Independent strategy scoring, view-model, service, reports, diagnostics, factors, filters, risk labels, and presets
+strategy/  Independent strategy comparison, scoring, view-model, service, reports, diagnostics, factors, filters, risk labels, and presets
 ui/        Streamlit page entrypoints and screening page rendering
 app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.4.1 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. New strategy scoring code lives in `strategy/`; `legacy_app.py` does not import it in this release.
+`legacy_app.py` is not an unused backup. In V1.4.2 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. New strategy comparison code lives in `strategy/`; `legacy_app.py` does not import it in this release.
 
-FinScientist V1.4.1 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.4.2 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,14 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.4.1
+当前版本：V1.4.2
+
+V1.4.2 internal score comparison phase:
+
+- Added `strategy/comparison.py` for internal comparison between existing research-priority scores and `strategy_score`.
+- Comparison output includes original score, strategy score, score gap, alignment label, interpretation, research-priority type, and warnings.
+- Alignment labels include `high_consensus`, `research_high_strategy_low`, `strategy_high_research_low`, `low_consensus`, and `insufficient_data`.
+- Comparison is read-only, preserves input order, and is not connected to UI or existing sorting.
 
 V1.4.1 strategy score calibration phase:
 

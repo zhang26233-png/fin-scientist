@@ -4,6 +4,38 @@
 
 ### Target
 
+- Complete V1.4.2 internal score comparison phase.
+- Add comparison helpers for existing research-priority scores and internal `strategy_score`.
+- Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or add comparison logic to `legacy_app.py` or `ui/screening_ui.py`.
+
+### Added Score Comparison
+
+- `strategy/comparison.py` compares original research-priority scores with `strategy_score`.
+- Output fields include `original_score`, `strategy_score`, `score_gap`, `alignment_label`, `interpretation`, `research_priority_type`, and `warnings`.
+- The helper is read-only and preserves input row order.
+
+### Alignment Labels
+
+- `high_consensus`: both score systems are high.
+- `research_high_strategy_low`: original research-priority score is high while strategy score is low.
+- `strategy_high_research_low`: strategy score is high while original research-priority score is low.
+- `low_consensus`: both score systems are low.
+- `insufficient_data`: at least one key score is missing.
+
+### Tests
+
+- Added `tests/test_strategy_comparison.py`.
+- Extended module import coverage to include `strategy.comparison`.
+- Covered empty input, missing original score, missing strategy score, all primary alignment labels, stable score gaps, no source DataFrame mutation, no legacy/UI dependency, and operation-word safety.
+
+### Next Step
+
+- V1.4.3 can add aggregate comparison summaries or consistency statistics across batches while keeping results internal.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.4.1 strategy score calibration phase.
 - Add calibration and distribution tests for internal strategy scores.
 - Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or add strategy scoring to `legacy_app.py` or `ui/screening_ui.py`.
@@ -30,7 +62,7 @@
 
 ### Next Step
 
-- V1.4.2 can add a side-by-side internal comparison between existing research-priority scores and strategy scores without changing page sorting or display.
+- V1.4.2 added side-by-side internal comparison between existing research-priority scores and strategy scores without changing page sorting or display.
 
 ## 2026-05-28
 
