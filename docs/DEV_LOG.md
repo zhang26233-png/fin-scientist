@@ -4,6 +4,39 @@
 
 ### Target
 
+- Complete V1.4.9 internal multi-preset strategy scoring phase.
+- Allow the same candidate set to be evaluated through different internal strategy views without changing UI, existing screening output, sorting, or `core/scoring.py`.
+- Keep the default preset compatible with V1.4.8 scoring and keep V1.4.4-V1.4.8 drift checks stable.
+
+### Preset Enhancements
+
+- `strategy/presets.py` now defines `balanced_research`, `trend_momentum`, `volume_breakout`, `low_risk_quality`, and `high_elasticity_watch`.
+- Each preset includes `preset_name`, `display_name`, `description`, `weights`, `risk_policy`, and `data_quality_policy`.
+- Existing `research_priority`, `stable_observation`, and `high_elasticity_observation` keys remain available for adapter compatibility.
+- Added `get_default_strategy_preset()` and safe fallback for unknown preset keys.
+
+### Scoring Enhancements
+
+- `calculate_strategy_scores()` now accepts `preset_name` or `preset_config`.
+- Score rows now include `preset_name`, `preset_display_name`, and `strategy_score_components`.
+- Default `balanced_research` keeps the previous score formula weights to avoid drift.
+- Non-default presets adjust factor weights, risk-policy multipliers, data-quality multipliers, and limited preset bonuses or penalties.
+
+### Tests
+
+- Added `tests/test_strategy_presets.py`.
+- Updated `tests/test_strategy_scoring.py` for multi-preset scoring behavior.
+- Updated preset compatibility checks and version-boundary import tests.
+- Re-ran drift, calibration, distribution, py-compile, full pytest, safety scan, and Streamlit short-start checks.
+
+### Next Step
+
+- V1.4.10 can add internal side-by-side preset comparison summaries, still without UI integration.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.4.8 internal risk and data-quality explanation phase.
 - Add audit-style explanations for `risk_labels`, `data_quality_labels`, `risk_penalty`, and `data_quality_penalty`.
 - Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or connect explanations to UI.

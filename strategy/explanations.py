@@ -169,6 +169,14 @@ def _factor_notes(row):
     if not isinstance(row, dict):
         return []
     notes = []
+    if row.get("preset_name"):
+        notes.append(
+            {
+                "factor": "preset",
+                "value": row.get("preset_name"),
+                "note": "当前内部评分使用的策略预设。",
+            }
+        )
     for key in ("trend_score", "momentum_score", "volume_price_score", "liquidity_score", "strategy_score"):
         if key in row:
             notes.append({"factor": key, "value": _safe_number(row.get(key)), "note": "内部研究优先级辅助观察。"})

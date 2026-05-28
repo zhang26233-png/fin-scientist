@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.4.8
+Current version: V1.4.9
 
-V1.4.8 adds internal strategy risk and data-quality explanations so `risk_labels`, `data_quality_labels`, `risk_penalty`, and `data_quality_penalty` can be reviewed through structured audit summaries. It keeps all scoring internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
+V1.4.9 adds an internal multi-preset strategy scoring system so the same candidate set can be evaluated through balanced research, trend-momentum, volume-breakout, low-risk quality, and high-elasticity observation views. It keeps all scoring internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.4.8 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring and comparison checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
+`legacy_app.py` is not an unused backup. In V1.4.9 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring and comparison checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
 
-FinScientist V1.4.8 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.4.9 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,17 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.4.8
+当前版本：V1.4.9
+
+V1.4.9 multi-preset strategy scoring phase:
+
+- Added strategy presets: `balanced_research`, `trend_momentum`, `volume_breakout`, `low_risk_quality`, and `high_elasticity_watch`.
+- `calculate_strategy_scores()` now accepts `preset_name` or `preset_config` and returns `preset_name`, `preset_display_name`, and `strategy_score_components`.
+- Default `balanced_research` preserves the v1.4.8 scoring weights: trend 0.30, momentum 0.25, volume-price 0.20, liquidity 0.15, baseline 0.10.
+- `trend_momentum` emphasizes trend and momentum; `volume_breakout` emphasizes volume-price and liquidity; `low_risk_quality` emphasizes liquidity, risk, and data quality; `high_elasticity_watch` allows elasticity only with volume and liquidity support.
+- Legacy preset keys remain available for adapter compatibility.
+- V1.4.4-V1.4.8 drift-check thresholds did not need adjustment.
+- The changes remain internal only and do not change UI, sorting, existing screening output, stock pools, data sources, or `core/scoring.py`.
 
 V1.4.8 internal risk and data-quality explanation phase:
 

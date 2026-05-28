@@ -6,6 +6,7 @@ import math
 import pandas as pd
 
 from strategy.adapter import build_strategy_diagnostics, infer_field_mapping, to_number
+from strategy.presets import get_default_strategy_preset, get_strategy_preset
 
 
 def _clamp_score(value):
@@ -217,6 +218,31 @@ def _risk_penalty(item):
     return min(50, penalty)
 
 
+def _risk_penalty_by_label(item):
+    labels = _risk_labels(item)
+    base = _risk_penalty(item)
+    if not labels:
+        return {"base": base}
+    buckets = {label: 0 for label in labels}
+    for label in labels:
+        if label == "high_volatility":
+            buckets[label] = 10
+        elif label == "extreme_upside_return":
+            buckets[label] = 8
+        elif label == "volume_downside_risk":
+            buckets[label] = 10
+        elif label == "overheated_turnover":
+            buckets[label] = 10
+        elif label == "low_liquidity":
+            buckets[label] = 5
+        elif label in {"insufficient_factor_data", "missing_volume_fields"}:
+            buckets[label] = 8
+    assigned = sum(buckets.values())
+    if base > assigned:
+        buckets["base"] = base - assigned
+    return buckets
+
+
 def _data_quality_penalty(item):
     penalty = 0
     labels = _data_quality_labels(item)
@@ -422,8 +448,94 @@ def _momentum_score(item, base_score):
     return _clamp_score(score)
 
 
-def _score_item(item):
+def _normalize_preset(preset_name=None, preset_config=None):
+    if isinstance(preset_config, dict):
+        preset = copy.deepcopy(preset_config)
+        if not preset.get("preset_name") and preset_name:
+            preset["preset_name"] = preset_name
+        default = get_default_strategy_preset()
+        for key in ("weights", "risk_policy", "data_quality_policy"):
+            merged = copy.deepcopy(default.get(key, {}))
+            merged.update(preset.get(key, {}) if isinstance(preset.get(key), dict) else {})
+            preset[key] = merged
+        preset.setdefault("display_name", preset.get("preset_name", default["display_name"]))
+        preset.setdefault("description", default.get("description", ""))
+        return preset
+    if preset_name:
+        return get_strategy_preset(preset_name)
+    return get_default_strategy_preset()
+
+
+def _preset_bonus(item, preset, volume_price_score, liquidity_score):
+    policy = preset.get("risk_policy", {}) if isinstance(preset, dict) else {}
+    labels = _risk_labels(item)
+    source_metrics = item.get("_source_metrics", {}) if isinstance(item, dict) else {}
+    amount = source_metrics.get("amount") if isinstance(source_metrics, dict) else math.nan
+    turnover = source_metrics.get("turnover") if isinstance(source_metrics, dict) else math.nan
+    volume_ratio = source_metrics.get("volume_ratio") if isinstance(source_metrics, dict) else math.nan
+    return_20d = source_metrics.get("return_20d") if isinstance(source_metrics, dict) else math.nan
+    bonus = 0
+    reasons = []
+    if (
+        isinstance(return_20d, (int, float))
+        and isinstance(volume_ratio, (int, float))
+        and return_20d > 0.05
+        and volume_ratio >= 1.2
+        and "volume_downside_risk" not in labels
+    ):
+        value = policy.get("volume_confirmation_bonus", 0)
+        bonus += value
+        if value:
+            reasons.append("volume_price_confirmed")
+    if (
+        isinstance(amount, (int, float))
+        and isinstance(turnover, (int, float))
+        and amount >= 50_000_000
+        and 0.005 <= turnover <= 0.08
+    ):
+        value = policy.get("active_liquidity_bonus", 0)
+        bonus += value
+        if value:
+            reasons.append("active_liquidity")
+    if (
+        preset.get("preset_name") in {"high_elasticity_watch", "high_elasticity_observation"}
+        and volume_price_score < 60
+        and liquidity_score < 50
+    ):
+        value = policy.get("missing_volume_confirmation_penalty", 0)
+        bonus -= value
+        if value:
+            reasons.append("missing_volume_confirmation")
+    return bonus, reasons
+
+
+def _adjusted_penalties(item, preset, risk_penalty, data_quality_penalty):
+    policy = preset.get("risk_policy", {}) if isinstance(preset, dict) else {}
+    quality_policy = preset.get("data_quality_policy", {}) if isinstance(preset, dict) else {}
+    label_penalties = _risk_penalty_by_label(item)
+    adjusted_risk = 0.0
+    for label, value in label_penalties.items():
+        multiplier = policy.get("risk_penalty_multiplier", 1.0)
+        if label == "high_volatility":
+            multiplier *= policy.get("high_volatility_penalty_multiplier", 1.0)
+        elif label == "extreme_upside_return":
+            multiplier *= policy.get("overheat_penalty_multiplier", 1.0)
+        elif label == "overheated_turnover":
+            multiplier *= policy.get("overheat_penalty_multiplier", 1.0)
+        elif label == "volume_downside_risk":
+            multiplier *= policy.get("volume_downside_penalty_multiplier", 1.0)
+        elif label == "low_liquidity":
+            multiplier *= policy.get("low_liquidity_penalty_multiplier", 1.0)
+        adjusted_risk += value * multiplier
+    if not label_penalties:
+        adjusted_risk = risk_penalty * policy.get("risk_penalty_multiplier", 1.0)
+    adjusted_quality = data_quality_penalty * quality_policy.get("data_quality_penalty_multiplier", 1.0)
+    return min(60, adjusted_risk), min(60, adjusted_quality)
+
+
+def _score_item(item, preset=None):
     item = item if isinstance(item, dict) else {}
+    preset = _normalize_preset(preset_config=preset)
     factor_scores = item.get("factor_scores", {})
     trend_score = _trend_score(item, _factor_score(factor_scores, "trend"))
     momentum_score = _momentum_score(item, _factor_score(factor_scores, "momentum"))
@@ -434,17 +546,40 @@ def _score_item(item):
     risk_labels = _risk_labels(item)
     data_quality_labels = _data_quality_labels(item)
 
-    raw_score = (
-        trend_score * 0.30
-        + momentum_score * 0.25
-        + volume_price_score * 0.20
-        + liquidity_score * 0.15
-        + 50 * 0.10
+    weights = preset.get("weights", {})
+    bonus, bonus_reasons = _preset_bonus(item, preset, volume_price_score, liquidity_score)
+    adjusted_risk_penalty, adjusted_data_quality_penalty = _adjusted_penalties(
+        item, preset, risk_penalty, data_quality_penalty
     )
-    strategy_score = _clamp_score(raw_score - risk_penalty - data_quality_penalty)
+    raw_score = (
+        trend_score * weights.get("trend_score", 0.30)
+        + momentum_score * weights.get("momentum_score", 0.25)
+        + volume_price_score * weights.get("volume_price_score", 0.20)
+        + liquidity_score * weights.get("liquidity_score", 0.15)
+        + 50 * weights.get("baseline_score", 0.10)
+    )
+    strategy_score = _clamp_score(raw_score + bonus - adjusted_risk_penalty - adjusted_data_quality_penalty)
+    components = {
+        "weighted_scores": {
+            "trend_score": round(trend_score * weights.get("trend_score", 0.30), 4),
+            "momentum_score": round(momentum_score * weights.get("momentum_score", 0.25), 4),
+            "volume_price_score": round(volume_price_score * weights.get("volume_price_score", 0.20), 4),
+            "liquidity_score": round(liquidity_score * weights.get("liquidity_score", 0.15), 4),
+            "baseline_score": round(50 * weights.get("baseline_score", 0.10), 4),
+        },
+        "raw_score": round(raw_score, 4),
+        "preset_bonus": round(bonus, 4),
+        "preset_bonus_reasons": bonus_reasons,
+        "risk_penalty": risk_penalty,
+        "data_quality_penalty": data_quality_penalty,
+        "adjusted_risk_penalty": round(adjusted_risk_penalty, 4),
+        "adjusted_data_quality_penalty": round(adjusted_data_quality_penalty, 4),
+    }
 
     return {
         "identity": copy.deepcopy(item.get("identity", {})),
+        "preset_name": preset.get("preset_name", ""),
+        "preset_display_name": preset.get("display_name", ""),
         "trend_score": trend_score,
         "momentum_score": momentum_score,
         "volume_price_score": volume_price_score,
@@ -454,11 +589,13 @@ def _score_item(item):
         "risk_labels": risk_labels,
         "data_quality_labels": data_quality_labels,
         "strategy_score": strategy_score,
+        "strategy_score_components": components,
         "score_note": "策略评分仅用于研究优先级辅助，不构成投资建议。",
     }
 
 
-def calculate_strategy_scores(source):
+def calculate_strategy_scores(source, preset_name=None, preset_config=None):
+    preset = _normalize_preset(preset_name=preset_name, preset_config=preset_config)
     diagnostics = _extract_diagnostics(source)
     if not diagnostics:
         return {
@@ -470,10 +607,11 @@ def calculate_strategy_scores(source):
                 "read_only": True,
                 "ranking_changed": False,
                 "scoring_changed": False,
+                "preset_name": preset.get("preset_name", ""),
             },
         }
 
-    scores = [_score_item(item) for item in diagnostics]
+    scores = [_score_item(item, preset=preset) for item in diagnostics]
     return {
         "status": "ok",
         "scores": scores,
@@ -483,6 +621,8 @@ def calculate_strategy_scores(source):
             "read_only": True,
             "ranking_changed": False,
             "scoring_changed": False,
+            "preset_name": preset.get("preset_name", ""),
+            "preset_display_name": preset.get("display_name", ""),
         },
     }
 

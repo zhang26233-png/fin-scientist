@@ -95,7 +95,9 @@ def test_strategy_explanations_generates_all_data_quality_label_explanations():
 
 
 def test_strategy_explanations_penalty_breakdown_is_auditable():
-    result = build_strategy_explanations(make_score_row())
+    row = make_score_row()
+    row["preset_name"] = "volume_breakout"
+    result = build_strategy_explanations(row)
     item = result["items"][0]
 
     assert item["penalty_breakdown"]["risk_penalty"]["value"] == 38
@@ -104,7 +106,7 @@ def test_strategy_explanations_penalty_breakdown_is_auditable():
     assert item["penalty_breakdown"]["data_quality_penalty"]["level"] == "medium"
     assert item["penalty_breakdown"]["total_penalty"] == 60
     assert result["penalty_breakdown"]["total_penalty"] == 60
-    assert result["factor_notes"]
+    assert any(note["factor"] == "preset" for note in result["factor_notes"])
 
 
 def test_strategy_explanations_accepts_score_result_and_does_not_modify_source():

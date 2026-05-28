@@ -54,8 +54,6 @@ def test_strategy_presets_are_read_only_copies():
     preset["factor_weights"]["trend"] = 0
 
     assert get_strategy_preset("research_priority")["factor_weights"]["trend"] == 0.35
-    assert set(list_strategy_presets()) == {
-        "research_priority",
-        "stable_observation",
-        "high_elasticity_observation",
-    }
+    preset_keys = set(list_strategy_presets())
+    assert {"research_priority", "stable_observation", "high_elasticity_observation"}.issubset(preset_keys)
+    assert {"balanced_research", "trend_momentum", "volume_breakout", "low_risk_quality"}.issubset(preset_keys)

@@ -374,6 +374,185 @@ def test_strategy_scoring_missing_key_fields_raise_data_quality_labels():
     assert_score_range(score_row)
 
 
+def test_strategy_scoring_supports_multiple_presets_for_same_sample():
+    frame = pd.DataFrame(
+        [
+            {
+                "symbol": "PRESET1",
+                "Close": 100,
+                "return_20d": 0.16,
+                "return_10d": 0.09,
+                "return_5d": 0.04,
+                "amount": 150_000_000,
+                "volume": 1_500_000,
+                "turnover": 0.04,
+                "volume_ratio": 1.5,
+                "volatility": 0.35,
+                "valid_trading_days": 90,
+            }
+        ]
+    )
+
+    balanced = calculate_strategy_scores(frame, preset_name="balanced_research")["scores"][0]
+    trend = calculate_strategy_scores(frame, preset_name="trend_momentum")["scores"][0]
+    volume = calculate_strategy_scores(frame, preset_name="volume_breakout")["scores"][0]
+
+    assert balanced["preset_name"] == "balanced_research"
+    assert trend["preset_name"] == "trend_momentum"
+    assert volume["preset_name"] == "volume_breakout"
+    assert len({balanced["strategy_score"], trend["strategy_score"], volume["strategy_score"]}) >= 2
+    assert "strategy_score_components" in trend
+    assert_score_range(trend)
+
+
+def test_trend_momentum_scores_trend_sample_above_low_risk_quality():
+    frame = pd.DataFrame(
+        [
+            {
+                "symbol": "TRENDMOM",
+                "Close": 100,
+                "return_20d": 0.18,
+                "return_10d": 0.10,
+                "return_5d": 0.04,
+                "amount": 120_000_000,
+                "volume": 1_200_000,
+                "turnover": 0.04,
+                "volume_ratio": 1.4,
+                "volatility": 0.36,
+                "valid_trading_days": 90,
+            }
+        ]
+    )
+
+    trend = calculate_strategy_scores(frame, preset_name="trend_momentum")["scores"][0]
+    low_risk = calculate_strategy_scores(frame, preset_name="low_risk_quality")["scores"][0]
+
+    assert trend["strategy_score"] > low_risk["strategy_score"]
+    assert_score_range(trend)
+    assert_score_range(low_risk)
+
+
+def test_low_risk_quality_penalizes_high_risk_sample_more():
+    frame = pd.DataFrame(
+        [
+            {
+                "symbol": "RISKY",
+                "Close": 100,
+                "return_20d": 0.45,
+                "return_10d": 0.28,
+                "return_5d": 0.18,
+                "amount": 80_000_000,
+                "volume": 1_000_000,
+                "turnover": 0.20,
+                "volume_ratio": 2.1,
+                "volatility": 0.95,
+                "valid_trading_days": 90,
+            }
+        ]
+    )
+
+    balanced = calculate_strategy_scores(frame, preset_name="balanced_research")["scores"][0]
+    low_risk = calculate_strategy_scores(frame, preset_name="low_risk_quality")["scores"][0]
+
+    assert low_risk["strategy_score"] < balanced["strategy_score"] or low_risk["strategy_score"] == 0
+    assert low_risk["strategy_score_components"]["adjusted_risk_penalty"] >= balanced["strategy_score_components"]["adjusted_risk_penalty"]
+    assert_score_range(low_risk)
+
+
+def test_volume_breakout_prefers_confirmed_active_volume_sample():
+    confirmed = pd.DataFrame(
+        [
+            {
+                "symbol": "VOLCONF",
+                "Close": 100,
+                "return_20d": 0.12,
+                "return_10d": 0.06,
+                "return_5d": 0.02,
+                "amount": 180_000_000,
+                "volume": 1_800_000,
+                "turnover": 0.04,
+                "volume_ratio": 1.6,
+                "volatility": 0.32,
+                "valid_trading_days": 90,
+            }
+        ]
+    )
+    weak = confirmed.copy(deep=True)
+    weak["symbol"] = "VOLWEAK"
+    weak["amount"] = 20_000_000
+    weak["volume_ratio"] = 0.7
+
+    confirmed_score = calculate_strategy_scores(confirmed, preset_name="volume_breakout")["scores"][0]
+    weak_score = calculate_strategy_scores(weak, preset_name="volume_breakout")["scores"][0]
+
+    assert confirmed_score["strategy_score"] > weak_score["strategy_score"]
+    assert "volume_price_confirmed" in confirmed_score["strategy_score_components"]["preset_bonus_reasons"]
+    assert_score_range(confirmed_score)
+
+
+def test_high_elasticity_requires_volume_confirmation():
+    confirmed = pd.DataFrame(
+        [
+            {
+                "symbol": "ELASTICCONF",
+                "Close": 100,
+                "return_20d": 0.22,
+                "return_10d": 0.12,
+                "return_5d": 0.06,
+                "amount": 180_000_000,
+                "volume": 1_800_000,
+                "turnover": 0.05,
+                "volume_ratio": 1.6,
+                "volatility": 0.70,
+                "valid_trading_days": 90,
+            }
+        ]
+    )
+    unsupported = confirmed.copy(deep=True)
+    unsupported["symbol"] = "ELASTICWEAK"
+    unsupported["amount"] = 2_000_000
+    unsupported["volume"] = 50_000
+    unsupported["turnover"] = 0.001
+    unsupported["volume_ratio"] = 0.6
+
+    confirmed_score = calculate_strategy_scores(confirmed, preset_name="high_elasticity_watch")["scores"][0]
+    unsupported_score = calculate_strategy_scores(unsupported, preset_name="high_elasticity_watch")["scores"][0]
+
+    assert confirmed_score["strategy_score"] > unsupported_score["strategy_score"]
+    assert "missing_volume_confirmation" in unsupported_score["strategy_score_components"]["preset_bonus_reasons"]
+    assert_score_range(unsupported_score)
+
+
+def test_strategy_scoring_unknown_preset_and_custom_config_are_safe():
+    frame = pd.DataFrame(
+        [
+            {
+                "symbol": "CUSTOMPRESET",
+                "Close": 100,
+                "return_20d": 0.08,
+                "amount": 100_000_000,
+                "volume": 1_000_000,
+                "turnover": 0.03,
+                "volume_ratio": 1.1,
+                "valid_trading_days": 90,
+            }
+        ]
+    )
+    unknown = calculate_strategy_scores(frame, preset_name="does-not-exist")["scores"][0]
+    custom = calculate_strategy_scores(
+        frame,
+        preset_config={
+            "preset_name": "custom_internal",
+            "weights": {"trend_score": 0.10, "momentum_score": 0.10, "volume_price_score": 0.40, "liquidity_score": 0.30, "baseline_score": 0.10},
+        },
+    )["scores"][0]
+
+    assert unknown["preset_name"] == "balanced_research"
+    assert custom["preset_name"] == "custom_internal"
+    assert_score_range(unknown)
+    assert_score_range(custom)
+
+
 def test_strategy_scoring_accepts_diagnostics_and_penalizes_high_risk():
     diagnostics = build_strategy_diagnostics(make_screening_frame())
     item = diagnostics["diagnostics"][0]

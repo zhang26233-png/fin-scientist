@@ -208,6 +208,9 @@
 - V1.4.8 adds `strategy/explanations.py` for internal risk and data-quality explanation summaries based on `risk_labels`, `data_quality_labels`, `risk_penalty`, and `data_quality_penalty`.
 - V1.4.8 outputs `risk_explanations`, `data_quality_explanations`, `penalty_breakdown`, `factor_notes`, `summary_text`, and `warnings` for audit-style review.
 - V1.4.8 keeps `strategy_score` unchanged and does not change existing screening output, scoring rules, page display, or sorting logic.
+- V1.4.9 adds internal multi-preset strategy scoring through `balanced_research`, `trend_momentum`, `volume_breakout`, `low_risk_quality`, and `high_elasticity_watch`.
+- V1.4.9 lets `calculate_strategy_scores()` accept `preset_name` or `preset_config` and return `strategy_score_components`.
+- V1.4.9 keeps the default preset compatible with previous scoring and does not change existing screening output, scoring rules, page display, or sorting logic.
 - Future V1.4.x work can add factor explanation helpers or internal diagnostics snapshots without changing the current page flow.
 
 ## v1.5 交易纪律模块
