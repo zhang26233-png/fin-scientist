@@ -4,6 +4,37 @@
 
 ### Target
 
+- Complete V1.3.4 strategy view-model phase.
+- Add a read-only internal view-model that converts `strategy.service` output into future UI-friendly structures.
+- Do not add data sources, change stock pools, change `core/scoring.py`, change Streamlit display, change sorting logic, or add strategy logic to `legacy_app.py` or `ui/screening_ui.py`.
+
+### Added Strategy View-Model
+
+- `strategy/view_model.py` consumes strategy service output.
+- View-model output includes `cards`, `badges`, `sections`, `table_rows`, `empty_state`, and `metadata`.
+- Metadata preserves read-only behavior and confirms UI, ranking, and scoring are unchanged.
+- The view-model returns safe empty states for missing or invalid input.
+
+### Compatibility
+
+- The view-model is not wired into the current screening flow.
+- Existing research-priority scoring, page display, and sorting remain unchanged.
+- `legacy_app.py` and `ui/screening_ui.py` do not import `strategy.view_model`.
+
+### Tests
+
+- Added `tests/test_strategy_view_model.py`.
+- Extended module import coverage to include `strategy.view_model`.
+- Covered empty service output, missing fields, typical service output, no mutation of service output, non-dict input, and operation-word safety.
+
+### Next Step
+
+- V1.3.5 can add a feature-flag boundary or non-rendering UI contract tests before any optional Streamlit display integration.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.3.3 strategy service phase.
 - Add a read-only internal service that combines `strategy.adapter` diagnostics and `strategy.report` summaries.
 - Do not add data sources, change stock pools, change `core/scoring.py`, change Streamlit display, change sorting logic, or add strategy logic to `legacy_app.py`.
@@ -29,7 +60,7 @@
 
 ### Next Step
 
-- V1.3.4 can add a read-only UI boundary design or a non-rendering view-model test layer before any optional page integration.
+- V1.3.4 added the read-only view-model layer without page integration.
 
 ## 2026-05-28
 

@@ -12,4 +12,5 @@ __all__ = [
     "report",
     "risk",
     "service",
+    "view_model",
 ]
