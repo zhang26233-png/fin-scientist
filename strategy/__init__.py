@@ -11,6 +11,7 @@ __all__ = [
     "presets",
     "report",
     "risk",
+    "scoring",
     "service",
     "view_model",
 ]

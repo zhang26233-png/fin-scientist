@@ -176,30 +176,41 @@
 - V1.3.6 adds `ui/strategy_diagnostics_panel.py` as an explicitly gated, read-only rendering helper.
 - The helper returns without rendering when the default-off strategy diagnostics flag is disabled.
 - V1.3.6 still does not call the helper from current Streamlit pages and does not change existing screening output, scoring rules, page display, or sorting logic.
-- Future V1.3.x work can add an inactive integration point only after gated rendering helper behavior remains stable.
+- V1.3.6 completed the inactive gated display boundary.
 
-## v1.4 交易纪律模块
+## v1.4 Independent Strategy Scoring
+
+- V1.4.0 adds `strategy/scoring.py` as an internal research-priority strategy-score system.
+- Strategy score components include trend score, momentum score, volume-price score, liquidity score, risk penalty, data-quality penalty, and final strategy score.
+- `strategy/factors.py` adds trend direction, volume-price, and data-quality helpers.
+- V1.4.0 does not replace `core/scoring.py`, connect strategy scores to the Streamlit workflow, change existing screening output, change scoring rules, change page display, or change sorting logic.
+- V1.4.1 adds calibration tests for high-quality trend, low-liquidity, overheated-risk, missing-data, and neutral samples.
+- V1.4.1 adds score-distribution checks for 0-100 bounds, directional expectations, and row-order preservation.
+- V1.4.1 keeps strategy scores internal and does not change existing screening output, scoring rules, page display, or sorting logic.
+- Future V1.4.x work can add side-by-side internal comparison against existing research-priority scores without changing the current page flow.
+
+## v1.5 交易纪律模块
 
 - 建立学习型交易纪律清单。
 - 记录仓位、止损、复盘和风险控制原则。
 - 不接入真实交易账户。
 - 不输出自动买卖指令。
 
-## v1.5 回测验证增强
+## v1.6 回测验证增强
 
 - 增加更多策略模板和参数设置。
 - 完善交易成本、持仓比例和样本区间说明。
 - 增加回测结果的稳定性和局限性提示。
 - 强调回测结果不代表未来收益。
 
-## v1.6 AI 研究摘要模块
+## v1.7 AI 研究摘要模块
 
 - 探索 AI 辅助整理研究摘要的可能性。
 - 保留数据来源、指标依据和风险提示。
 - 不让 AI 直接生成交易结论。
 - 明确区分事实、规则判断和主观假设。
 
-## v1.7 工程化增强
+## v1.8 工程化增强
 
 - 将单文件原型逐步拆分为更清晰的模块。
 - 增加测试覆盖和文档规范。

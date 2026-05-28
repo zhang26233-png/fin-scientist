@@ -4,6 +4,75 @@
 
 ### Target
 
+- Complete V1.4.1 strategy score calibration phase.
+- Add calibration and distribution tests for internal strategy scores.
+- Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or add strategy scoring to `legacy_app.py` or `ui/screening_ui.py`.
+
+### Calibration Samples
+
+- High-quality trend sample: stronger trend, active amount, complete fields, moderate volatility.
+- Low-liquidity sample: low amount and low volume.
+- Overheated-risk sample: large short-term increase and high volatility.
+- Missing-data sample: missing key market fields.
+- Neutral sample: ordinary factor profile with middle-range score expectations.
+
+### Scoring Adjustment
+
+- Refined `strategy/scoring.py` to read source amount and volume fields from DataFrame inputs.
+- Low-liquidity samples now lower `liquidity_score` more directly.
+- This adjustment is internal to `strategy/scoring.py` and does not affect existing application scoring.
+
+### Tests
+
+- Added `tests/test_strategy_scoring_calibration.py`.
+- Added `tests/test_strategy_score_distribution.py`.
+- Covered score direction, 0-100 bounds, row-order preservation, low-liquidity penalty, high-risk penalty, data-quality penalty, no source DataFrame mutation, and operation-word safety.
+
+### Next Step
+
+- V1.4.2 can add a side-by-side internal comparison between existing research-priority scores and strategy scores without changing page sorting or display.
+
+## 2026-05-28
+
+### Target
+
+- Complete V1.4.0 independent strategy scoring phase.
+- Add internal strategy-score functions under `strategy/` without replacing `core/scoring.py`.
+- Do not add data sources, change stock pools, change Streamlit display, change existing screening sorting, or add strategy scoring to `legacy_app.py` or `ui/screening_ui.py`.
+
+### Added Strategy Scoring
+
+- `strategy/scoring.py` computes internal strategy scores from a screening-result DataFrame or existing diagnostics.
+- Score output includes `trend_score`, `momentum_score`, `volume_price_score`, `liquidity_score`, `risk_penalty`, `data_quality_penalty`, and `strategy_score`.
+- `strategy_score` is clamped to 0-100 and is only a research-priority auxiliary score.
+- Risk and data-quality issues lower the internal strategy score but do not change existing application scoring.
+
+### Factor Enhancements
+
+- `strategy/factors.py` adds trend direction, volume-price, and data-quality factor helpers.
+- Existing factor snapshot behavior remains compatible.
+
+### Compatibility
+
+- Existing `core/scoring.py` remains unchanged.
+- Existing research-priority scoring, page display, and sorting remain unchanged.
+- `legacy_app.py` and `ui/screening_ui.py` do not import `strategy.scoring`.
+
+### Tests
+
+- Added `tests/test_strategy_scoring.py`.
+- Extended `tests/test_strategy_factors.py` for new pure factor helpers.
+- Extended module import coverage to include `strategy.scoring`.
+- Covered empty inputs, missing fields, stable typical scoring, high-risk penalty, data-quality penalty, no source DataFrame mutation, no legacy/UI dependency, and operation-word safety.
+
+### Next Step
+
+- V1.4.1 added score calibration fixtures and distribution checks while keeping strategy scores internal.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.3.6 gated diagnostics panel helper phase.
 - Add a feature-flagged rendering helper for future strategy diagnostics display.
 - Do not add data sources, change stock pools, change `core/scoring.py`, change Streamlit display, change sorting logic, or call the helper from current pages.
