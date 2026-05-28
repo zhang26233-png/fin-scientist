@@ -34,6 +34,11 @@ def _get_numeric_series(price_df, column):
     return pd.to_numeric(price_df[column], errors="coerce").dropna()
 
 
+def _latest_number(price_df, column):
+    series = _get_numeric_series(price_df, column)
+    return math.nan if series.empty else float(series.iloc[-1])
+
+
 def calculate_trend_factor(price_df, price_col="Close", short_window=20, long_window=60):
     close = _get_numeric_series(price_df, price_col)
     if len(close) < short_window:
@@ -51,6 +56,23 @@ def calculate_trend_factor(price_df, price_col="Close", short_window=20, long_wi
     if not pd.isna(long_ma) and short_ma > long_ma:
         score += 30
 
+    period_return = latest / close.iloc[-short_window] - 1 if close.iloc[-short_window] else math.nan
+    if pd.isna(period_return):
+        trend_direction_label = "方向暂缺"
+        trend_quality_label = "趋势质量待核验"
+    elif period_return > 0.30:
+        trend_direction_label = "短期趋势向上"
+        trend_quality_label = "拉升较快，需核验过热风险"
+    elif period_return > 0.05:
+        trend_direction_label = "短期趋势向上"
+        trend_quality_label = "趋势相对平稳"
+    elif period_return >= -0.05:
+        trend_direction_label = "短期趋势走平"
+        trend_quality_label = "趋势方向不明显"
+    else:
+        trend_direction_label = "短期趋势向下"
+        trend_quality_label = "趋势转弱"
+
     return {
         "factor": "trend",
         "score": int(score),
@@ -59,6 +81,8 @@ def calculate_trend_factor(price_df, price_col="Close", short_window=20, long_wi
             "latest": float(latest),
             "short_ma": float(short_ma),
             "long_ma": None if pd.isna(long_ma) else float(long_ma),
+            "trend_direction_label": trend_direction_label,
+            "trend_quality_label": trend_quality_label,
         },
     }
 
@@ -73,21 +97,144 @@ def calculate_momentum_factor(price_df, price_col="Close", window=20):
     if start == 0:
         return _empty_result("momentum", "起始价格为 0，无法计算动量因子。")
 
+    explicit_returns = [
+        _latest_number(price_df, column)
+        for column in ("pct_chg", "recent_return", "return_5d", "return_10d")
+        if isinstance(price_df, pd.DataFrame) and column in price_df.columns
+    ]
+    explicit_returns = [value for value in explicit_returns if not pd.isna(value)]
     period_return = end / start - 1
+    if explicit_returns:
+        period_return = max(explicit_returns)
+
+    recent_returns = close.pct_change().dropna().tail(min(5, len(close) - 1))
+    consecutive_up_count = 0
+    consecutive_down_count = 0
+    for value in reversed(recent_returns.tolist()):
+        if value > 0:
+            consecutive_up_count += 1
+            if consecutive_down_count:
+                break
+        elif value < 0:
+            consecutive_down_count += 1
+            if consecutive_up_count:
+                break
+        else:
+            break
+
     if period_return > 0.20:
-        score = 80
+        score = 65 if period_return > 0.35 or consecutive_up_count >= 5 else 80
+        momentum_label = "过热动量" if period_return > 0.35 or consecutive_up_count >= 5 else "强动量"
     elif period_return > 0.10:
         score = 65
+        momentum_label = "温和动量"
     elif period_return > 0:
         score = 50
+        momentum_label = "弱动量"
     else:
         score = 30
+        momentum_label = "动量转弱"
+    if consecutive_down_count >= 3:
+        score = min(score, 25)
+        momentum_label = "连续走弱"
 
     return {
         "factor": "momentum",
         "score": score,
         "label": "阶段表现观察",
-        "details": {"window": window, "return": float(period_return)},
+        "details": {
+            "window": window,
+            "return": float(period_return),
+            "momentum_label": momentum_label,
+            "consecutive_up_count": consecutive_up_count,
+            "consecutive_down_count": consecutive_down_count,
+        },
+    }
+
+
+def calculate_moving_average_position_factor(price_df, price_col="Close", ma_columns=("MA5", "MA10", "MA20")):
+    close = _get_numeric_series(price_df, price_col)
+    if close.empty:
+        return _empty_result("moving_average_position", "收盘价数据不足，无法计算均线位置因子。")
+
+    latest = float(close.iloc[-1])
+    available_ma = {}
+    for column in ma_columns:
+        value = _latest_number(price_df, column)
+        if not pd.isna(value):
+            available_ma[column] = value
+    if not available_ma:
+        return _empty_result("moving_average_position", "均线字段缺失，无法计算均线位置因子。")
+
+    above_count = sum(1 for value in available_ma.values() if latest > value)
+    below_count = sum(1 for value in available_ma.values() if latest < value)
+    score = 50 + above_count * 15 - below_count * 15
+    if below_count == len(available_ma):
+        trend_direction_label = "短期趋势向下"
+    elif above_count == len(available_ma):
+        trend_direction_label = "短期趋势向上"
+    else:
+        trend_direction_label = "短期趋势走平"
+    return {
+        "factor": "moving_average_position",
+        "score": max(0, min(100, int(score))),
+        "label": "均线位置观察",
+        "details": {
+            "latest": latest,
+            "available_ma": available_ma,
+            "above_count": above_count,
+            "below_count": below_count,
+            "trend_direction_label": trend_direction_label,
+        },
+    }
+
+
+def calculate_momentum_profile_factor(price_df, price_col="Close"):
+    close = _get_numeric_series(price_df, price_col)
+    if len(close) < 3:
+        return _empty_result("momentum_profile", "收盘价数据不足，无法计算动量画像因子。")
+
+    returns = {
+        column: _latest_number(price_df, column)
+        for column in ("pct_chg", "recent_return", "return_5d", "return_10d")
+        if isinstance(price_df, pd.DataFrame) and column in price_df.columns
+    }
+    if not returns:
+        for window in (5, 10):
+            if len(close) > window and close.iloc[-window - 1] != 0:
+                returns[f"return_{window}d"] = close.iloc[-1] / close.iloc[-window - 1] - 1
+    if not returns:
+        return _empty_result("momentum_profile", "动量字段缺失，无法计算动量画像因子。")
+
+    latest_return = max(value for value in returns.values() if not pd.isna(value))
+    recent_changes = close.pct_change().dropna().tail(min(5, len(close) - 1))
+    up_days = int((recent_changes > 0).sum())
+    down_days = int((recent_changes < 0).sum())
+    if latest_return > 0.35:
+        score = 55
+        momentum_label = "过热动量"
+    elif latest_return > 0.08:
+        score = 70
+        momentum_label = "温和动量"
+    elif latest_return >= -0.03:
+        score = 50
+        momentum_label = "中性动量"
+    else:
+        score = 30
+        momentum_label = "动量转弱"
+    if down_days >= 4:
+        score = min(score, 25)
+        momentum_label = "连续走弱"
+    return {
+        "factor": "momentum_profile",
+        "score": score,
+        "label": "动量画像观察",
+        "details": {
+            "returns": returns,
+            "up_days": up_days,
+            "down_days": down_days,
+            "momentum_label": momentum_label,
+        },
     }
 
 
@@ -267,7 +414,9 @@ def build_factor_snapshot(price_df):
 __all__ = [
     "build_factor_snapshot",
     "calculate_data_quality_factor",
+    "calculate_momentum_profile_factor",
     "calculate_momentum_factor",
+    "calculate_moving_average_position_factor",
     "calculate_trend_factor",
     "calculate_trend_direction_factor",
     "calculate_volatility_factor",

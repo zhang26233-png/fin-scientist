@@ -27,6 +27,18 @@ def _read_mapped(row, mapping, key):
     return row.get(column)
 
 
+def _read_any(row, candidates):
+    for column in candidates:
+        if column in row:
+            return row.get(column)
+    lowered = {str(column).lower(): column for column in row.index}
+    for column in candidates:
+        matched = lowered.get(str(column).lower())
+        if matched is not None:
+            return row.get(matched)
+    return None
+
+
 def _source_metrics_from_frame(source, diagnostics):
     if not isinstance(source, pd.DataFrame) or not diagnostics:
         return diagnostics
@@ -41,6 +53,8 @@ def _source_metrics_from_frame(source, diagnostics):
             "amount": to_number(_read_mapped(row, mapping, "amount")),
             "volume": to_number(_read_mapped(row, mapping, "volume")),
             "return_20d": to_number(_read_mapped(row, mapping, "return_20d")),
+            "return_10d": to_number(_read_any(row, ("return_10d", "10d_return", "近 10 日涨跌幅"))),
+            "return_5d": to_number(_read_any(row, ("return_5d", "5d_return", "近 5 日涨跌幅", "pct_chg", "recent_return"))),
             "volatility": to_number(_read_mapped(row, mapping, "volatility")),
             "valid_days": to_number(_read_mapped(row, mapping, "valid_days")),
         }
@@ -91,9 +105,15 @@ def _risk_penalty(item):
     source_metrics = item.get("_source_metrics", {}) if isinstance(item, dict) else {}
     if isinstance(source_metrics, dict):
         return_20d = source_metrics.get("return_20d")
+        return_10d = source_metrics.get("return_10d")
+        return_5d = source_metrics.get("return_5d")
         volatility = source_metrics.get("volatility")
         if isinstance(return_20d, (int, float)) and return_20d > 0.35:
             penalty += 10
+        if isinstance(return_10d, (int, float)) and return_10d > 0.25:
+            penalty += 10
+        if isinstance(return_5d, (int, float)) and return_5d > 0.15:
+            penalty += 8
         if isinstance(volatility, (int, float)) and volatility > 0.80:
             penalty += 10
 
@@ -142,11 +162,65 @@ def _liquidity_score(item):
     return volume_score
 
 
+def _source_return(source_metrics, *keys):
+    if not isinstance(source_metrics, dict):
+        return math.nan
+    for key in keys:
+        value = source_metrics.get(key)
+        if isinstance(value, (int, float)) and not math.isnan(value):
+            return value
+    return math.nan
+
+
+def _trend_score(item, base_score):
+    source_metrics = item.get("_source_metrics", {}) if isinstance(item, dict) else {}
+    return_20d = _source_return(source_metrics, "return_20d")
+    volatility = _source_return(source_metrics, "volatility")
+    score = base_score
+    if not math.isnan(return_20d):
+        if return_20d > 0.35:
+            score = min(max(score, 70), 80)
+        elif return_20d > 0.05:
+            score = max(score, 75)
+        elif return_20d >= -0.05:
+            score = min(max(score, 50), 65)
+        else:
+            score = min(score, 35)
+    if not math.isnan(volatility) and volatility > 0.80:
+        score = min(score, 70)
+    return _clamp_score(score)
+
+
+def _momentum_score(item, base_score):
+    source_metrics = item.get("_source_metrics", {}) if isinstance(item, dict) else {}
+    return_20d = _source_return(source_metrics, "return_20d")
+    return_10d = _source_return(source_metrics, "return_10d")
+    return_5d = _source_return(source_metrics, "return_5d")
+    available = [value for value in (return_20d, return_10d, return_5d) if not math.isnan(value)]
+    score = base_score
+    if available:
+        strongest = max(available)
+        weakest = min(available)
+        if strongest > 0.35:
+            score = min(max(score, 55), 65)
+        elif strongest > 0.08:
+            score = max(score, 70)
+        elif strongest >= -0.03:
+            score = min(max(score, 45), 60)
+        else:
+            score = min(score, 30)
+        if len(available) >= 2 and weakest < -0.03 and strongest < 0.03:
+            score = min(score, 30)
+        if return_5d < -0.05 and return_10d < -0.03:
+            score = min(score, 25)
+    return _clamp_score(score)
+
+
 def _score_item(item):
     item = item if isinstance(item, dict) else {}
     factor_scores = item.get("factor_scores", {})
-    trend_score = _factor_score(factor_scores, "trend")
-    momentum_score = _factor_score(factor_scores, "momentum")
+    trend_score = _trend_score(item, _factor_score(factor_scores, "trend"))
+    momentum_score = _momentum_score(item, _factor_score(factor_scores, "momentum"))
     volume_price_score = _factor_score(factor_scores, "volume")
     liquidity_score = _liquidity_score(item)
     risk_penalty = _risk_penalty(item)

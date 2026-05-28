@@ -4,6 +4,43 @@
 
 ### Target
 
+- Complete V1.4.5 strategy trend and momentum factor enhancement phase.
+- Improve internal strategy-score distinction for trend direction, moving-average position, short-term momentum, overheating, and recent weakness.
+- Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or add strategy logic to `legacy_app.py` or `ui/screening_ui.py`.
+
+### Factor Enhancements
+
+- `strategy/factors.py` adds `calculate_moving_average_position_factor()`.
+- `strategy/factors.py` adds `calculate_momentum_profile_factor()`.
+- `calculate_trend_factor()` now includes `trend_direction_label` and trend quality details.
+- `calculate_momentum_factor()` now includes `momentum_label`, consecutive-up count, and consecutive-down count.
+
+### Scoring Enhancements
+
+- `strategy/scoring.py` now reads optional 5-day and 10-day return fields from DataFrame inputs.
+- Trend sub-score distinguishes moderate trend, flat trend, downtrend, and overheated trend.
+- Momentum sub-score distinguishes moderate momentum, overheated momentum, recent weakness, and continuous weakness.
+- Overheated short-term return increases risk penalty.
+
+### Drift Checks
+
+- V1.4.4 drift-check thresholds remained stable.
+- No drift threshold changes were required.
+
+### Tests
+
+- Updated `tests/test_strategy_factors.py`.
+- Updated `tests/test_strategy_scoring.py`.
+- Re-ran drift, calibration, and score-distribution tests to confirm stable ranges.
+
+### Next Step
+
+- V1.4.6 can add internal factor-explanation helpers for trend and momentum sub-scores, still without UI integration.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.4.4 strategy score drift-check phase.
 - Add fixed-sample drift checks for strategy scores, alignment labels, and aggregate comparison summaries.
 - Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or add drift logic to `legacy_app.py` or `ui/screening_ui.py`.
@@ -32,7 +69,7 @@
 
 ### Next Step
 
-- V1.4.5 can add internal comparison export helpers or diagnostic snapshot formatting while keeping results out of UI.
+- V1.4.5 enhanced trend and momentum factor handling while keeping results out of UI.
 
 ## 2026-05-28
 

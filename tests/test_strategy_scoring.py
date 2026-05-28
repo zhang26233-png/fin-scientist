@@ -81,10 +81,76 @@ def test_strategy_scoring_typical_frame_stable_score():
     assert result["status"] == "ok"
     assert score_row["identity"]["symbol"] == "300750.SZ"
     assert score_row["trend_score"] == 100
-    assert score_row["momentum_score"] in {50, 65, 80}
+    assert score_row["momentum_score"] in {50, 65, 70, 80}
     assert score_row["strategy_score"] > 0
     assert_score_range(score_row)
     assert_no_forbidden_words(result)
+
+
+def test_strategy_scoring_distinguishes_moderate_momentum_from_overheated_risk():
+    moderate = pd.DataFrame(
+        [
+            {
+                "股票代码": "MOD1",
+                "最新价格": 100,
+                "近 20 日涨跌幅": "12.00%",
+                "return_10d": 0.08,
+                "return_5d": 0.03,
+                "成交量": 1000000,
+                "成交额": 100000000,
+                "年化波动率": "30.00%",
+                "成交量放大倍数": 1.2,
+                "有效交易日数量": 90,
+            }
+        ]
+    )
+    overheated = pd.DataFrame(
+        [
+            {
+                "股票代码": "HOT1",
+                "最新价格": 100,
+                "近 20 日涨跌幅": "48.00%",
+                "return_10d": 0.30,
+                "return_5d": 0.18,
+                "成交量": 1000000,
+                "成交额": 100000000,
+                "年化波动率": "95.00%",
+                "成交量放大倍数": 2.0,
+                "有效交易日数量": 90,
+            }
+        ]
+    )
+
+    moderate_score = calculate_strategy_scores(moderate)["scores"][0]
+    overheated_score = calculate_strategy_scores(overheated)["scores"][0]
+
+    assert moderate_score["momentum_score"] > overheated_score["momentum_score"]
+    assert overheated_score["risk_penalty"] > moderate_score["risk_penalty"]
+    assert moderate_score["strategy_score"] > overheated_score["strategy_score"]
+
+
+def test_strategy_scoring_lowers_momentum_for_recent_weakness():
+    weak = pd.DataFrame(
+        [
+            {
+                "股票代码": "WEAK1",
+                "最新价格": 100,
+                "近 20 日涨跌幅": "-8.00%",
+                "return_10d": -0.04,
+                "return_5d": -0.06,
+                "成交量": 1000000,
+                "成交额": 100000000,
+                "年化波动率": "35.00%",
+                "成交量放大倍数": 0.9,
+                "有效交易日数量": 90,
+            }
+        ]
+    )
+
+    score_row = calculate_strategy_scores(weak)["scores"][0]
+
+    assert score_row["momentum_score"] <= 25
+    assert 0 <= score_row["strategy_score"] <= 100
 
 
 def test_strategy_scoring_accepts_diagnostics_and_penalizes_high_risk():
