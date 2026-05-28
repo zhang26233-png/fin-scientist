@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.4.3
+Current version: V1.4.4
 
-V1.4.3 extends `strategy/comparison.py` with aggregate score-alignment summaries across batches. It keeps all comparison results internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
+V1.4.4 adds fixed-sample drift checks for internal strategy scores, alignment labels, and aggregate comparison summaries. It keeps all checks internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.4.3 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. New strategy comparison code lives in `strategy/`; `legacy_app.py` does not import it in this release.
+`legacy_app.py` is not an unused backup. In V1.4.4 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring and comparison checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
 
-FinScientist V1.4.3 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.4.4 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,15 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.4.3
+当前版本：V1.4.4
+
+V1.4.4 strategy drift-check phase:
+
+- Added fixed-sample drift checks for internal `strategy_score` ranges.
+- Added drift checks for alignment labels and aggregate comparison summary metrics.
+- Fixed samples cover high-quality trend, low-liquidity, overheated-risk, missing-data, neutral, strategy-strong research-weak, and research-strong strategy-weak cases.
+- No scoring or summary logic was changed in this release.
+- Checks remain internal and do not change UI, sorting, or existing scores.
 
 V1.4.3 aggregate comparison summary phase:
 

@@ -4,6 +4,40 @@
 
 ### Target
 
+- Complete V1.4.4 strategy score drift-check phase.
+- Add fixed-sample drift checks for strategy scores, alignment labels, and aggregate comparison summaries.
+- Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or add drift logic to `legacy_app.py` or `ui/screening_ui.py`.
+
+### Drift Samples
+
+- High-quality trend sample.
+- Low-liquidity sample.
+- Overheated-risk sample.
+- Missing-data sample.
+- Neutral sample.
+- Strategy-strong research-weak sample.
+- Research-strong strategy-weak sample.
+
+### Monitored Metrics
+
+- `strategy_score` ranges for fixed scoring samples.
+- Liquidity penalty, risk penalty, and data-quality penalty direction.
+- Alignment label sequence for fixed comparison samples.
+- Summary total count, valid count, alignment counts, missing score counts, average scores, and average gap.
+
+### Tests
+
+- Added `tests/test_strategy_score_drift.py`.
+- Covered drift ranges, stable alignment labels, stable aggregate summary metrics, source DataFrame immutability, no legacy/UI dependency, and operation-word safety.
+
+### Next Step
+
+- V1.4.5 can add internal comparison export helpers or diagnostic snapshot formatting while keeping results out of UI.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.4.3 aggregate comparison summary phase.
 - Add batch-level summaries for existing research-priority scores and internal `strategy_score`.
 - Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or add comparison summary logic to `legacy_app.py` or `ui/screening_ui.py`.
@@ -22,7 +56,7 @@
 
 ### Next Step
 
-- V1.4.4 can add drift-check fixtures for comparison summaries over fixed sample batches, still keeping results internal.
+- V1.4.4 added fixed-sample drift checks for comparison summaries and strategy scores while keeping results internal.
 
 ## 2026-05-28
 
