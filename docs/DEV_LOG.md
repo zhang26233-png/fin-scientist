@@ -4,6 +4,33 @@
 
 ### Target
 
+- Complete V1.4.12 internal strategy snapshot export phase.
+- Convert single-candidate preset comparisons and candidate-pool preset summaries into stable JSON-like dictionaries without changing UI, existing screening output, sorting, default strategy scoring, or `core/scoring.py`.
+- Keep V1.4.4-V1.4.11 drift and calibration tests stable.
+
+### Export Helpers
+
+- Added `strategy/export.py`.
+- Added `export_preset_comparison_snapshot()`.
+- Added `export_preset_pool_summary_snapshot()`.
+- Added `build_strategy_snapshot_payload()`.
+- Snapshot outputs include `schema_version`, `snapshot_type`, stable comparison or summary fields, warnings, and merged metadata.
+- `generated_at` can be supplied for stable tests or omitted for UTC timestamp generation in combined payloads.
+
+### Tests
+
+- Added `tests/test_strategy_export.py`.
+- Covered empty input, single-candidate snapshot structure, candidate-pool summary snapshot structure, metadata merge, warning preservation, input immutability, safety wording, and legacy/UI dependency boundaries.
+- Re-ran drift, calibration, distribution, py-compile, full pytest, safety scan, and Streamlit short-start checks.
+
+### Next Step
+
+- V1.4.13 can add internal snapshot validation helpers for schema compatibility checks, still without UI integration.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.4.11 internal candidate-pool preset summary phase.
 - Aggregate multi-preset comparison results across a batch of candidates without changing UI, existing screening output, sorting, default strategy scoring, or `core/scoring.py`.
 - Keep V1.4.4-V1.4.10 drift and calibration tests stable.

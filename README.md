@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.4.11
+Current version: V1.4.12
 
-V1.4.11 adds internal candidate-pool summaries for cross-preset comparisons, aggregating dominant style distribution, consensus level distribution, preset average scores, score spread, and insufficient-data counts across a batch of candidates. It keeps all scoring internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
+V1.4.12 adds internal strategy snapshot export helpers that convert preset comparison and candidate-pool preset summary results into stable JSON-like schemas for research records, backtest preparation, and version audits. It keeps all scoring internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.4.11 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring and comparison checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
+`legacy_app.py` is not an unused backup. In V1.4.12 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring and comparison checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
 
-FinScientist V1.4.11 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.4.12 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,17 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.4.11
+当前版本：V1.4.12
+
+V1.4.12 internal strategy snapshot export phase:
+
+- Added `strategy/export.py`.
+- Added `export_preset_comparison_snapshot()` for single-candidate preset comparison snapshots.
+- Added `export_preset_pool_summary_snapshot()` for candidate-pool preset summary snapshots.
+- Added `build_strategy_snapshot_payload()` to combine optional comparison and pool summary snapshots with stable metadata.
+- Snapshot outputs include `schema_version`, `snapshot_type`, preserved warnings, merged metadata, and stable JSON-like dictionaries.
+- V1.4.4-V1.4.11 drift-check thresholds did not need adjustment.
+- The changes remain internal only and do not change `strategy_score` default logic, UI, sorting, existing screening output, stock pools, data sources, or `core/scoring.py`.
 
 V1.4.11 candidate-pool preset summary phase:
 
