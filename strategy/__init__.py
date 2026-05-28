@@ -9,5 +9,6 @@ __all__ = [
     "adapter",
     "filters",
     "presets",
+    "report",
     "risk",
 ]

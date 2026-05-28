@@ -4,6 +4,37 @@
 
 ### Target
 
+- Complete V1.3.2 strategy report phase.
+- Add a read-only report builder that summarizes `strategy.adapter` diagnostics.
+- Do not add data sources, change stock pools, change `core/scoring.py`, change Streamlit display, change sorting logic, or add strategy logic to `legacy_app.py`.
+
+### Added Strategy Report
+
+- `strategy/report.py` consumes adapter diagnostics and returns structured internal summaries.
+- Report output includes `preset_name`, `summary_text`, `factor_summary`, `filter_summary`, `risk_summary`, `data_quality_summary`, and `notes`.
+- Text focuses on observations, prompts, risks, data quality, and research-priority context.
+- Empty diagnostics, missing fields, and invalid structures return safe summaries.
+
+### Compatibility
+
+- The report builder is not wired into the current screening flow.
+- Existing research-priority scoring, page display, and sorting remain unchanged.
+- `legacy_app.py` does not import `strategy.report`.
+
+### Tests
+
+- Added `tests/test_strategy_report.py`.
+- Extended module import coverage to include `strategy.report`.
+- Covered empty diagnostics, missing fields, typical adapter output, no mutation of the adapter output, invalid input, and operation-word safety.
+
+### Next Step
+
+- V1.3.3 can add a read-only internal strategy diagnostics service that combines adapter and report outputs behind one tested function, still without UI integration.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.3.1 strategy adapter phase.
 - Add a read-only adapter that converts existing screening-result DataFrames into strategy diagnostics.
 - Do not add data sources, change stock pools, change `core/scoring.py`, change Streamlit display, change sorting logic, or add strategy logic to `legacy_app.py`.
@@ -29,7 +60,7 @@
 
 ### Next Step
 
-- V1.3.2 can add a read-only internal report builder on top of adapter output, still without changing existing UI or ranking unless a separate UI boundary is explicitly requested.
+- V1.3.2 added the read-only report builder while keeping existing UI and ranking unchanged.
 
 ## 2026-05-28
 

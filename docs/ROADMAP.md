@@ -161,7 +161,10 @@
 - V1.3.1 adds `strategy/adapter.py` as a read-only conversion layer from existing screening-result DataFrames to strategy diagnostics.
 - Adapter output includes factor scores, filter flags, risk tags, risk notes, preset name, and a diagnostics summary.
 - V1.3.1 still does not connect strategy diagnostics to the Streamlit workflow, existing screening output, scoring rules, page display, or sorting logic.
-- Future V1.3.x work can add a read-only strategy diagnostics panel only after the adapter behavior and UI boundary are explicitly tested.
+- V1.3.2 adds `strategy/report.py` as a read-only internal report builder based on adapter diagnostics.
+- Report output includes preset name, summary text, factor summary, filter summary, risk summary, data-quality summary, and notes.
+- V1.3.2 still does not connect strategy reports to the Streamlit workflow, existing screening output, scoring rules, page display, or sorting logic.
+- Future V1.3.x work can add a read-only strategy diagnostics panel only after the report behavior and UI boundary are explicitly tested.
 
 ## v1.4 交易纪律模块
 
