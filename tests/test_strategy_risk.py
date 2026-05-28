@@ -4,6 +4,8 @@ from strategy.risk import (
     detect_high_volatility_risk,
     detect_liquidity_risk,
     detect_missing_data_risk,
+    detect_turnover_overheat_risk,
+    detect_volume_downside_risk,
     risk_tags_to_text,
 )
 
@@ -57,3 +59,41 @@ def test_strategy_risk_individual_detectors_are_stable():
     assert detect_missing_data_risk(metrics)
     assert detect_liquidity_risk(metrics)
     assert risk_tags_to_text("bad input") == ""
+
+
+def test_strategy_risk_detects_volume_downside_turnover_and_low_liquidity_codes():
+    metrics = {
+        "近 5 日涨跌幅": -0.08,
+        "成交量放大倍数": 1.8,
+        "换手率": 0.20,
+        "成交额": 2_000_000,
+        "成交量": 50_000,
+        "有效交易日数量": 90,
+        "基本面字段缺失较多": False,
+    }
+
+    risks = build_risk_labels(metrics)
+    codes = {item.get("code") for item in risks}
+
+    assert detect_volume_downside_risk(metrics)
+    assert detect_turnover_overheat_risk(metrics)
+    assert "volume_downside_risk" in codes
+    assert "overheated_turnover" in codes
+    assert "low_liquidity" in codes
+    assert_no_operation_words(risk_tags_to_text(risks))
+
+
+def test_strategy_risk_handles_inf_nan_and_amplitude_safely():
+    metrics = {
+        "年化波动率": float("inf"),
+        "振幅": 0.16,
+        "成交量放大倍数": float("nan"),
+        "有效交易日数量": 90,
+        "基本面字段缺失较多": False,
+    }
+
+    risks = build_risk_labels(metrics)
+    codes = {item.get("code") for item in risks}
+
+    assert "high_volatility" in codes
+    assert_no_operation_words(risk_tags_to_text(risks))

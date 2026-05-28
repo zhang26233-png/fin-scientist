@@ -4,6 +4,84 @@
 
 ### Target
 
+- Complete V1.4.7 strategy risk and data-quality penalty enhancement phase.
+- Improve internal `strategy_score` risk distinction for high volatility, extreme short-term return, volume-supported downside moves, overheated turnover, low liquidity, missing key fields, and invalid numeric values.
+- Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or add strategy logic to `legacy_app.py` or `ui/screening_ui.py`.
+
+### Risk Enhancements
+
+- `strategy/risk.py` adds stable risk codes for `high_volatility`, `extreme_upside_return`, `volume_downside_risk`, `overheated_turnover`, `low_liquidity`, and `insufficient_factor_data`.
+- Added detection for amplitude-based high volatility, short-term extreme return, volume-supported downside moves, overheated turnover, and low-liquidity evidence from amount, volume, and turnover.
+- Non-finite risk inputs are treated as unavailable so risk labeling remains safe.
+
+### Scoring Enhancements
+
+- `strategy/scoring.py` now reads `pct_chg`, amplitude, and moving-average aliases when available.
+- Risk penalty now reflects high volatility/amplitude, extreme short-term return, volume downside, overheated turnover, and confirmed low liquidity.
+- Score rows now include internal `risk_labels` and `data_quality_labels`.
+
+### Data Quality Enhancements
+
+- Data-quality labels include `missing_price_fields`, `missing_volume_fields`, `missing_turnover_fields`, `invalid_numeric_fields`, and `insufficient_factor_data`.
+- Missing turnover or moving-average fields are labeled, while penalties remain calibrated so fixed drift samples stay in range.
+
+### Drift Checks
+
+- V1.4.4/V1.4.5/V1.4.6 drift-check thresholds remained stable.
+- No drift threshold changes were required.
+
+### Tests
+
+- Updated `tests/test_strategy_risk.py`.
+- Updated `tests/test_strategy_scoring.py`.
+- Updated version-boundary import tests.
+- Re-ran drift, calibration, distribution, py-compile, full pytest, safety scan, and Streamlit short-start checks.
+
+### Next Step
+
+- V1.4.8 can add internal score-explanation summaries for risk and data-quality labels, still without UI integration.
+
+## 2026-05-28
+
+### Target
+
+- Complete V1.4.6 strategy volume-price and liquidity factor enhancement phase.
+- Improve internal `strategy_score` distinction for amount activity, volume-ratio confirmation, turnover health, low-liquidity risk, and overheated turnover.
+- Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or add strategy logic to `legacy_app.py` or `ui/screening_ui.py`.
+
+### Factor Enhancements
+
+- `strategy/factors.py` now reads amount aliases, volume-ratio aliases, and turnover aliases for volume-price and liquidity observations.
+- `calculate_volume_price_factor()` adds labels for `volume_price_confirmed`, `volume_price_weak`, `low_liquidity`, `overheated_turnover`, and `volume_downside_risk`.
+- `calculate_liquidity_factor()` distinguishes low amount, active amount, low turnover, moderate turnover, and overheated turnover.
+- Non-finite amount, volume, turnover, and volume-ratio values are treated as unavailable so extreme inputs return bounded results.
+
+### Scoring Enhancements
+
+- `strategy/scoring.py` keeps the existing score components and weights, but separates volume-price confirmation from liquidity availability more clearly.
+- Low amount and low turnover reduce `liquidity_score`.
+- Positive trend with stronger volume ratio can raise `volume_price_score`.
+- Downside movement with elevated volume ratio and overheated turnover increase `risk_penalty`.
+
+### Drift Checks
+
+- V1.4.4 drift-check thresholds remained stable.
+- No drift threshold changes were required.
+
+### Tests
+
+- Updated `tests/test_strategy_factors.py`.
+- Updated `tests/test_strategy_scoring.py`.
+- Re-ran drift, calibration, distribution, adapter, py-compile, full pytest, safety scan, and Streamlit short-start checks.
+
+### Next Step
+
+- V1.4.7 can add internal factor explanation snapshots for strategy-score subcomponents, still without UI integration.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.4.5 strategy trend and momentum factor enhancement phase.
 - Improve internal strategy-score distinction for trend direction, moving-average position, short-term momentum, overheating, and recent weakness.
 - Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or add strategy logic to `legacy_app.py` or `ui/screening_ui.py`.

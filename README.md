@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.4.5
+Current version: V1.4.7
 
-V1.4.5 enhances internal strategy trend and momentum factors so `strategy_score` better distinguishes trend direction, moving-average position, moderate momentum, overheating, and recent weakness. It keeps all scoring internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
+V1.4.7 enhances internal strategy risk and data-quality penalties so `strategy_score` better distinguishes high volatility, extreme short-term returns, volume-supported downside moves, overheated turnover, low liquidity, missing key fields, and invalid numeric fields. It keeps all scoring internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.4.5 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring and comparison checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
+`legacy_app.py` is not an unused backup. In V1.4.7 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring and comparison checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
 
-FinScientist V1.4.5 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.4.7 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,26 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.4.5
+当前版本：V1.4.7
+
+V1.4.7 risk and data-quality penalty enhancement phase:
+
+- Enhanced `strategy/risk.py` with stable risk codes for high volatility, extreme upside return, volume downside risk, overheated turnover, low liquidity, and insufficient factor data.
+- `strategy/scoring.py` now outputs internal `risk_labels` and `data_quality_labels` alongside existing score components.
+- Risk penalty now distinguishes high volatility or amplitude, extreme short-term return, volume-supported downside moves, overheated turnover, and confirmed low liquidity.
+- Data-quality penalty now labels missing price, volume, turnover, moving-average factor data, and invalid numeric values while keeping fixed-sample drift ranges stable.
+- V1.4.4/V1.4.5/V1.4.6 drift-check thresholds did not need adjustment.
+- The changes remain internal only and do not change UI, sorting, existing screening output, stock pools, data sources, or `core/scoring.py`.
+
+V1.4.6 volume-price and liquidity factor enhancement phase:
+
+- Enhanced `strategy/factors.py` amount, volume-ratio, turnover, volume-price, and liquidity observations.
+- Added volume-price and liquidity labels: `volume_price_confirmed`, `volume_price_weak`, `low_liquidity`, `overheated_turnover`, and `volume_downside_risk`.
+- `strategy/scoring.py` now separates `volume_price_score` and `liquidity_score` more clearly while preserving the existing component weights and 0-100 bounds.
+- Low amount and low turnover reduce liquidity score; volume-supported positive trend can raise volume-price score; volume-supported downside and overheated turnover increase risk penalty.
+- Added alias support for `turnover_rate` and `量比`, plus non-finite value handling for extreme inputs.
+- V1.4.4 drift-check thresholds did not need adjustment.
+- The changes remain internal only and do not change UI, sorting, existing screening output, stock pools, data sources, or `core/scoring.py`.
 
 V1.4.5 trend and momentum factor enhancement phase:
 

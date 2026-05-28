@@ -3,6 +3,7 @@ import pandas as pd
 from strategy.factors import (
     build_factor_snapshot,
     calculate_data_quality_factor,
+    calculate_liquidity_factor,
     calculate_momentum_profile_factor,
     calculate_momentum_factor,
     calculate_moving_average_position_factor,
@@ -33,6 +34,7 @@ def test_strategy_factor_modules_handle_empty_dataframe():
     assert calculate_volume_factor(empty)["score"] == "无法计算"
     assert calculate_trend_direction_factor(empty)["score"] == "无法计算"
     assert calculate_volume_price_factor(empty)["score"] == "无法计算"
+    assert calculate_liquidity_factor(empty)["score"] == "无法计算"
     assert calculate_moving_average_position_factor(empty)["score"] == "无法计算"
     assert calculate_momentum_profile_factor(empty)["score"] == "无法计算"
     assert calculate_data_quality_factor(empty)["score"] == 0
@@ -43,6 +45,7 @@ def test_strategy_factor_modules_handle_missing_fields():
 
     assert calculate_trend_factor(frame)["label"]
     assert calculate_volume_factor(frame)["label"]
+    assert calculate_liquidity_factor(frame)["score"] <= 50
     assert calculate_moving_average_position_factor(frame)["score"] == "无法计算"
     assert calculate_data_quality_factor(frame)["details"]["missing_columns"] == ["Close", "Volume"]
 
@@ -101,3 +104,69 @@ def test_momentum_profile_factor_labels_moderate_overheated_and_weak_momentum():
     assert overheated_result["details"]["momentum_label"] == "过热动量"
     assert weak_result["details"]["momentum_label"] in {"动量转弱", "连续走弱"}
     assert moderate_result["score"] > overheated_result["score"] > weak_result["score"]
+
+
+def test_volume_price_factor_labels_confirmation_weakness_and_risks():
+    confirmed = make_price_frame()
+    confirmed["amount"] = 120_000_000
+    confirmed["volume_ratio"] = 1.5
+    confirmed["turnover"] = 0.03
+    confirmed["return_20d"] = 0.12
+    weak = confirmed.copy(deep=True)
+    weak["volume_ratio"] = 0.55
+    downside = confirmed.copy(deep=True)
+    downside["return_20d"] = -0.08
+    downside["volume_ratio"] = 1.8
+    low_liquidity = confirmed.copy(deep=True)
+    low_liquidity["amount"] = 2_000_000
+    overheated = confirmed.copy(deep=True)
+    overheated["turnover"] = 0.20
+
+    confirmed_result = calculate_volume_price_factor(confirmed)
+    weak_result = calculate_volume_price_factor(weak)
+    downside_result = calculate_volume_price_factor(downside)
+    low_result = calculate_volume_price_factor(low_liquidity)
+    overheated_result = calculate_volume_price_factor(overheated)
+
+    assert "volume_price_confirmed" in confirmed_result["details"]["volume_price_labels"]
+    assert "volume_price_weak" in weak_result["details"]["volume_price_labels"]
+    assert "volume_downside_risk" in downside_result["details"]["volume_price_labels"]
+    assert "low_liquidity" in low_result["details"]["volume_price_labels"]
+    assert "overheated_turnover" in overheated_result["details"]["volume_price_labels"]
+    assert confirmed_result["score"] > weak_result["score"]
+    assert confirmed_result["score"] > downside_result["score"]
+
+
+def test_liquidity_factor_distinguishes_active_and_low_liquidity():
+    active = make_price_frame()
+    active["amount"] = 160_000_000
+    active["turnover"] = 0.04
+    low = active.copy(deep=True)
+    low["amount"] = 1_000_000
+    low["turnover"] = 0.001
+    overheated = active.copy(deep=True)
+    overheated["turnover"] = 0.20
+
+    active_result = calculate_liquidity_factor(active)
+    low_result = calculate_liquidity_factor(low)
+    overheated_result = calculate_liquidity_factor(overheated)
+
+    assert active_result["score"] > low_result["score"]
+    assert "low_liquidity" in low_result["details"]["liquidity_labels"]
+    assert "overheated_turnover" in overheated_result["details"]["liquidity_labels"]
+
+
+def test_volume_price_and_liquidity_factors_handle_aliases_and_extreme_values():
+    frame = make_price_frame()
+    frame["turnover_amount"] = float("inf")
+    frame["量比"] = float("inf")
+    frame["turnover_rate"] = 0.04
+    frame["return_20d"] = 0.08
+
+    volume_price = calculate_volume_price_factor(frame)
+    liquidity = calculate_liquidity_factor(frame)
+
+    assert volume_price["factor"] == "volume_price"
+    assert 0 <= volume_price["score"] <= 100
+    assert liquidity["factor"] == "liquidity"
+    assert 0 <= liquidity["score"] <= 100

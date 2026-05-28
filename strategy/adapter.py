@@ -20,13 +20,17 @@ FIELD_ALIASES = {
     "return_60d": ("近 60 日涨跌幅", "return_60d", "60d_return"),
     "volume": ("成交量", "volume", "Volume"),
     "amount": ("成交额", "amount", "turnover_amount"),
-    "turnover": ("换手率", "turnover"),
+    "turnover": ("换手率", "turnover", "turnover_rate"),
     "sector": ("板块", "sector"),
     "industry": ("行业", "industry"),
     "score": ("综合研究观察评分", "研究优先级评分", "score"),
     "volatility": ("年化波动率", "volatility", "annual_volatility"),
+    "amplitude": ("振幅", "amplitude"),
     "max_drawdown": ("最大回撤", "max_drawdown"),
-    "volume_ratio": ("成交量放大倍数", "volume_ratio"),
+    "volume_ratio": ("成交量放大倍数", "量比", "volume_ratio"),
+    "ma5": ("MA5", "ma5"),
+    "ma10": ("MA10", "ma10"),
+    "ma20": ("MA20", "ma20"),
     "valid_days": ("有效交易日数量", "valid_trading_days"),
     "data_quality": ("数据质量", "data_quality"),
 }
@@ -36,11 +40,14 @@ def to_number(value):
     if value is None:
         return math.nan
     if isinstance(value, (int, float)):
-        return float(value)
+        number = float(value)
+        return number if math.isfinite(number) else math.nan
     text = str(value).replace(",", "").replace("%", "").strip()
     try:
         number = float(text)
     except ValueError:
+        return math.nan
+    if not math.isfinite(number):
         return math.nan
     if "%" in str(value):
         return number / 100
@@ -118,7 +125,12 @@ def _build_risk_metrics(row, mapping):
     volume_ratio = to_number(_read_mapped(row, mapping, "volume_ratio"))
     return {
         "年化波动率": to_number(_read_mapped(row, mapping, "volatility")),
+        "振幅": to_number(_read_mapped(row, mapping, "amplitude")),
         "近 20 日涨跌幅": to_number(_read_mapped(row, mapping, "return_20d")),
+        "近 5 日涨跌幅": to_number(_read_mapped(row, mapping, "change_pct")),
+        "成交额": to_number(_read_mapped(row, mapping, "amount")),
+        "成交量": to_number(_read_mapped(row, mapping, "volume")),
+        "换手率": to_number(_read_mapped(row, mapping, "turnover")),
         "成交量放大倍数": volume_ratio,
         "有效交易日数量": 0 if math.isnan(valid_days) else int(valid_days),
         "成交量数据缺失": math.isnan(to_number(_read_mapped(row, mapping, "volume"))) and math.isnan(volume_ratio),

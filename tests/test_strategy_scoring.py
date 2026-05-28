@@ -153,6 +153,227 @@ def test_strategy_scoring_lowers_momentum_for_recent_weakness():
     assert 0 <= score_row["strategy_score"] <= 100
 
 
+def test_strategy_scoring_liquidity_uses_amount_volume_and_turnover():
+    active = pd.DataFrame(
+        [
+            {
+                "symbol": "ACTIVE1",
+                "Close": 100,
+                "return_20d": 0.10,
+                "return_10d": 0.05,
+                "return_5d": 0.02,
+                "volume": 1_500_000,
+                "amount": 150_000_000,
+                "turnover": 0.04,
+                "volatility": 0.30,
+                "volume_ratio": 1.2,
+                "valid_trading_days": 90,
+            }
+        ]
+    )
+    low = active.copy(deep=True)
+    low["symbol"] = "LOW1"
+    low["amount"] = 2_000_000
+    low["volume"] = 50_000
+    low["turnover"] = 0.001
+
+    active_score = calculate_strategy_scores(active)["scores"][0]
+    low_score = calculate_strategy_scores(low)["scores"][0]
+
+    assert active_score["liquidity_score"] > low_score["liquidity_score"]
+    assert low_score["liquidity_score"] <= 25
+    assert_score_range(active_score)
+    assert_score_range(low_score)
+
+
+def test_strategy_scoring_volume_price_confirms_or_weakens_trend():
+    confirmed = pd.DataFrame(
+        [
+            {
+                "symbol": "CONF1",
+                "Close": 100,
+                "return_20d": 0.12,
+                "return_10d": 0.06,
+                "return_5d": 0.03,
+                "volume": 1_500_000,
+                "amount": 150_000_000,
+                "turnover": 0.04,
+                "volatility": 0.30,
+                "volume_ratio": 1.5,
+                "valid_trading_days": 90,
+            }
+        ]
+    )
+    weak = confirmed.copy(deep=True)
+    weak["symbol"] = "WEAKVOL1"
+    weak["volume_ratio"] = 0.55
+
+    confirmed_score = calculate_strategy_scores(confirmed)["scores"][0]
+    weak_score = calculate_strategy_scores(weak)["scores"][0]
+
+    assert confirmed_score["volume_price_score"] > weak_score["volume_price_score"]
+    assert confirmed_score["strategy_score"] >= weak_score["strategy_score"]
+
+
+def test_strategy_scoring_penalizes_volume_downside_and_overheated_turnover():
+    base = pd.DataFrame(
+        [
+            {
+                "symbol": "BASE1",
+                "Close": 100,
+                "return_20d": 0.02,
+                "return_10d": 0.01,
+                "return_5d": 0.0,
+                "volume": 1_000_000,
+                "amount": 100_000_000,
+                "turnover": 0.04,
+                "volatility": 0.35,
+                "volume_ratio": 1.0,
+                "valid_trading_days": 90,
+            }
+        ]
+    )
+    downside = base.copy(deep=True)
+    downside["symbol"] = "DOWNVOL1"
+    downside["return_20d"] = -0.08
+    downside["volume_ratio"] = 1.8
+    overheated = base.copy(deep=True)
+    overheated["symbol"] = "TURNHOT1"
+    overheated["turnover"] = 0.20
+
+    base_score = calculate_strategy_scores(base)["scores"][0]
+    downside_score = calculate_strategy_scores(downside)["scores"][0]
+    overheated_score = calculate_strategy_scores(overheated)["scores"][0]
+
+    assert downside_score["risk_penalty"] > base_score["risk_penalty"]
+    assert overheated_score["risk_penalty"] > base_score["risk_penalty"]
+    assert downside_score["volume_price_score"] < base_score["volume_price_score"]
+    assert_score_range(downside_score)
+    assert_score_range(overheated_score)
+
+
+def test_strategy_scoring_accepts_turnover_rate_and_volume_ratio_aliases():
+    frame = pd.DataFrame(
+        [
+            {
+                "symbol": "ALIAS1",
+                "Close": 100,
+                "return_20d": 0.10,
+                "return_10d": 0.04,
+                "return_5d": 0.02,
+                "volume": 1_200_000,
+                "turnover_amount": 120_000_000,
+                "turnover_rate": 0.04,
+                "量比": 1.45,
+                "volatility": 0.30,
+                "valid_trading_days": 90,
+            }
+        ]
+    )
+
+    score_row = calculate_strategy_scores(frame)["scores"][0]
+
+    assert score_row["volume_price_score"] >= 75
+    assert score_row["liquidity_score"] > 40
+    assert_score_range(score_row)
+
+
+def test_strategy_scoring_handles_extreme_volume_liquidity_values_safely():
+    frame = pd.DataFrame(
+        [
+            {
+                "symbol": "EXTREME1",
+                "Close": 100,
+                "return_20d": 0.10,
+                "volume": float("inf"),
+                "amount": float("inf"),
+                "turnover": float("inf"),
+                "volume_ratio": float("inf"),
+                "valid_trading_days": 90,
+            }
+        ]
+    )
+
+    score_row = calculate_strategy_scores(frame)["scores"][0]
+
+    assert_score_range(score_row)
+
+
+def test_strategy_scoring_penalizes_extreme_short_return_and_high_volatility():
+    normal = pd.DataFrame(
+        [
+            {
+                "symbol": "NORMALRISK",
+                "Close": 100,
+                "return_20d": 0.08,
+                "return_10d": 0.04,
+                "return_5d": 0.02,
+                "amount": 120_000_000,
+                "volume": 1_200_000,
+                "turnover": 0.04,
+                "volume_ratio": 1.1,
+                "volatility": 0.30,
+                "amplitude": 0.05,
+                "valid_trading_days": 90,
+            }
+        ]
+    )
+    high_risk = normal.copy(deep=True)
+    high_risk["symbol"] = "HIGHRISK"
+    high_risk["return_5d"] = 0.18
+    high_risk["pct_chg"] = 0.14
+    high_risk["volatility"] = 0.95
+    high_risk["amplitude"] = 0.16
+
+    normal_score = calculate_strategy_scores(normal)["scores"][0]
+    high_risk_score = calculate_strategy_scores(high_risk)["scores"][0]
+
+    assert high_risk_score["risk_penalty"] > normal_score["risk_penalty"]
+    assert "extreme_upside_return" in high_risk_score["risk_labels"]
+    assert "high_volatility" in high_risk_score["risk_labels"]
+    assert_score_range(high_risk_score)
+
+
+def test_strategy_scoring_outputs_risk_and_data_quality_labels():
+    frame = pd.DataFrame(
+        [
+            {
+                "symbol": "QUALITYRISK",
+                "Close": float("inf"),
+                "return_5d": -0.08,
+                "volume": 50_000,
+                "amount": 2_000_000,
+                "turnover": 0.001,
+                "volume_ratio": 1.8,
+                "volatility": 0.35,
+                "valid_trading_days": 90,
+            }
+        ]
+    )
+
+    score_row = calculate_strategy_scores(frame)["scores"][0]
+
+    assert score_row["data_quality_penalty"] > 0
+    assert "invalid_numeric_fields" in score_row["data_quality_labels"]
+    assert "missing_turnover_fields" not in score_row["data_quality_labels"]
+    assert "volume_downside_risk" in score_row["risk_labels"]
+    assert "low_liquidity" in score_row["risk_labels"]
+    assert_score_range(score_row)
+    assert_no_forbidden_words(score_row)
+
+
+def test_strategy_scoring_missing_key_fields_raise_data_quality_labels():
+    frame = pd.DataFrame([{"symbol": "MISSINGKEYS", "Close": 50}])
+
+    score_row = calculate_strategy_scores(frame)["scores"][0]
+
+    assert score_row["data_quality_penalty"] > 0
+    assert "missing_volume_fields" in score_row["data_quality_labels"]
+    assert "missing_turnover_fields" in score_row["data_quality_labels"]
+    assert "insufficient_factor_data" in score_row["data_quality_labels"]
+    assert_score_range(score_row)
+
+
 def test_strategy_scoring_accepts_diagnostics_and_penalizes_high_risk():
     diagnostics = build_strategy_diagnostics(make_screening_frame())
     item = diagnostics["diagnostics"][0]

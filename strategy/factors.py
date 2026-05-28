@@ -4,6 +4,11 @@ import math
 
 import pandas as pd
 
+AMOUNT_COLUMNS = ("amount", "turnover_amount", "成交额")
+TURNOVER_COLUMNS = ("turnover", "turnover_rate", "换手率")
+VOLUME_RATIO_COLUMNS = ("volume_ratio", "量比", "成交量放大倍数")
+RETURN_COLUMNS = ("return_20d", "recent_return", "pct_chg")
+
 INSUFFICIENT = "数据不足"
 
 
@@ -11,12 +16,14 @@ def to_number(value):
     if value is None:
         return math.nan
     if isinstance(value, (int, float)):
-        return float(value)
+        number = float(value)
+        return number if math.isfinite(number) else math.nan
     text = str(value).replace(",", "").replace("%", "").strip()
     try:
-        return float(text)
+        number = float(text)
     except ValueError:
         return math.nan
+    return number if math.isfinite(number) else math.nan
 
 
 def _empty_result(name, reason=INSUFFICIENT):
@@ -31,12 +38,89 @@ def _empty_result(name, reason=INSUFFICIENT):
 def _get_numeric_series(price_df, column):
     if not isinstance(price_df, pd.DataFrame) or column not in price_df.columns:
         return pd.Series(dtype=float)
-    return pd.to_numeric(price_df[column], errors="coerce").dropna()
+    series = pd.to_numeric(price_df[column], errors="coerce")
+    return series[series.map(math.isfinite)].dropna()
 
 
 def _latest_number(price_df, column):
     series = _get_numeric_series(price_df, column)
     return math.nan if series.empty else float(series.iloc[-1])
+
+
+def _latest_from_any(price_df, columns):
+    if not isinstance(price_df, pd.DataFrame):
+        return math.nan
+    lowered = {str(column).lower(): column for column in price_df.columns}
+    for column in columns:
+        if column in price_df.columns:
+            return _latest_number(price_df, column)
+        matched = lowered.get(str(column).lower())
+        if matched is not None:
+            return _latest_number(price_df, matched)
+    return math.nan
+
+
+def _derive_period_return(price_df, close, window):
+    explicit_return = _latest_from_any(price_df, RETURN_COLUMNS)
+    if not pd.isna(explicit_return):
+        return explicit_return
+    if len(close) <= window:
+        return math.nan
+    start = close.iloc[-window - 1]
+    end = close.iloc[-1]
+    if start == 0:
+        return math.nan
+    return end / start - 1
+
+
+def _derive_volume_ratio(price_df, volume, window):
+    explicit_ratio = _latest_from_any(price_df, VOLUME_RATIO_COLUMNS)
+    if not pd.isna(explicit_ratio):
+        return explicit_ratio
+    if len(volume) < window:
+        return math.nan
+    short_volume = volume.tail(min(5, len(volume))).mean()
+    long_volume = volume.tail(window).mean()
+    if long_volume <= 0:
+        return math.nan
+    return short_volume / long_volume
+
+
+def _volume_price_profile(period_return, volume_ratio, amount, turnover):
+    score = 50
+    labels = []
+
+    if not pd.isna(amount):
+        if amount < 5_000_000:
+            labels.append("low_liquidity")
+            score = min(score, 25)
+        elif amount >= 50_000_000:
+            score += 10
+
+    if not pd.isna(volume_ratio):
+        if volume_ratio > 1.3 and not pd.isna(period_return) and period_return > 0:
+            labels.append("volume_price_confirmed")
+            score += 15
+        elif volume_ratio < 0.8 and not pd.isna(period_return) and period_return > 0:
+            labels.append("volume_price_weak")
+            score -= 15
+        elif volume_ratio > 1.3 and not pd.isna(period_return) and period_return < 0:
+            labels.append("volume_downside_risk")
+            score -= 20
+
+    if not pd.isna(turnover):
+        if turnover < 0.003:
+            labels.append("low_liquidity")
+            score = min(score, 30)
+        elif turnover > 0.15:
+            labels.append("overheated_turnover")
+            score = min(score, 55)
+        elif 0.005 <= turnover <= 0.08 and "volume_price_confirmed" in labels:
+            score += 5
+
+    if not labels:
+        labels.append("volume_price_neutral")
+    return max(0, min(100, int(round(score)))), labels
 
 
 def calculate_trend_factor(price_df, price_col="Close", short_window=20, long_window=60):
@@ -331,36 +415,80 @@ def calculate_trend_direction_factor(price_df, price_col="Close", window=20):
 def calculate_volume_price_factor(price_df, price_col="Close", volume_col="Volume", window=20):
     close = _get_numeric_series(price_df, price_col)
     volume = _get_numeric_series(price_df, volume_col)
-    if len(close) <= window or len(volume) < window:
+    if close.empty or volume.empty:
         return _empty_result("volume_price", "价格或成交量数据不足，无法计算量价因子。")
 
-    start = close.iloc[-window - 1]
-    end = close.iloc[-1]
-    if start == 0:
-        return _empty_result("volume_price", "起始价格为 0，无法计算量价因子。")
+    period_return = _derive_period_return(price_df, close, window)
+    volume_ratio = _derive_volume_ratio(price_df, volume, window)
+    if pd.isna(period_return) or pd.isna(volume_ratio):
+        return _empty_result("volume_price", "volume-price data is insufficient")
 
-    period_return = end / start - 1
-    short_volume = volume.tail(min(5, len(volume))).mean()
-    long_volume = volume.tail(window).mean()
-    if long_volume <= 0:
-        return _empty_result("volume_price", "长期平均成交量无效，无法计算量价因子。")
-
-    volume_ratio = short_volume / long_volume
-    score = 50
-    if period_return > 0 and volume_ratio > 1.3:
-        score = 70
-    elif period_return > 0 and volume_ratio >= 0.8:
-        score = 60
-    elif period_return < -0.10 and volume_ratio > 1.3:
-        score = 25
-    elif period_return < 0:
-        score = 40
+    amount = _latest_from_any(price_df, AMOUNT_COLUMNS)
+    turnover = _latest_from_any(price_df, TURNOVER_COLUMNS)
+    score, profile_labels = _volume_price_profile(period_return, volume_ratio, amount, turnover)
 
     return {
         "factor": "volume_price",
         "score": score,
         "label": "量价配合观察",
-        "details": {"window": window, "return": float(period_return), "volume_ratio": float(volume_ratio)},
+        "details": {
+            "window": window,
+            "return": float(period_return),
+            "volume_ratio": float(volume_ratio),
+            "amount": None if pd.isna(amount) else float(amount),
+            "turnover": None if pd.isna(turnover) else float(turnover),
+            "volume_price_labels": profile_labels,
+        },
+    }
+
+
+def calculate_liquidity_factor(price_df):
+    if not isinstance(price_df, pd.DataFrame) or price_df.empty:
+        return _empty_result("liquidity", "liquidity data is insufficient")
+
+    amount = _latest_from_any(price_df, AMOUNT_COLUMNS)
+    volume = _latest_from_any(price_df, ("Volume", "volume", "成交量"))
+    turnover = _latest_from_any(price_df, TURNOVER_COLUMNS)
+    score = 50
+    labels = []
+
+    if pd.isna(amount):
+        score -= 20
+    elif amount < 5_000_000:
+        labels.append("low_liquidity")
+        score = 20
+    elif amount < 30_000_000:
+        score = 40
+    elif amount < 200_000_000:
+        score = 65
+    else:
+        score = 75
+
+    if not pd.isna(volume) and volume < 100_000:
+        labels.append("low_liquidity")
+        score = min(score, 35)
+    if not pd.isna(turnover):
+        if turnover < 0.003:
+            labels.append("low_liquidity")
+            score = min(score, 30)
+        elif turnover > 0.15:
+            labels.append("overheated_turnover")
+            score = min(score, 55)
+        elif 0.005 <= turnover <= 0.08:
+            score = min(100, score + 5)
+    if not labels:
+        labels.append("liquidity_observable")
+
+    return {
+        "factor": "liquidity",
+        "score": max(0, min(100, int(round(score)))),
+        "label": "liquidity observation",
+        "details": {
+            "amount": None if pd.isna(amount) else float(amount),
+            "volume": None if pd.isna(volume) else float(volume),
+            "turnover": None if pd.isna(turnover) else float(turnover),
+            "liquidity_labels": labels,
+        },
     }
 
 
@@ -414,6 +542,7 @@ def build_factor_snapshot(price_df):
 __all__ = [
     "build_factor_snapshot",
     "calculate_data_quality_factor",
+    "calculate_liquidity_factor",
     "calculate_momentum_profile_factor",
     "calculate_momentum_factor",
     "calculate_moving_average_position_factor",
