@@ -139,7 +139,16 @@
 - Covers `fetch_a_share_fundamental_data`, `get_fundamental_data`, and `fetch_screening_price_data` empty data, exception, fallback, missing-field, and stable-return paths.
 - Real AkShare, BaoStock, and yfinance call flows remain in `legacy_app.py`.
 - No business features, data sources, scoring rules, stock-pool contents, or fallback order are changed.
-- Next step: V1.2.9 can migrate a very small fetch-boundary helper only where mocked coverage already exists.
+- Completed by V1.2.9; entrypoint boundaries are now explicit before the next feature phase.
+
+## v1.2.9 Entrypoint Boundary Wrap-Up
+
+- Clarifies `app.py` as the Streamlit page setup and page navigation entrypoint.
+- Clarifies `ui/screening_ui.py` as the new screening page entry that still calls the legacy screening renderer.
+- Clarifies `legacy_app.py` as the compatibility layer for the old workbench, legacy screening renderer, and real network-adjacent fetch orchestration.
+- Adds a small compatibility wrapper for the old research workbench without changing page behavior.
+- No business features, data sources, scoring rules, stock-pool contents, fallback order, or AkShare / BaoStock / yfinance call flows are changed.
+- The remaining legacy migration risk is concentrated in real fetch orchestration and the large Streamlit workbench renderer; these should not be moved without narrower tests.
 
 ## v1.3 交易纪律模块
 

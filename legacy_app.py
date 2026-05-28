@@ -1,9 +1,10 @@
 """Compatibility layer for the pre-module FinScientist implementation.
 
-This file is not a backup. In V1.2.8 it still carries legacy core logic and UI
-that are imported by the lightweight entrypoint and the new modules. Keep
-changes conservative here; future releases should move functions into
-config/, data/, core/, and ui/ in small batches.
+This file is not a backup. In V1.2.9 it is the explicit compatibility layer for
+the old research workbench, the legacy screening renderer, and network-adjacent
+fetch orchestration that has not yet been migrated. Keep changes conservative;
+future releases should move functions into config/, data/, core/, and ui/ in
+small batches after focused tests exist.
 """
 
 import math
@@ -22,7 +23,20 @@ try:
 except Exception:
     bs = None
 
-APP_VERSION = "V1.2.8"
+APP_VERSION = "V1.2.9"
+LEGACY_COMPATIBILITY_SURFACE = (
+    "render_legacy_workbench",
+    "render_legacy_app",
+    "render_screening_section",
+    "calculate_indicators",
+    "calculate_backtest_metrics",
+    "generate_backtest_signals",
+    "check_price_data_quality",
+    "fetch_market_data",
+    "fetch_screening_price_data",
+    "get_fundamental_data",
+    "fetch_a_share_fundamental_data",
+)
 MISSING = "数据暂缺"
 INSUFFICIENT = "数据不足"
 
@@ -3185,3 +3199,8 @@ def render_legacy_app():
         st.write("- 规则化摘要不能替代专业研究判断。")
         st.write("- 本结果不构成投资建议。")
         st.write("- 不应据此进行真实交易。")
+
+
+def render_legacy_workbench():
+    """Render the old research workbench through an explicit compatibility API."""
+    render_legacy_app()

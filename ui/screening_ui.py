@@ -1,16 +1,14 @@
-"""Streamlit UI entry for the automatic research-object screening page."""
+"""Streamlit UI entry for the automatic research-object screening page.
+
+The screening workflow implementation still lives in legacy_app.py. This page
+is the new navigation entry and keeps that dependency explicit until the
+renderer can be migrated safely.
+"""
 
 import streamlit as st
 
 from config.stock_pools import A_SHARE_SCREENING_POOLS, DEFAULT_A_SHARE_POOL_TYPE
-from legacy_app import (
-    SCREENING_MARKET_OPTIONS,
-    SCREENING_MAX_PROCESS_OPTIONS,
-    SCREENING_POOL_OPTIONS,
-    SCREENING_RUN_MODE_OPTIONS,
-    SCREENING_TOP_OPTIONS,
-    render_screening_section,
-)
+import legacy_app as legacy_workbench
 
 
 def render_screening_page():
@@ -21,9 +19,9 @@ def render_screening_page():
     )
     with st.sidebar:
         st.header('\u81ea\u52a8\u7b5b\u9009\u53c2\u6570')
-        screening_market = st.selectbox('\u7b5b\u9009\u5e02\u573a', options=SCREENING_MARKET_OPTIONS, index=0)
-        screening_run_mode = st.selectbox('\u8fd0\u884c\u6a21\u5f0f', options=SCREENING_RUN_MODE_OPTIONS, index=0)
-        screening_pool_source = st.selectbox('\u80a1\u7968\u6c60\u9009\u62e9', options=SCREENING_POOL_OPTIONS, index=0)
+        screening_market = st.selectbox('\u7b5b\u9009\u5e02\u573a', options=legacy_workbench.SCREENING_MARKET_OPTIONS, index=0)
+        screening_run_mode = st.selectbox('\u8fd0\u884c\u6a21\u5f0f', options=legacy_workbench.SCREENING_RUN_MODE_OPTIONS, index=0)
+        screening_pool_source = st.selectbox('\u80a1\u7968\u6c60\u9009\u62e9', options=legacy_workbench.SCREENING_POOL_OPTIONS, index=0)
         screening_a_share_pool_type = DEFAULT_A_SHARE_POOL_TYPE
         if screening_market == 'A\u80a1' and screening_pool_source == '\u9ed8\u8ba4\u793a\u4f8b\u80a1\u7968\u6c60':
             screening_a_share_pool_type = st.selectbox(
@@ -36,8 +34,8 @@ def render_screening_page():
             value="600519, 300750, 000001" if screening_market == 'A\u80a1' else "AAPL, MSFT, NVDA",
             height=90,
         )
-        screening_top_n = st.selectbox('\u7b5b\u9009\u6570\u91cf', options=SCREENING_TOP_OPTIONS, index=0)
-        screening_max_process_count = st.selectbox('\u6700\u5927\u5904\u7406\u6570\u91cf', options=SCREENING_MAX_PROCESS_OPTIONS, index=0)
+        screening_top_n = st.selectbox('\u7b5b\u9009\u6570\u91cf', options=legacy_workbench.SCREENING_TOP_OPTIONS, index=0)
+        screening_max_process_count = st.selectbox('\u6700\u5927\u5904\u7406\u6570\u91cf', options=legacy_workbench.SCREENING_MAX_PROCESS_OPTIONS, index=0)
         clear_screening_cache_button = st.button('\u6e05\u9664\u7f13\u5b58\u5e76\u91cd\u65b0\u83b7\u53d6\u6570\u636e')
         run_screening_button = st.button('\u751f\u6210\u7814\u7a76\u5019\u9009\u6c60')
 
@@ -49,7 +47,7 @@ def render_screening_page():
             st.warning(f"缓存清除失败，请稍后重试：{exc}")
 
     if run_screening_button:
-        render_screening_section(
+        legacy_workbench.render_screening_section(
             screening_market,
             screening_pool_source,
             screening_top_n,

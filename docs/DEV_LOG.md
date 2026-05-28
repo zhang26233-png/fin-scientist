@@ -1,5 +1,42 @@
 # Development Log
 
+## 2026-05-28
+
+### Target
+
+- Complete V1.2.9 architecture wrap-up.
+- Clarify the entrypoint boundaries between `app.py`, `ui/screening_ui.py`, and `legacy_app.py`.
+- Do not add business features, data sources, scoring changes, stock-pool changes, UI behavior changes, real network fetch migration, or AkShare / BaoStock / yfinance call-flow changes.
+
+### Boundary Cleanup
+
+- `app.py` now owns Streamlit page setup and page navigation only.
+- `legacy_app.py` exposes `render_legacy_workbench()` as the explicit old workbench compatibility wrapper.
+- `ui/screening_ui.py` now imports `legacy_app.py` as `legacy_workbench` to make the temporary screening dependency visible.
+- `legacy_app.py` declares `LEGACY_COMPATIBILITY_SURFACE` for the currently supported compatibility paths.
+
+### Still Kept In `legacy_app.py`
+
+- Old research workbench rendering.
+- Legacy screening section rendering.
+- Real network-adjacent fetch orchestration.
+- AkShare / BaoStock / yfinance call flows.
+- Backtest, watchlist, comparison, and remaining UI-bound helper flows.
+
+### Tests
+
+- Updated `tests/test_module_imports.py` with a V1.2.9 boundary test for version alignment and compatibility-surface visibility.
+
+### Pending Migration List
+
+- Do not move `fetch_screening_price_data` or other real fetch orchestration until narrower mocked tests cover the specific split.
+- Do not move the old workbench renderer as a single large migration; split only small UI sections when behavior can be checked.
+- `ui/screening_ui.py` still calls the legacy screening renderer by design for this release.
+
+### Next Step
+
+- V1.3 may proceed only if the next scope preserves the safety boundary and avoids direct trading conclusions. If V1.3 means strategy quantification, first define it as research-priority and risk-analysis methodology rather than trading advice.
+
 ## 2026-05-27
 
 ### Target
@@ -36,7 +73,7 @@
 
 ### Next Step
 
-- V1.2.9 can migrate one very small fetch-boundary helper where mocked coverage already exists, or continue adding mock coverage for remaining failure paths.
+- V1.2.9 completed entrypoint boundary cleanup before any further network-adjacent migration.
 
 ## 2026-05-27
 
