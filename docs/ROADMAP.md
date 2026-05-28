@@ -170,7 +170,10 @@
 - V1.3.4 adds `strategy/view_model.py` as a read-only conversion layer from service output to future UI-friendly structures.
 - View-model output includes cards, badges, sections, table rows, empty state, and metadata.
 - V1.3.4 still does not connect strategy view-model output to the Streamlit workflow, existing screening output, scoring rules, page display, or sorting logic.
-- Future V1.3.x work can add a feature-flagged UI boundary only after view-model behavior and safety text are explicitly tested.
+- V1.3.5 adds `config/feature_flags.py` with strategy diagnostics rendering disabled by default.
+- V1.3.5 adds non-rendering UI contract tests to ensure `ui/screening_ui.py` and `legacy_app.py` do not depend on strategy view-model or service code.
+- V1.3.5 still does not render strategy diagnostics in Streamlit or change existing screening output, scoring rules, page display, or sorting logic.
+- Future V1.3.x work can add an explicitly gated, read-only rendering function only after feature-flag and contract tests remain stable.
 
 ## v1.4 交易纪律模块
 

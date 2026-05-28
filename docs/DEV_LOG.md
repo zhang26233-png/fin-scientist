@@ -4,6 +4,37 @@
 
 ### Target
 
+- Complete V1.3.5 feature-flag boundary phase.
+- Add default-off strategy diagnostics feature flags and non-rendering UI contract tests.
+- Do not add data sources, change stock pools, change `core/scoring.py`, change Streamlit display, change sorting logic, or add strategy logic to `legacy_app.py` or `ui/screening_ui.py`.
+
+### Added Feature Flags
+
+- `config/feature_flags.py` defines strategy diagnostics display flags.
+- `is_strategy_diagnostics_enabled()` returns `False` by default.
+- `get_feature_flag_metadata()` returns `strategy_diagnostics_enabled: False`, `ui_rendering_enabled: False`, `ranking_changed: False`, `scoring_changed: False`, and `read_only: True`.
+
+### Compatibility
+
+- The feature flag is not wired into current screening rendering.
+- Existing research-priority scoring, page display, and sorting remain unchanged.
+- `legacy_app.py` and `ui/screening_ui.py` do not import `strategy.view_model` or `strategy.service`.
+
+### Tests
+
+- Added `tests/test_feature_flags.py`.
+- Added `tests/test_strategy_ui_contract.py`.
+- Extended module import coverage to include `config.feature_flags`.
+- Covered default-off behavior, no UI dependency on strategy view-model/service, unchanged ranking/scoring metadata, and operation-word safety.
+
+### Next Step
+
+- V1.3.6 can add a gated, non-invoked rendering helper for strategy diagnostics, with tests confirming it remains inactive while the flag is off.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.3.4 strategy view-model phase.
 - Add a read-only internal view-model that converts `strategy.service` output into future UI-friendly structures.
 - Do not add data sources, change stock pools, change `core/scoring.py`, change Streamlit display, change sorting logic, or add strategy logic to `legacy_app.py` or `ui/screening_ui.py`.
@@ -29,7 +60,7 @@
 
 ### Next Step
 
-- V1.3.5 can add a feature-flag boundary or non-rendering UI contract tests before any optional Streamlit display integration.
+- V1.3.5 added the default-off feature flag boundary and non-rendering UI contract tests.
 
 ## 2026-05-28
 
