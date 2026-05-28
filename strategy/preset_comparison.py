@@ -209,8 +209,157 @@ def compare_strategy_presets(source, preset_names=None):
     }
 
 
+def _ratio_map(counts, denominator):
+    if denominator <= 0:
+        return {key: 0.0 for key in counts}
+    return {key: round(value / denominator, 4) for key, value in counts.items()}
+
+
+def _average(values):
+    clean_values = [value for value in values if isinstance(value, (int, float)) and math.isfinite(value)]
+    if not clean_values:
+        return None
+    return round(sum(clean_values) / len(clean_values), 2)
+
+
+def _empty_pool_summary(status="empty", warning="candidate pool is empty"):
+    style_counts = {
+        "balanced": 0,
+        "trend_momentum": 0,
+        "volume_breakout": 0,
+        "low_risk_quality": 0,
+        "high_elasticity": 0,
+        "mixed": 0,
+        "insufficient_data": 0,
+    }
+    consensus_counts = {
+        "broad_consensus_high": 0,
+        "style_specific_high": 0,
+        "mixed_signal": 0,
+        "broad_consensus_low": 0,
+        "insufficient_data": 0,
+    }
+    return {
+        "status": status,
+        "total_count": 0,
+        "valid_count": 0,
+        "insufficient_data_count": 0,
+        "dominant_style_counts": style_counts,
+        "dominant_style_ratios": _ratio_map(style_counts, 0),
+        "consensus_level_counts": consensus_counts,
+        "consensus_level_ratios": _ratio_map(consensus_counts, 0),
+        "average_scores_by_preset": {},
+        "average_score_spread": None,
+        "max_score_spread": None,
+        "broad_consensus_high_count": 0,
+        "style_specific_high_count": 0,
+        "mixed_signal_count": 0,
+        "broad_consensus_low_count": 0,
+        "summary_text": "候选池为空，未生成多策略预设横向汇总。",
+        "warnings": [warning],
+        "metadata": {
+            "read_only": True,
+            "ui_connected": False,
+            "ranking_changed": False,
+            "scoring_changed": False,
+        },
+    }
+
+
+def summarize_preset_comparison_pool(source, preset_names=None):
+    source_frame = _source_to_frame(source)
+    if isinstance(source_frame, dict):
+        return _empty_pool_summary(status="unsupported", warning="candidate pool structure is unsupported")
+    if source_frame.empty:
+        return _empty_pool_summary()
+
+    preset_names = tuple(preset_names or DEFAULT_COMPARISON_PRESETS)
+    comparisons = []
+    for _, row in source_frame.iterrows():
+        comparisons.append(compare_strategy_presets(pd.DataFrame([copy.deepcopy(row.to_dict())]), preset_names))
+
+    style_keys = ("balanced", "trend_momentum", "volume_breakout", "low_risk_quality", "high_elasticity", "mixed", "insufficient_data")
+    consensus_keys = (
+        "broad_consensus_high",
+        "style_specific_high",
+        "mixed_signal",
+        "broad_consensus_low",
+        "insufficient_data",
+    )
+    style_counts = {key: 0 for key in style_keys}
+    consensus_counts = {key: 0 for key in consensus_keys}
+    preset_score_values = {preset_name: [] for preset_name in preset_names}
+    spreads = []
+    warnings = []
+
+    for comparison in comparisons:
+        style = comparison.get("dominant_style", "insufficient_data")
+        consensus = comparison.get("consensus_level", "insufficient_data")
+        if style not in style_counts:
+            style = "mixed"
+        if consensus not in consensus_counts:
+            consensus = "insufficient_data"
+        style_counts[style] += 1
+        consensus_counts[consensus] += 1
+        spread = comparison.get("score_spread")
+        if isinstance(spread, (int, float)) and math.isfinite(spread):
+            spreads.append(spread)
+        for item in comparison.get("preset_scores", []):
+            preset_name = item.get("preset_name")
+            score = item.get("strategy_score")
+            if preset_name in preset_score_values and isinstance(score, (int, float)):
+                preset_score_values[preset_name].append(score)
+        warnings.extend(comparison.get("warnings", []))
+
+    total_count = len(comparisons)
+    insufficient_data_count = consensus_counts["insufficient_data"] + sum(
+        1
+        for comparison in comparisons
+        if comparison.get("consensus_level") != "insufficient_data"
+        and all((item.get("strategy_score") in (None, 0)) for item in comparison.get("preset_scores", []))
+    )
+    valid_count = max(0, total_count - insufficient_data_count)
+    average_scores = {preset_name: _average(values) for preset_name, values in preset_score_values.items()}
+    average_spread = _average(spreads)
+    max_spread = max(spreads) if spreads else None
+    summary_text = (
+        f"已汇总 {total_count} 个候选对象的内部多策略预设比较；"
+        f"有效比较 {valid_count} 个，数据不足 {insufficient_data_count} 个，"
+        f"平均分歧 {average_spread if average_spread is not None else '无'}。"
+        "该汇总仅用于学习和研究，不构成投资建议。"
+    )
+
+    return {
+        "status": "ok",
+        "total_count": total_count,
+        "valid_count": valid_count,
+        "insufficient_data_count": insufficient_data_count,
+        "dominant_style_counts": style_counts,
+        "dominant_style_ratios": _ratio_map(style_counts, total_count),
+        "consensus_level_counts": consensus_counts,
+        "consensus_level_ratios": _ratio_map(consensus_counts, total_count),
+        "average_scores_by_preset": average_scores,
+        "average_score_spread": average_spread,
+        "max_score_spread": max_spread,
+        "broad_consensus_high_count": consensus_counts["broad_consensus_high"],
+        "style_specific_high_count": consensus_counts["style_specific_high"],
+        "mixed_signal_count": consensus_counts["mixed_signal"],
+        "broad_consensus_low_count": consensus_counts["broad_consensus_low"],
+        "summary_text": summary_text,
+        "warnings": list(dict.fromkeys(warnings)),
+        "metadata": {
+            "read_only": True,
+            "ui_connected": False,
+            "ranking_changed": False,
+            "scoring_changed": False,
+            "preset_count": len(preset_names),
+        },
+    }
+
+
 __all__ = [
     "DEFAULT_COMPARISON_PRESETS",
     "compare_strategy_presets",
     "summarize_preset_scores",
+    "summarize_preset_comparison_pool",
 ]

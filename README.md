@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.4.10
+Current version: V1.4.11
 
-V1.4.10 adds internal cross-preset comparison summaries so one candidate can be compared across balanced research, trend-momentum, volume-breakout, low-risk quality, and high-elasticity observation views. It keeps all scoring internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
+V1.4.11 adds internal candidate-pool summaries for cross-preset comparisons, aggregating dominant style distribution, consensus level distribution, preset average scores, score spread, and insufficient-data counts across a batch of candidates. It keeps all scoring internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.4.10 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring and comparison checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
+`legacy_app.py` is not an unused backup. In V1.4.11 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring and comparison checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
 
-FinScientist V1.4.10 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.4.11 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,16 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.4.10
+当前版本：V1.4.11
+
+V1.4.11 candidate-pool preset summary phase:
+
+- Added `summarize_preset_comparison_pool()` in `strategy/preset_comparison.py`.
+- The helper runs `compare_strategy_presets()` row by row for an internal candidate pool and preserves input order.
+- Summary output includes total/valid counts, insufficient-data count, dominant-style counts and ratios, consensus-level counts and ratios, average scores by preset, average score spread, max score spread, summary text, and warnings.
+- Shortcut counts are provided for `broad_consensus_high`, `style_specific_high`, `mixed_signal`, and `broad_consensus_low`.
+- V1.4.4-V1.4.10 drift-check thresholds did not need adjustment.
+- The changes remain internal only and do not change `strategy_score` default logic, UI, sorting, existing screening output, stock pools, data sources, or `core/scoring.py`.
 
 V1.4.10 cross-preset comparison phase:
 

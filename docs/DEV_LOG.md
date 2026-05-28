@@ -4,6 +4,31 @@
 
 ### Target
 
+- Complete V1.4.11 internal candidate-pool preset summary phase.
+- Aggregate multi-preset comparison results across a batch of candidates without changing UI, existing screening output, sorting, default strategy scoring, or `core/scoring.py`.
+- Keep V1.4.4-V1.4.10 drift and calibration tests stable.
+
+### Pool Summary
+
+- Added `summarize_preset_comparison_pool()` to `strategy/preset_comparison.py`.
+- The helper runs `compare_strategy_presets()` for each candidate row and preserves input order.
+- Output includes total count, valid count, insufficient-data count, dominant-style counts and ratios, consensus-level counts and ratios, average scores by preset, average score spread, max score spread, summary text, and warnings.
+- Shortcut counts are exposed for `broad_consensus_high`, `style_specific_high`, `mixed_signal`, and `broad_consensus_low`.
+
+### Tests
+
+- Added `tests/test_strategy_preset_pool_summary.py`.
+- Covered empty input, missing fields, multi-row summary stability, style and consensus counts, preset averages, spread statistics, source immutability, safety wording, and legacy/UI dependency boundaries.
+- Re-ran drift, calibration, distribution, py-compile, full pytest, safety scan, and Streamlit short-start checks.
+
+### Next Step
+
+- V1.4.12 can add internal export-ready JSON snapshots for preset comparison and pool summaries, still without UI integration.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.4.10 internal cross-preset comparison summary phase.
 - Compare the same candidate across multiple internal strategy presets without changing UI, existing screening output, sorting, default strategy scoring, or `core/scoring.py`.
 - Keep V1.4.4-V1.4.9 drift and calibration tests stable.
