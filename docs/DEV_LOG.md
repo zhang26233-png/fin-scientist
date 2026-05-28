@@ -4,6 +4,35 @@
 
 ### Target
 
+- Complete V1.4.13 internal backtest sample helper phase.
+- Define validation-ready inputs and sample construction helpers for later strategy-score and multi-preset effectiveness checks without downloading data, connecting UI, changing existing screening output, sorting, default strategy scoring, or `core/scoring.py`.
+- Keep V1.4.4-V1.4.12 drift, calibration, and snapshot tests stable.
+
+### Backtest Helpers
+
+- Added `strategy/backtest.py`.
+- Added `validate_backtest_input()`.
+- Added `calculate_forward_return()`.
+- Added `classify_backtest_outcome()`.
+- Added `build_backtest_sample()`.
+- Added `summarize_backtest_samples()`.
+- Outcome labels include `positive_follow_through`, `weak_follow_through`, `failed_follow_through`, `high_drawdown_risk`, and `insufficient_data`.
+- The module only uses caller-provided data and does not access real data sources.
+
+### Tests
+
+- Added `tests/test_strategy_backtest.py`.
+- Covered empty input, missing fields, stable forward-return calculation, typical sample construction, positive/weak/failed/high-drawdown/insufficient-data outcomes, sample summaries, source immutability, safety wording, and legacy/UI dependency boundaries.
+- Re-ran drift, calibration, snapshot, py-compile, full pytest, safety scan, and Streamlit short-start checks.
+
+### Next Step
+
+- V1.4.14 can add internal backtest metric aggregation such as outcome hit-rate by preset and score bucket, still without UI integration or real data downloads.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.4.12 internal strategy snapshot export phase.
 - Convert single-candidate preset comparisons and candidate-pool preset summaries into stable JSON-like dictionaries without changing UI, existing screening output, sorting, default strategy scoring, or `core/scoring.py`.
 - Keep V1.4.4-V1.4.11 drift and calibration tests stable.
