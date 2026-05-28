@@ -133,6 +133,116 @@ def compare_strategy_scores(score_frame):
     }
 
 
+def _extract_comparisons(source):
+    if isinstance(source, pd.DataFrame):
+        return compare_strategy_scores(source).get("comparisons", [])
+    if isinstance(source, dict):
+        comparisons = source.get("comparisons")
+        return copy.deepcopy(comparisons) if isinstance(comparisons, list) else []
+    if isinstance(source, list):
+        return copy.deepcopy(source)
+    return []
+
+
+def _average(values):
+    clean_values = [value for value in values if isinstance(value, (int, float)) and not math.isnan(value)]
+    if not clean_values:
+        return None
+    return round(sum(clean_values) / len(clean_values), 2)
+
+
+def summarize_score_alignment(source):
+    comparisons = _extract_comparisons(source)
+    if not comparisons:
+        return {
+            "total_count": 0,
+            "valid_count": 0,
+            "missing_original_score_count": 0,
+            "missing_strategy_score_count": 0,
+            "average_original_score": None,
+            "average_strategy_score": None,
+            "average_score_gap": None,
+            "alignment_counts": {},
+            "alignment_ratios": {},
+            "high_consensus_count": 0,
+            "research_high_strategy_low_count": 0,
+            "strategy_high_research_low_count": 0,
+            "low_consensus_count": 0,
+            "insufficient_data_count": 0,
+            "summary_text": "输入为空，未生成评分一致性汇总。",
+            "warnings": ["评分对比汇总仅用于内部研究解释，不构成投资建议。"],
+        }
+
+    total_count = len(comparisons)
+    original_scores = []
+    strategy_scores = []
+    score_gaps = []
+    alignment_counts = {}
+    missing_original = 0
+    missing_strategy = 0
+
+    for item in comparisons:
+        if not isinstance(item, dict):
+            continue
+        label = item.get("alignment_label", "insufficient_data")
+        alignment_counts[label] = alignment_counts.get(label, 0) + 1
+        original_score = item.get("original_score")
+        strategy_score = item.get("strategy_score")
+        score_gap = item.get("score_gap")
+        if isinstance(original_score, (int, float)):
+            original_scores.append(float(original_score))
+        else:
+            missing_original += 1
+        if isinstance(strategy_score, (int, float)):
+            strategy_scores.append(float(strategy_score))
+        else:
+            missing_strategy += 1
+        if isinstance(score_gap, (int, float)):
+            score_gaps.append(float(score_gap))
+
+    alignment_ratios = {
+        label: round(count / total_count, 4) if total_count else 0
+        for label, count in alignment_counts.items()
+    }
+    valid_count = total_count - alignment_counts.get("insufficient_data", 0)
+    high_consensus_count = alignment_counts.get("high_consensus", 0)
+    research_high_strategy_low_count = alignment_counts.get("research_high_strategy_low", 0)
+    strategy_high_research_low_count = alignment_counts.get("strategy_high_research_low", 0)
+    low_consensus_count = alignment_counts.get("low_consensus", 0)
+    insufficient_data_count = alignment_counts.get("insufficient_data", 0)
+    summary_text = (
+        f"本批次共 {total_count} 条评分对比，其中有效对比 {valid_count} 条；"
+        f"高一致性 {high_consensus_count} 条，分歧样本 "
+        f"{research_high_strategy_low_count + strategy_high_research_low_count} 条，"
+        f"数据不足 {insufficient_data_count} 条。"
+    )
+    warnings = ["评分对比汇总仅用于内部研究解释，不构成投资建议。"]
+    if missing_original:
+        warnings.append(f"缺失原研究优先级评分 {missing_original} 条。")
+    if missing_strategy:
+        warnings.append(f"缺失 strategy_score {missing_strategy} 条。")
+
+    return {
+        "total_count": total_count,
+        "valid_count": valid_count,
+        "missing_original_score_count": missing_original,
+        "missing_strategy_score_count": missing_strategy,
+        "average_original_score": _average(original_scores),
+        "average_strategy_score": _average(strategy_scores),
+        "average_score_gap": _average(score_gaps),
+        "alignment_counts": alignment_counts,
+        "alignment_ratios": alignment_ratios,
+        "high_consensus_count": high_consensus_count,
+        "research_high_strategy_low_count": research_high_strategy_low_count,
+        "strategy_high_research_low_count": strategy_high_research_low_count,
+        "low_consensus_count": low_consensus_count,
+        "insufficient_data_count": insufficient_data_count,
+        "summary_text": summary_text,
+        "warnings": warnings,
+    }
+
+
 __all__ = [
     "compare_strategy_scores",
+    "summarize_score_alignment",
 ]

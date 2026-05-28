@@ -4,6 +4,30 @@
 
 ### Target
 
+- Complete V1.4.3 aggregate comparison summary phase.
+- Add batch-level summaries for existing research-priority scores and internal `strategy_score`.
+- Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or add comparison summary logic to `legacy_app.py` or `ui/screening_ui.py`.
+
+### Added Aggregate Summary
+
+- `strategy/comparison.py` now exposes `summarize_score_alignment()`.
+- The summary accepts a score DataFrame, a `compare_strategy_scores()` output dictionary, or a comparison list.
+- Summary output includes total count, valid count, missing score counts, average original score, average strategy score, average score gap, alignment counts, alignment ratios, label-specific counts, summary text, and warnings.
+- The helper is read-only and preserves input row order.
+
+### Tests
+
+- Added `tests/test_strategy_comparison_summary.py`.
+- Covered empty input, single comparison, multi-row summaries, label counts, missing score counts, stable averages, ratio sanity checks, source DataFrame immutability, no legacy/UI dependency, and operation-word safety.
+
+### Next Step
+
+- V1.4.4 can add drift-check fixtures for comparison summaries over fixed sample batches, still keeping results internal.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.4.2 internal score comparison phase.
 - Add comparison helpers for existing research-priority scores and internal `strategy_score`.
 - Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or add comparison logic to `legacy_app.py` or `ui/screening_ui.py`.
@@ -30,7 +54,7 @@
 
 ### Next Step
 
-- V1.4.3 can add aggregate comparison summaries or consistency statistics across batches while keeping results internal.
+- V1.4.3 added aggregate comparison summaries while keeping results internal.
 
 ## 2026-05-28
 

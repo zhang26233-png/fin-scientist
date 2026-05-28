@@ -190,7 +190,10 @@
 - V1.4.2 adds `strategy/comparison.py` for internal side-by-side comparison between existing research-priority scores and `strategy_score`.
 - V1.4.2 defines alignment labels for high consensus, research-high strategy-low, strategy-high research-low, low consensus, and insufficient data.
 - V1.4.2 keeps comparisons internal and does not change existing screening output, scoring rules, page display, or sorting logic.
-- Future V1.4.x work can add aggregate comparison summaries or drift checks without changing the current page flow.
+- V1.4.3 adds aggregate comparison summaries through `summarize_score_alignment()`.
+- V1.4.3 summary fields include total count, valid count, missing score counts, average scores, average gap, alignment counts, alignment ratios, summary text, and warnings.
+- V1.4.3 keeps summaries internal and does not change existing screening output, scoring rules, page display, or sorting logic.
+- Future V1.4.x work can add drift checks or snapshot fixtures without changing the current page flow.
 
 ## v1.5 交易纪律模块
 
