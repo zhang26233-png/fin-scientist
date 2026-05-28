@@ -205,6 +205,9 @@
 - V1.4.7 enhances internal risk and data-quality penalties for high volatility, extreme short-term return, volume-supported downside moves, overheated turnover, low liquidity, missing key fields, and invalid numeric values.
 - V1.4.7 adds internal `risk_labels` and `data_quality_labels` while keeping existing `strategy_score` component weights, 0-100 bounds, and V1.4.4/V1.4.5/V1.4.6 drift-check thresholds stable.
 - V1.4.7 keeps all scoring internal and does not change existing screening output, scoring rules, page display, or sorting logic.
+- V1.4.8 adds `strategy/explanations.py` for internal risk and data-quality explanation summaries based on `risk_labels`, `data_quality_labels`, `risk_penalty`, and `data_quality_penalty`.
+- V1.4.8 outputs `risk_explanations`, `data_quality_explanations`, `penalty_breakdown`, `factor_notes`, `summary_text`, and `warnings` for audit-style review.
+- V1.4.8 keeps `strategy_score` unchanged and does not change existing screening output, scoring rules, page display, or sorting logic.
 - Future V1.4.x work can add factor explanation helpers or internal diagnostics snapshots without changing the current page flow.
 
 ## v1.5 交易纪律模块

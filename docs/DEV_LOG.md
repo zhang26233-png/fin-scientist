@@ -4,6 +4,44 @@
 
 ### Target
 
+- Complete V1.4.8 internal risk and data-quality explanation phase.
+- Add audit-style explanations for `risk_labels`, `data_quality_labels`, `risk_penalty`, and `data_quality_penalty`.
+- Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or connect explanations to UI.
+
+### Explanation Module
+
+- Added `strategy/explanations.py`.
+- `build_strategy_explanations()` accepts a score row, a scoring result dictionary, or a list of score rows.
+- Output includes `risk_explanations`, `data_quality_explanations`, `penalty_breakdown`, `factor_notes`, `summary_text`, `warnings`, and read-only metadata.
+- Empty input, missing fields, unknown labels, and abnormal inputs return safe explanation structures.
+
+### Risk Explanations
+
+- Added explanations for `high_volatility`, `extreme_upside_return`, `volume_downside_risk`, `overheated_turnover`, `low_liquidity`, and related data sufficiency labels.
+
+### Data Quality Explanations
+
+- Added explanations for `missing_price_fields`, `missing_volume_fields`, `missing_turnover_fields`, `invalid_numeric_fields`, and `insufficient_factor_data`.
+
+### Drift Checks
+
+- V1.4.4-V1.4.7 drift-check thresholds remained stable.
+- `strategy_score` calculation was not changed.
+
+### Tests
+
+- Added `tests/test_strategy_explanations.py`.
+- Updated version-boundary import tests.
+- Re-ran drift, calibration, py-compile, full pytest, safety scan, and Streamlit short-start checks.
+
+### Next Step
+
+- V1.4.9 can add internal batch-level explanation summaries, still without UI integration.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.4.7 strategy risk and data-quality penalty enhancement phase.
 - Improve internal `strategy_score` risk distinction for high volatility, extreme short-term return, volume-supported downside moves, overheated turnover, low liquidity, missing key fields, and invalid numeric values.
 - Do not add data sources, change stock pools, replace `core/scoring.py`, change Streamlit display, change existing screening sorting, or add strategy logic to `legacy_app.py` or `ui/screening_ui.py`.

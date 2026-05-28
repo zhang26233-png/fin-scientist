@@ -23,6 +23,7 @@ def test_v122_modules_import_cleanly():
         "core.sector_strength",
         "strategy.adapter",
         "strategy.comparison",
+        "strategy.explanations",
         "strategy.factors",
         "strategy.filters",
         "strategy.report",
@@ -60,12 +61,12 @@ def test_explanations_module_no_longer_imports_legacy_app():
         assert "legacy_app" not in file.read()
 
 
-def test_v147_entrypoints_keep_explicit_compatibility_boundary():
+def test_v148_entrypoints_keep_explicit_compatibility_boundary():
     app = importlib.import_module("app")
     legacy_app = importlib.import_module("legacy_app")
     screening_ui = importlib.import_module("ui.screening_ui")
 
-    assert app.APP_VERSION == "V1.4.7"
+    assert app.APP_VERSION == "V1.4.8"
     assert legacy_app.APP_VERSION == app.APP_VERSION
     assert callable(legacy_app.render_legacy_workbench)
     assert "render_screening_section" in legacy_app.LEGACY_COMPATIBILITY_SURFACE

@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.4.7
+Current version: V1.4.8
 
-V1.4.7 enhances internal strategy risk and data-quality penalties so `strategy_score` better distinguishes high volatility, extreme short-term returns, volume-supported downside moves, overheated turnover, low liquidity, missing key fields, and invalid numeric fields. It keeps all scoring internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
+V1.4.8 adds internal strategy risk and data-quality explanations so `risk_labels`, `data_quality_labels`, `risk_penalty`, and `data_quality_penalty` can be reviewed through structured audit summaries. It keeps all scoring internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.4.7 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring and comparison checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
+`legacy_app.py` is not an unused backup. In V1.4.8 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring and comparison checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
 
-FinScientist V1.4.7 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.4.8 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,16 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.4.7
+当前版本：V1.4.8
+
+V1.4.8 internal risk and data-quality explanation phase:
+
+- Added `strategy/explanations.py` for read-only internal explanations based on strategy score rows or scoring result dictionaries.
+- Converts risk labels such as `high_volatility`, `extreme_upside_return`, `volume_downside_risk`, `overheated_turnover`, and `low_liquidity` into structured risk explanations.
+- Converts data-quality labels such as `missing_price_fields`, `missing_volume_fields`, `missing_turnover_fields`, `invalid_numeric_fields`, and `insufficient_factor_data` into structured data-quality explanations.
+- Adds `penalty_breakdown`, `factor_notes`, `summary_text`, and `warnings` for audit-style review.
+- V1.4.4-V1.4.7 drift-check thresholds did not need adjustment.
+- The changes remain internal only and do not change `strategy_score`, UI, sorting, existing screening output, stock pools, data sources, or `core/scoring.py`.
 
 V1.4.7 risk and data-quality penalty enhancement phase:
 
