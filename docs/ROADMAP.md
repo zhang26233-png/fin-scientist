@@ -158,7 +158,10 @@
 - `strategy/risk.py` owns risk-label helpers that return risk tags and explanations only.
 - `strategy/presets.py` owns preset configuration structures for research workflows.
 - V1.3.0 does not connect the new framework to the Streamlit workflow, existing screening output, scoring rules, page display, or sorting logic.
-- Future V1.3.x work can add a read-only strategy diagnostics panel or adapter after tests cover the behavior.
+- V1.3.1 adds `strategy/adapter.py` as a read-only conversion layer from existing screening-result DataFrames to strategy diagnostics.
+- Adapter output includes factor scores, filter flags, risk tags, risk notes, preset name, and a diagnostics summary.
+- V1.3.1 still does not connect strategy diagnostics to the Streamlit workflow, existing screening output, scoring rules, page display, or sorting logic.
+- Future V1.3.x work can add a read-only strategy diagnostics panel only after the adapter behavior and UI boundary are explicitly tested.
 
 ## v1.4 交易纪律模块
 

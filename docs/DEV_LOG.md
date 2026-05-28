@@ -4,6 +4,37 @@
 
 ### Target
 
+- Complete V1.3.1 strategy adapter phase.
+- Add a read-only adapter that converts existing screening-result DataFrames into strategy diagnostics.
+- Do not add data sources, change stock pools, change `core/scoring.py`, change Streamlit display, change sorting logic, or add strategy logic to `legacy_app.py`.
+
+### Added Strategy Adapter
+
+- `strategy/adapter.py` maps common screening-result fields into diagnostic inputs.
+- Field aliases include latest price, percentage change, volume, amount, turnover, sector, industry, score, volatility, drawdown, volume ratio, valid days, and data quality.
+- Adapter output includes `factor_scores`, `filter_flags`, `risk_tags`, `risk_notes`, `preset_name`, and `diagnostics_summary`.
+- The adapter copies the input DataFrame and does not mutate the original object.
+
+### Compatibility
+
+- The adapter is not wired into the current screening flow.
+- Existing research-priority scoring, page display, and sorting remain unchanged.
+- `legacy_app.py` does not import `strategy.adapter`.
+
+### Tests
+
+- Added `tests/test_strategy_adapter.py`.
+- Extended module import coverage to include `strategy.adapter`.
+- Covered empty DataFrame, missing fields, typical screening rows, alias inference, no mutation of the source DataFrame, and operation-word safety.
+
+### Next Step
+
+- V1.3.2 can add a read-only internal report builder on top of adapter output, still without changing existing UI or ranking unless a separate UI boundary is explicitly requested.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.3.0 strategy quantification phase 1.
 - Add an independent `strategy/` framework for research-priority factors, filters, risk labels, and presets.
 - Do not add data sources, change stock pools, change `core/scoring.py`, change page display, change sorting logic, or add strategy logic to `legacy_app.py`.
@@ -32,7 +63,7 @@
 
 ### Next Step
 
-- V1.3.1 can add a read-only adapter that converts existing screening metrics into strategy diagnostics, still without changing the existing ranking or page output unless explicitly enabled.
+- V1.3.1 added the read-only adapter while keeping the existing ranking and page output unchanged.
 
 ## 2026-05-28
 
