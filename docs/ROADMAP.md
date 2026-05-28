@@ -211,6 +211,9 @@
 - V1.4.9 adds internal multi-preset strategy scoring through `balanced_research`, `trend_momentum`, `volume_breakout`, `low_risk_quality`, and `high_elasticity_watch`.
 - V1.4.9 lets `calculate_strategy_scores()` accept `preset_name` or `preset_config` and return `strategy_score_components`.
 - V1.4.9 keeps the default preset compatible with previous scoring and does not change existing screening output, scoring rules, page display, or sorting logic.
+- V1.4.10 adds `strategy/preset_comparison.py` for internal cross-preset comparison summaries.
+- V1.4.10 outputs preset scores, best/worst preset, score spread, average score, consensus level, dominant style, style notes, and warnings.
+- V1.4.10 keeps default strategy scoring unchanged and does not change existing screening output, scoring rules, page display, or sorting logic.
 - Future V1.4.x work can add factor explanation helpers or internal diagnostics snapshots without changing the current page flow.
 
 ## v1.5 交易纪律模块

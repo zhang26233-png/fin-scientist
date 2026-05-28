@@ -4,6 +4,37 @@
 
 ### Target
 
+- Complete V1.4.10 internal cross-preset comparison summary phase.
+- Compare the same candidate across multiple internal strategy presets without changing UI, existing screening output, sorting, default strategy scoring, or `core/scoring.py`.
+- Keep V1.4.4-V1.4.9 drift and calibration tests stable.
+
+### Comparison Module
+
+- Added `strategy/preset_comparison.py`.
+- Added `compare_strategy_presets(source, preset_names=None)`.
+- Added `summarize_preset_scores(preset_scores)`.
+- Outputs include `preset_scores`, `best_preset`, `worst_preset`, `score_spread`, `average_preset_score`, `consensus_level`, `dominant_style`, `style_notes`, and `warnings`.
+
+### Consensus And Style
+
+- Consensus levels include `broad_consensus_high`, `style_specific_high`, `mixed_signal`, `broad_consensus_low`, and `insufficient_data`.
+- Dominant styles include `balanced`, `trend_momentum`, `volume_breakout`, `low_risk_quality`, `high_elasticity`, `mixed`, and `insufficient_data`.
+- The helper is read-only and does not connect to Streamlit pages.
+
+### Tests
+
+- Added `tests/test_strategy_preset_comparison.py`.
+- Updated version-boundary import tests.
+- Re-ran drift, calibration, distribution, py-compile, full pytest, safety scan, and Streamlit short-start checks.
+
+### Next Step
+
+- V1.4.11 can add internal batch-level preset comparison across multiple candidates, still without UI integration.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.4.9 internal multi-preset strategy scoring phase.
 - Allow the same candidate set to be evaluated through different internal strategy views without changing UI, existing screening output, sorting, or `core/scoring.py`.
 - Keep the default preset compatible with V1.4.8 scoring and keep V1.4.4-V1.4.8 drift checks stable.

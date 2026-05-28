@@ -474,13 +474,17 @@ def _preset_bonus(item, preset, volume_price_score, liquidity_score):
     turnover = source_metrics.get("turnover") if isinstance(source_metrics, dict) else math.nan
     volume_ratio = source_metrics.get("volume_ratio") if isinstance(source_metrics, dict) else math.nan
     return_20d = source_metrics.get("return_20d") if isinstance(source_metrics, dict) else math.nan
+    return_10d = source_metrics.get("return_10d") if isinstance(source_metrics, dict) else math.nan
+    return_5d = source_metrics.get("return_5d") if isinstance(source_metrics, dict) else math.nan
+    volatility = source_metrics.get("volatility") if isinstance(source_metrics, dict) else math.nan
     bonus = 0
     reasons = []
+    volume_threshold = policy.get("volume_confirmation_threshold", 1.2)
     if (
         isinstance(return_20d, (int, float))
         and isinstance(volume_ratio, (int, float))
         and return_20d > 0.05
-        and volume_ratio >= 1.2
+        and volume_ratio >= volume_threshold
         and "volume_downside_risk" not in labels
     ):
         value = policy.get("volume_confirmation_bonus", 0)
@@ -497,6 +501,43 @@ def _preset_bonus(item, preset, volume_price_score, liquidity_score):
         bonus += value
         if value:
             reasons.append("active_liquidity")
+    if (
+        preset.get("preset_name") == "trend_momentum"
+        and isinstance(return_20d, (int, float))
+        and isinstance(return_10d, (int, float))
+        and return_20d >= 0.15
+        and return_10d >= 0.08
+    ):
+        value = policy.get("trend_momentum_bonus", 0)
+        bonus += value
+        if value:
+            reasons.append("trend_momentum_alignment")
+    if (
+        preset.get("preset_name") in {"low_risk_quality", "stable_observation"}
+        and isinstance(volatility, (int, float))
+        and volatility <= 0.25
+        and liquidity_score >= 50
+        and set(labels).issubset({"routine_review"})
+    ):
+        value = policy.get("stable_quality_bonus", 0)
+        bonus += value
+        if value:
+            reasons.append("stable_quality")
+    if (
+        preset.get("preset_name") in {"high_elasticity_watch", "high_elasticity_observation"}
+        and isinstance(return_20d, (int, float))
+        and isinstance(return_10d, (int, float))
+        and isinstance(return_5d, (int, float))
+        and isinstance(volume_ratio, (int, float))
+        and return_20d >= 0.20
+        and return_10d >= 0.10
+        and return_5d >= 0.04
+        and volume_ratio >= 1.5
+    ):
+        value = policy.get("elasticity_bonus", 0)
+        bonus += value
+        if value:
+            reasons.append("elasticity_with_volume_confirmation")
     if (
         preset.get("preset_name") in {"high_elasticity_watch", "high_elasticity_observation"}
         and volume_price_score < 60
