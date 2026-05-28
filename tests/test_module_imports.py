@@ -19,6 +19,10 @@ def test_v122_modules_import_cleanly():
         "core.scoring",
         "core.explanations",
         "core.sector_strength",
+        "strategy.factors",
+        "strategy.filters",
+        "strategy.risk",
+        "strategy.presets",
     ]
 
     for module_name in module_names:
@@ -48,13 +52,18 @@ def test_explanations_module_no_longer_imports_legacy_app():
         assert "legacy_app" not in file.read()
 
 
-def test_v129_entrypoints_keep_explicit_compatibility_boundary():
+def test_v130_entrypoints_keep_explicit_compatibility_boundary():
     app = importlib.import_module("app")
     legacy_app = importlib.import_module("legacy_app")
     screening_ui = importlib.import_module("ui.screening_ui")
 
-    assert app.APP_VERSION == "V1.2.9"
+    assert app.APP_VERSION == "V1.3.0"
     assert legacy_app.APP_VERSION == app.APP_VERSION
     assert callable(legacy_app.render_legacy_workbench)
     assert "render_screening_section" in legacy_app.LEGACY_COMPATIBILITY_SURFACE
     assert screening_ui.legacy_workbench is legacy_app
+
+
+def test_strategy_modules_do_not_extend_legacy_app():
+    with open("legacy_app.py", encoding="utf-8") as file:
+        assert "strategy." not in file.read()

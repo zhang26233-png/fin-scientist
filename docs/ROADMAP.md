@@ -150,28 +150,38 @@
 - No business features, data sources, scoring rules, stock-pool contents, fallback order, or AkShare / BaoStock / yfinance call flows are changed.
 - The remaining legacy migration risk is concentrated in real fetch orchestration and the large Streamlit workbench renderer; these should not be moved without narrower tests.
 
-## v1.3 交易纪律模块
+## v1.3 Strategy Quantification Framework
+
+- V1.3.0 starts with an independent `strategy/` package.
+- `strategy/factors.py` owns pure research-priority factor helpers for trend, momentum, volatility, and volume.
+- `strategy/filters.py` owns pure preprocessing filters for missing fields, row count, price threshold, turnover threshold, and abnormal move checks.
+- `strategy/risk.py` owns risk-label helpers that return risk tags and explanations only.
+- `strategy/presets.py` owns preset configuration structures for research workflows.
+- V1.3.0 does not connect the new framework to the Streamlit workflow, existing screening output, scoring rules, page display, or sorting logic.
+- Future V1.3.x work can add a read-only strategy diagnostics panel or adapter after tests cover the behavior.
+
+## v1.4 交易纪律模块
 
 - 建立学习型交易纪律清单。
 - 记录仓位、止损、复盘和风险控制原则。
 - 不接入真实交易账户。
 - 不输出自动买卖指令。
 
-## v1.4 回测验证增强
+## v1.5 回测验证增强
 
 - 增加更多策略模板和参数设置。
 - 完善交易成本、持仓比例和样本区间说明。
 - 增加回测结果的稳定性和局限性提示。
 - 强调回测结果不代表未来收益。
 
-## v1.5 AI 研究摘要模块
+## v1.6 AI 研究摘要模块
 
 - 探索 AI 辅助整理研究摘要的可能性。
 - 保留数据来源、指标依据和风险提示。
 - 不让 AI 直接生成交易结论。
 - 明确区分事实、规则判断和主观假设。
 
-## v1.6 工程化增强
+## v1.7 工程化增强
 
 - 将单文件原型逐步拆分为更清晰的模块。
 - 增加测试覆盖和文档规范。

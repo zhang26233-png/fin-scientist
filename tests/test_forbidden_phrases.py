@@ -23,6 +23,7 @@ SCAN_PATHS = [
     Path("config"),
     Path("data"),
     Path("core"),
+    Path("strategy"),
 ]
 
 

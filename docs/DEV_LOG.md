@@ -4,6 +4,40 @@
 
 ### Target
 
+- Complete V1.3.0 strategy quantification phase 1.
+- Add an independent `strategy/` framework for research-priority factors, filters, risk labels, and presets.
+- Do not add data sources, change stock pools, change `core/scoring.py`, change page display, change sorting logic, or add strategy logic to `legacy_app.py`.
+
+### Added Strategy Modules
+
+- `strategy/factors.py`: pure trend, momentum, volatility, and volume factor helpers.
+- `strategy/filters.py`: pure missing-field, minimum-row, minimum-price, turnover, and abnormal-move checks.
+- `strategy/risk.py`: risk-label helpers that return tags and explanations only.
+- `strategy/presets.py`: preset configuration structures for research-priority, stable-observation, and high-elasticity observation workflows.
+
+### Compatibility
+
+- The new strategy framework is not wired into the current screening flow.
+- Existing research-priority scoring and composite scoring remain unchanged.
+- `legacy_app.py` does not import `strategy/`.
+- Streamlit page display and sorting behavior are unchanged.
+
+### Tests
+
+- Added `tests/test_strategy_factors.py`.
+- Added `tests/test_strategy_filters.py`.
+- Added `tests/test_strategy_risk.py`.
+- Extended module import coverage to include `strategy/`.
+- Extended forbidden-phrase runtime scanning to include `strategy/`.
+
+### Next Step
+
+- V1.3.1 can add a read-only adapter that converts existing screening metrics into strategy diagnostics, still without changing the existing ranking or page output unless explicitly enabled.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.2.9 architecture wrap-up.
 - Clarify the entrypoint boundaries between `app.py`, `ui/screening_ui.py`, and `legacy_app.py`.
 - Do not add business features, data sources, scoring changes, stock-pool changes, UI behavior changes, real network fetch migration, or AkShare / BaoStock / yfinance call-flow changes.
