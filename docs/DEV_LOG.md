@@ -4,6 +4,37 @@
 
 ### Target
 
+- Complete V1.3.6 gated diagnostics panel helper phase.
+- Add a feature-flagged rendering helper for future strategy diagnostics display.
+- Do not add data sources, change stock pools, change `core/scoring.py`, change Streamlit display, change sorting logic, or call the helper from current pages.
+
+### Added Gated Helper
+
+- `ui/strategy_diagnostics_panel.py` accepts a strategy view-model.
+- `render_strategy_diagnostics_panel()` checks `is_strategy_diagnostics_enabled()` before any rendering.
+- When the default-off flag is disabled, the helper returns `rendered: False` and does not call Streamlit.
+- The helper does not import `strategy.service` and does not build diagnostics itself.
+
+### Compatibility
+
+- Current Streamlit pages do not call `render_strategy_diagnostics_panel()`.
+- Existing research-priority scoring, page display, and sorting remain unchanged.
+- `legacy_app.py` and `ui/screening_ui.py` do not import `ui.strategy_diagnostics_panel`.
+
+### Tests
+
+- Added `tests/test_strategy_diagnostics_panel.py`.
+- Extended module import coverage to include `ui.strategy_diagnostics_panel`.
+- Covered default-off behavior, no Streamlit calls while disabled, no mutation of view-model input, no service dependency in the panel, no page dependency on the panel, and operation-word safety.
+
+### Next Step
+
+- V1.3.7 can add an inactive integration adapter or explicit UI contract for where the panel would be mounted, still keeping the feature flag off by default.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.3.5 feature-flag boundary phase.
 - Add default-off strategy diagnostics feature flags and non-rendering UI contract tests.
 - Do not add data sources, change stock pools, change `core/scoring.py`, change Streamlit display, change sorting logic, or add strategy logic to `legacy_app.py` or `ui/screening_ui.py`.
@@ -29,7 +60,7 @@
 
 ### Next Step
 
-- V1.3.6 can add a gated, non-invoked rendering helper for strategy diagnostics, with tests confirming it remains inactive while the flag is off.
+- V1.3.6 added the gated, non-invoked rendering helper and tests confirming it remains inactive while the flag is off.
 
 ## 2026-05-28
 

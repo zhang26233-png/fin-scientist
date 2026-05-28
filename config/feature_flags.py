@@ -1,6 +1,6 @@
 """Feature flags for optional FinScientist capabilities.
 
-All flags are conservative by default. V1.3.5 defines the strategy diagnostics
+All flags are conservative by default. V1.3.6 defines the strategy diagnostics
 UI boundary but does not enable rendering or connect it to the Streamlit pages.
 """
 

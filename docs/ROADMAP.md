@@ -173,7 +173,10 @@
 - V1.3.5 adds `config/feature_flags.py` with strategy diagnostics rendering disabled by default.
 - V1.3.5 adds non-rendering UI contract tests to ensure `ui/screening_ui.py` and `legacy_app.py` do not depend on strategy view-model or service code.
 - V1.3.5 still does not render strategy diagnostics in Streamlit or change existing screening output, scoring rules, page display, or sorting logic.
-- Future V1.3.x work can add an explicitly gated, read-only rendering function only after feature-flag and contract tests remain stable.
+- V1.3.6 adds `ui/strategy_diagnostics_panel.py` as an explicitly gated, read-only rendering helper.
+- The helper returns without rendering when the default-off strategy diagnostics flag is disabled.
+- V1.3.6 still does not call the helper from current Streamlit pages and does not change existing screening output, scoring rules, page display, or sorting logic.
+- Future V1.3.x work can add an inactive integration point only after gated rendering helper behavior remains stable.
 
 ## v1.4 交易纪律模块
 

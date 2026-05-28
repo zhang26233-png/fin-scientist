@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.3.5
+Current version: V1.3.6
 
-V1.3.5 adds a default-off feature-flag boundary for future strategy diagnostics display, plus non-rendering UI contract tests. It does not render strategy diagnostics in Streamlit, add data sources, change scoring rules, change stock pools, change page display, or change sorting logic.
+V1.3.6 adds a feature-flagged `ui/strategy_diagnostics_panel.py` rendering helper for future strategy diagnostics display. The feature flag remains off by default, and the helper is not called by current Streamlit pages, so this release does not render strategy diagnostics, add data sources, change scoring rules, change stock pools, change page display, or change sorting logic.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.3.5 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. New strategy framework code lives in `strategy/`; `legacy_app.py` does not import it in this release.
+`legacy_app.py` is not an unused backup. In V1.3.6 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. New strategy framework code lives in `strategy/`; `legacy_app.py` does not import it in this release.
 
-FinScientist V1.3.5 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.3.6 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,15 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.3.5
+当前版本：V1.3.6
+
+V1.3.6 gated diagnostics panel helper phase:
+
+- Added `ui/strategy_diagnostics_panel.py` as a feature-flagged helper for future strategy diagnostics display.
+- The helper returns without rendering when `is_strategy_diagnostics_enabled()` is `False`.
+- The feature flag remains disabled by default.
+- Current Streamlit pages do not call the helper.
+- No strategy diagnostics are rendered in Streamlit in this release.
 
 V1.3.5 feature-flag boundary phase:
 
