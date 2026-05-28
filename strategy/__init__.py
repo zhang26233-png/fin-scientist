@@ -11,4 +11,5 @@ __all__ = [
     "presets",
     "report",
     "risk",
+    "service",
 ]

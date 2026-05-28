@@ -4,6 +4,37 @@
 
 ### Target
 
+- Complete V1.3.3 strategy service phase.
+- Add a read-only internal service that combines `strategy.adapter` diagnostics and `strategy.report` summaries.
+- Do not add data sources, change stock pools, change `core/scoring.py`, change Streamlit display, change sorting logic, or add strategy logic to `legacy_app.py`.
+
+### Added Strategy Service
+
+- `strategy/service.py` consumes an existing screening-result DataFrame.
+- The service calls `build_strategy_diagnostics()` and `build_strategy_report()`.
+- Service output includes `status`, `preset_name`, `diagnostics`, `report`, `metadata`, and `warnings`.
+- Metadata explicitly records read-only behavior and confirms UI, ranking, and scoring are unchanged.
+
+### Compatibility
+
+- The service is not wired into the current screening flow.
+- Existing research-priority scoring, page display, and sorting remain unchanged.
+- `legacy_app.py` does not import `strategy.service`.
+
+### Tests
+
+- Added `tests/test_strategy_service.py`.
+- Extended module import coverage to include `strategy.service`.
+- Covered empty DataFrame, missing fields, typical screening rows, no mutation of the source DataFrame, non-DataFrame input, and operation-word safety.
+
+### Next Step
+
+- V1.3.4 can add a read-only UI boundary design or a non-rendering view-model test layer before any optional page integration.
+
+## 2026-05-28
+
+### Target
+
 - Complete V1.3.2 strategy report phase.
 - Add a read-only report builder that summarizes `strategy.adapter` diagnostics.
 - Do not add data sources, change stock pools, change `core/scoring.py`, change Streamlit display, change sorting logic, or add strategy logic to `legacy_app.py`.
@@ -29,7 +60,7 @@
 
 ### Next Step
 
-- V1.3.3 can add a read-only internal strategy diagnostics service that combines adapter and report outputs behind one tested function, still without UI integration.
+- V1.3.3 added the read-only internal strategy diagnostics service without UI integration.
 
 ## 2026-05-28
 
