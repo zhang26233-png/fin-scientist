@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.4.16
+Current version: V1.5.0
 
-V1.4.16 adds internal strategy preview and export helpers for caller-provided candidate pools. It builds read-only preview DataFrames and JSON-like/CSV exports with default strategy scores, cross-preset comparison fields, risk labels, and data-quality labels without downloading data, connecting to UI, changing stock pools, changing page display, changing existing screening order, or replacing `core/scoring.py`.
+V1.5.0 adds an optional read-only strategy preview section to the screening page. The preview displays strategy scores, cross-preset comparison fields, dominant style, consensus level, risk labels, and data-quality labels without changing the original screening result table, default sorting, stock pools, data sources, or `core/scoring.py`.
 
 Startup command remains:
 
@@ -24,19 +24,28 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.4.16 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring, comparison, backtest metric, backtest diagnostic, and strategy preview checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
+`legacy_app.py` is not an unused backup. In V1.5.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
 
-FinScientist V1.4.16 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.5.0 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
-当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
+当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
 ## 项目定位
 
-FinScientist 是学习与研究工具，用于演示多市场行情分析、技术指标、规则化摘要、多股票对比、自选股观察和简单策略回测。它不是正式投研系统，不连接真实交易账户，不提供自动买卖功能，任何页面输出都不构成投资建议。
+FinScientist 是学习与研究工具，用于演示多市场行情分析、技术指标、规则化摘要、多股票对比、自选股观察和简单策略回测。它不是正式投研系统，不连接真实交易账户，不提供真实交易操作功能，任何页面输出都不构成投资建议。
 
 ## 当前版本
 
-当前版本：V1.4.16
+当前版本：V1.5.0
+
+V1.5.0 optional strategy preview UI phase:
+
+- Added a collapsed strategy preview section after the screening result table.
+- The preview calls `build_strategy_preview(..., sort_by_strategy=False)` by default.
+- Displayed fields include symbol, name, original score, strategy score, best preset, dominant style, consensus level, per-preset scores, risk labels, data-quality labels, and warnings.
+- Optional preview sorting affects only the preview table and does not change the original screening table.
+- `legacy_app.py` returns the already-built screening result DataFrame but does not import strategy logic.
+- No network calls, downloads, real data-source access, stock-pool changes, default sorting changes, original research-priority score changes, or `core/scoring.py` changes were introduced.
 
 V1.4.16 internal strategy preview/export phase:
 
@@ -368,7 +377,7 @@ V0.9.3 新增：
 - 自动研究对象筛选模块新增量价指标计算。
 - 新增研究优先级评分，并按分数从高到低展示 Top N 候选结果表。
 - 指标包括最新价格、近 5/20/60 日涨跌幅、MA20、MA60、均线结构、成交量放大倍数、最大回撤、年化波动率和有效交易日数量。
-- 评分偏技术面和量价维度，只用于帮助排序进一步研究对象，不代表买入、卖出或持有建议，不构成投资建议。
+- 评分偏技术面和量价维度，只用于帮助排序进一步研究对象，不代表具体操作建议，不构成投资建议。
 - 数据不足、Close 缺失、Volume 缺失、NaN 或 inf 等情况会显示“数据不足”或“无法评分”，单只股票异常不会影响其他候选对象。
 
 V0.9.2c 修复：
@@ -426,7 +435,7 @@ V0.9.2 数据获取稳定性修复：
 - 复权口径可能不完全一致。
 - 新闻、财务和估值字段可能滞后或缺失。
 - 免费数据源不适合直接用于实盘交易。
-- 本项目不会接入真实交易账户，也不会执行自动买卖。
+- 本项目不会接入真实交易账户，也不会执行真实交易操作。
 
 ## 数据质量报告
 
@@ -490,7 +499,7 @@ OpenAI API 不是行情数据源，不用于获取价格、成交量或财务行
 
 ## 自动研究对象筛选
 
-本模块用于从股票池中筛选研究优先级较高的候选对象，仅用于学习和研究，不构成投资建议，也不代表买入、卖出或持有建议。
+本模块用于从股票池中筛选研究优先级较高的候选对象，仅用于学习和研究，不构成投资建议，也不代表具体操作建议。
 
 当前 V0.9.5 已完成：
 
@@ -527,7 +536,7 @@ OpenAI API 不是行情数据源，不用于获取价格、成交量或财务行
 
 研究优先级评分从 0 到 100，使用本地可解释规则计算。趋势结构包括当前价格是否高于 MA20、是否高于 MA60、MA20 是否高于 MA60；动量表现包括近 20 日和近 60 日涨跌幅；量能变化包括最近 5 日均量相对最近 20 日均量的放大倍数；风险扣分包括短期涨幅过大、最大回撤偏大、年化波动率偏高、有效交易日不足、成交量数据缺失和数据质量较差。
 
-该评分只代表研究优先级，偏技术面和量价维度，用于辅助排序进一步研究对象。它不是投资建议，也不代表买入、卖出或持有建议。V0.9.4 已加入入选理由、风险提示和筛选总结，后续将继续加入板块强度、基本面质量和消息催化，以提升研究完整度。
+该评分只代表研究优先级，偏技术面和量价维度，用于辅助排序进一步研究对象。它不是投资建议，也不代表具体操作建议。V0.9.4 已加入入选理由、风险提示和筛选总结，后续将继续加入板块强度、基本面质量和消息催化，以提升研究完整度。
 
 ### 入选理由、风险提示和筛选总结
 

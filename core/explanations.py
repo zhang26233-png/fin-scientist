@@ -95,7 +95,7 @@ def generate_selection_reasons(metrics):
 def generate_screening_risk_warnings(metrics):
     warnings = []
     if not isinstance(metrics, dict):
-        return ["当前指标不足，无法生成完整风险提示。", "当前结果只代表研究优先级，不代表买入、卖出或持有建议。"]
+        return ["当前指标不足，无法生成完整风险提示。", "当前结果只代表研究优先级，不代表具体操作建议。"]
 
     return_20d = to_number(metrics.get("近 20 日涨跌幅"))
     max_drawdown = to_number(metrics.get("最大回撤"))
@@ -121,7 +121,7 @@ def generate_screening_risk_warnings(metrics):
 
     if not warnings:
         warnings.append("暂未触发主要风险阈值，但仍需结合基本面、消息面、板块环境和市场情绪进一步验证。")
-    warnings.append("当前结果只代表研究优先级，不代表买入、卖出或持有建议。")
+    warnings.append("当前结果只代表研究优先级，不代表具体操作建议。")
     return warnings
 
 

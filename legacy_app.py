@@ -1,6 +1,6 @@
 """Compatibility layer for the pre-module FinScientist implementation.
 
-This file is not a backup. In V1.4.16 it is the explicit compatibility layer for
+This file is not a backup. In V1.5.0 it is the explicit compatibility layer for
 the old research workbench, the legacy screening renderer, and network-adjacent
 fetch orchestration that has not yet been migrated. Keep changes conservative;
 future releases should move functions into config/, data/, core/, and ui/ in
@@ -23,7 +23,7 @@ try:
 except Exception:
     bs = None
 
-APP_VERSION = "V1.4.16"
+APP_VERSION = "V1.5.0"
 LEGACY_COMPATIBILITY_SURFACE = (
     "render_legacy_workbench",
     "render_legacy_app",
@@ -1746,7 +1746,7 @@ def generate_comparison_summary(comparison_df):
             f"2. 高波动标的：{format_symbol_list(high_vol_symbols)}。这些标的年化波动率偏高，适合重点观察价格弹性和风险暴露。",
             f"3. 高回撤标的：{format_symbol_list(high_drawdown_symbols)}。这些标的区间最大回撤较大，需要进一步排查基本面、行业景气和事件冲击。",
             f"4. 趋势较弱标的：{format_symbol_list(weak_symbols)}。这些标的当前价格相对主要均线偏弱，短中期趋势确认度较低。",
-            f"5. 后续研究建议：价格高于20日和60日均线的标的包括 {format_symbol_list(above_ma_symbols)}；更适合进入下一步研究清单的标的包括 {format_symbol_list(research_symbols)}。本摘要不输出买入、卖出或目标价，仅用于学习演示，不构成投资建议。",
+            f"5. 后续研究观察：价格高于20日和60日均线的标的包括 {format_symbol_list(above_ma_symbols)}；更适合进入下一步研究清单的标的包括 {format_symbol_list(research_symbols)}。本摘要不输出具体操作结论或目标价，仅用于学习演示，不构成投资建议。",
         ]
     )
 
@@ -1847,7 +1847,7 @@ def build_screening_priority_rows(success_items, run_mode="快速模式"):
             try:
                 risk_warnings = generate_screening_risk_warnings(metrics)
             except Exception:
-                risk_warnings = ["风险提示生成失败，请检查指标完整性。", "当前结果只代表研究优先级，不代表买入、卖出或持有建议。"]
+                risk_warnings = ["风险提示生成失败，请检查指标完整性。", "当前结果只代表研究优先级，不代表具体操作建议。"]
             row = {
                 "股票代码": item["display_ticker"],
                 "股票名称": item.get("stock_name", "名称暂缺"),
@@ -1928,11 +1928,12 @@ def build_screening_priority_rows(success_items, run_mode="快速模式"):
 
 
 def render_screening_section(market, pool_source, top_n_label, input_text, pool_type=None, max_process_count=10, run_mode="快速模式"):
+    screening_result_frame = pd.DataFrame()
     st.divider()
     st.header("自动研究对象筛选")
     st.write(
         "本模块用于从股票池中筛选研究优先级较高的候选对象，仅用于学习和研究，"
-        "不构成投资建议，也不代表买入、卖出或持有建议。"
+        "不构成投资建议，也不代表具体操作建议。"
     )
     st.caption(
         "当前 V1.1 在 V1.0 基础上新增性能优化、缓存机制、快速模式和完整模式。"
@@ -1967,7 +1968,7 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
         source_text = input_text or ""
         if not source_text.strip():
             st.warning("请选择自定义股票池时，请先输入至少一个股票代码。")
-            return
+            return screening_result_frame
 
     result = parse_screening_universe(source_text, market)
     for warning in result["warnings"]:
@@ -1976,7 +1977,7 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
     parsed_items = result["parsed_items"]
     if not parsed_items:
         st.warning("解析后没有可展示的候选对象。")
-        return
+        return screening_result_frame
     total_pool_count = len(parsed_items)
     process_count = min(max_process_count, total_pool_count)
 
@@ -2042,6 +2043,7 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
         all_scored_frame.attrs["total_count"] = summary["股票池总数"]
         if scored_rows:
             priority_frame = pd.DataFrame(scored_rows[:top_n])
+            screening_result_frame = priority_frame.copy(deep=True)
             priority_columns = [
                 "股票代码",
                 "股票名称",
@@ -2183,6 +2185,7 @@ def render_screening_section(market, pool_source, top_n_label, input_text, pool_
         "当前 V1.1 在 V1.0 基础上新增性能优化、缓存机制、快速模式和完整模式。"
         "所有内容均由本地规则生成，仅用于学习和研究，不构成投资建议。"
     )
+    return screening_result_frame
 
 
 def is_valid_number(value):

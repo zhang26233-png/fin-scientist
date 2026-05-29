@@ -182,9 +182,6 @@ def test_strategy_preview_csv_export_writes_temp_file(tmp_path):
 
 def test_strategy_preview_not_used_by_legacy_or_screening_ui():
     legacy_text = Path("legacy_app.py").read_text(encoding="utf-8")
-    screening_text = Path("ui/screening_ui.py").read_text(encoding="utf-8")
 
     assert "strategy.preview" not in legacy_text
     assert "build_strategy_preview" not in legacy_text
-    assert "strategy.preview" not in screening_text
-    assert "build_strategy_preview" not in screening_text

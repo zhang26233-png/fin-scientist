@@ -4,6 +4,34 @@
 
 ### Target
 
+- Complete V1.5.0 optional strategy preview UI phase.
+- Show strategy preview results on the screening page without changing the original screening table, default sorting, scoring rules, stock pools, data sources, or `core/scoring.py`.
+- Keep V1.4.4-V1.4.16 tests stable.
+
+### Strategy Preview UI
+
+- Added `build_screening_strategy_preview()` and `render_strategy_preview_section()` to `ui/screening_ui.py`.
+- The screening page now renders a collapsed strategy preview section after the original screening workflow returns its result DataFrame.
+- The preview calls `build_strategy_preview(result_df, sort_by_strategy=False)` by default.
+- Optional preview sorting changes only the preview table.
+- Preview display fields include symbol, name, original score, strategy score, best preset, dominant style, consensus level, per-preset scores, risk labels, data-quality labels, and warnings.
+- `legacy_app.py` returns the existing screening result DataFrame for UI composition but does not import strategy modules.
+
+### Tests
+
+- Added `tests/test_strategy_ui_integration.py`.
+- Updated `tests/test_strategy_preview.py` for the new UI dependency boundary.
+- Updated `tests/test_module_imports.py` for V1.5.0.
+- Covered empty input, missing fields, input immutability, default order preservation, preview-only sorting, required preview fields, safety wording, legacy boundary, and `core/scoring.py` boundary.
+
+### Next Step
+
+- V1.5.1 can add optional CSV/JSON-like download controls for the preview section while keeping the original screening table unchanged.
+
+## 2026-05-29
+
+### Target
+
 - Complete V1.4.16 internal strategy preview/export phase.
 - Build read-only strategy preview outputs for caller-provided candidate pools using default strategy scoring and cross-preset comparison.
 - Keep V1.4.4-V1.4.15 tests stable without changing UI, screening output, sorting, default strategy scoring, stock pools, data sources, or `core/scoring.py`.
@@ -1192,7 +1220,7 @@
 ### 本次目标
 
 - 完成 V1.0：A股基本面质量筛选初版。
-- 不接入真实交易账户，不做自动买卖，不输出买入、卖出或持有建议，不改变现有研究优先级评分规则。
+- 不接入真实交易账户，不执行真实交易操作，不输出具体操作建议，不改变现有研究优先级评分规则。
 
 ### 修改文件
 
@@ -1237,7 +1265,7 @@
 ### 本次目标
 
 - 完成 V0.9.6：A股行业 / 板块 / 主题标签与板块强度初版。
-- 不新增复杂数据源，不接入 OpenAI API，不接入真实交易账户，不做自动买卖，不改变现有研究优先级评分规则。
+- 不新增复杂数据源，不接入 OpenAI API，不接入真实交易账户，不执行真实交易操作，不改变现有研究优先级评分规则。
 
 ### 修改文件
 
@@ -1280,7 +1308,7 @@
 ### 本次目标
 
 - 完成 V0.9.5：A股研究股票池体系升级与股票中文名称展示。
-- 不新增评分规则，不新增复杂数据源，不接入 OpenAI API，不接入真实交易账户，不做自动买卖。
+- 不新增评分规则，不新增复杂数据源，不接入 OpenAI API，不接入真实交易账户，不执行真实交易操作。
 
 ### 修改文件
 
@@ -1323,7 +1351,7 @@
 ### 本次目标
 
 - 完成 V0.9.4：自动研究对象筛选模块新增解释层、入选理由、风险提示和筛选总结。
-- 继续保持本地规则生成，不接入 OpenAI API，不接入真实交易账户，不做自动买卖。
+- 继续保持本地规则生成，不接入 OpenAI API，不接入真实交易账户，不执行真实交易操作。
 
 ### 修改文件
 
@@ -1366,7 +1394,7 @@
 ### 本次目标
 
 - 完成 V0.9.3：自动研究对象筛选模块新增量价指标计算、研究优先级评分和 Top N 排序展示。
-- 不接入 OpenAI API，不接入真实交易账户，不做自动买卖，仅输出研究候选池和进一步研究对象排序。
+- 不接入 OpenAI API，不接入真实交易账户，不执行真实交易操作，仅输出研究候选池和进一步研究对象排序。
 
 ### 修改文件
 

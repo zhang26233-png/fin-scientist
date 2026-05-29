@@ -5,7 +5,7 @@
 - A股研究能力作为后续重点方向，优先增强 A股数据获取稳定性、字段口径说明和数据质量检查。
 - 港股和美股继续作为兼容市场保留，避免破坏现有单股分析、多股票对比、自选股、新闻与事件分析、策略回测等功能。
 - 后续可选接入 Tushare Pro，但需要 token、权限和配额配置，不作为当前默认链路。
-- 保留安全边界：所有结果仅用于学习和研究，不构成投资建议，不接入真实交易账户，不执行自动买卖流程。
+- 保留安全边界：所有结果仅用于学习和研究，不构成投资建议，不接入真实交易账户，不执行真实交易操作流程。
 
 ## v0.6 单股行情查询与基础研究工作台
 
@@ -232,14 +232,17 @@
 - V1.4.16 adds `strategy/preview.py` for read-only candidate-pool strategy previews and stable CSV/JSON-like exports.
 - V1.4.16 preview outputs default strategy score, cross-preset comparison fields, per-preset scores, dominant style, consensus level, risk labels, data-quality labels, and warnings.
 - V1.4.16 keeps input order by default and does not change existing screening output, page sorting, scoring rules, stock pools, data sources, or `core/scoring.py`.
-- Future V1.4.x work can add factor explanation helpers or internal diagnostics snapshots without changing the current page flow.
+- V1.5.0 adds an optional collapsed strategy preview section to the screening page.
+- V1.5.0 renders `strategy.preview` output after the original screening table while keeping the original result table and default sorting unchanged.
+- V1.5.0 keeps strategy preview read-only and does not change existing scoring rules, stock pools, data sources, or `core/scoring.py`.
+- Future V1.5.x work can add optional export buttons or tighter preview formatting without changing the original screening flow.
 
 ## v1.5 交易纪律模块
 
 - 建立学习型交易纪律清单。
 - 记录仓位、止损、复盘和风险控制原则。
 - 不接入真实交易账户。
-- 不输出自动买卖指令。
+- 不输出真实交易操作指令。
 
 ## v1.6 回测验证增强
 

@@ -9,6 +9,48 @@ import streamlit as st
 
 from config.stock_pools import A_SHARE_SCREENING_POOLS, DEFAULT_A_SHARE_POOL_TYPE
 import legacy_app as legacy_workbench
+from strategy.preview import build_strategy_preview
+
+
+STRATEGY_PREVIEW_COLUMNS = [
+    "symbol",
+    "name",
+    "original_score",
+    "strategy_score",
+    "best_preset",
+    "dominant_style",
+    "consensus_level",
+    "balanced_research_score",
+    "trend_momentum_score",
+    "volume_breakout_score",
+    "low_risk_quality_score",
+    "high_elasticity_watch_score",
+    "risk_labels",
+    "data_quality_labels",
+    "warnings",
+]
+
+
+def build_screening_strategy_preview(result_df, sort_by_strategy=False):
+    return build_strategy_preview(result_df, sort_by_strategy=sort_by_strategy)
+
+
+def render_strategy_preview_section(result_df):
+    with st.expander("策略评分预览（研究辅助，不构成交易建议）", expanded=False):
+        st.caption("以下策略评分仅用于研究优先级观察，不构成交易建议；默认不改变原筛选排序。")
+        if result_df is None or getattr(result_df, "empty", True):
+            st.info("当前候选池为空，暂无可展示的策略评分预览。")
+            return build_screening_strategy_preview(result_df)
+
+        sort_preview = st.checkbox("按 strategy_score 查看预览", value=False)
+        preview = build_screening_strategy_preview(result_df, sort_by_strategy=sort_preview)
+        display_columns = [column for column in STRATEGY_PREVIEW_COLUMNS if column in preview.columns]
+        st.dataframe(preview[display_columns], hide_index=True, use_container_width=True)
+
+        warning_rows = preview[preview["warnings"].map(bool)] if "warnings" in preview.columns else preview.iloc[0:0]
+        if not warning_rows.empty:
+            st.caption("部分候选对象存在字段缺失或数据质量提示，请结合原始指标继续核对。")
+        return preview
 
 
 def render_screening_page():
@@ -47,7 +89,7 @@ def render_screening_page():
             st.warning(f"缓存清除失败，请稍后重试：{exc}")
 
     if run_screening_button:
-        legacy_workbench.render_screening_section(
+        screening_result = legacy_workbench.render_screening_section(
             screening_market,
             screening_pool_source,
             screening_top_n,
@@ -56,6 +98,7 @@ def render_screening_page():
             screening_max_process_count,
             screening_run_mode,
         )
+        render_strategy_preview_section(screening_result)
     else:
         st.header('\u81ea\u52a8\u7814\u7a76\u5bf9\u8c61\u7b5b\u9009')
         st.info('\u8bf7\u9009\u62e9\u80a1\u7968\u6c60\u548c\u8fd0\u884c\u6a21\u5f0f\u540e\uff0c\u70b9\u51fb\u751f\u6210\u7814\u7a76\u5019\u9009\u6c60\u3002\u5f53\u524d\u7ed3\u679c\u4ec5\u4f9b\u5b66\u4e60\u548c\u7814\u7a76\uff0c\u4e0d\u6784\u6210\u6295\u8d44\u5efa\u8bae\u3002')
