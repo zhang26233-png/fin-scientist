@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-05-29
+
+### Target
+
+- Complete V1.4.14 internal backtest metric aggregation phase.
+- Aggregate caller-provided backtest samples by preset, strategy-score bucket, dominant style, and consensus level for research validation only.
+- Keep V1.4.4-V1.4.13 drift, calibration, snapshot, and backtest tests stable without changing UI, screening output, sorting, default strategy scoring, stock pools, data sources, or `core/scoring.py`.
+
+### Backtest Metrics
+
+- Added `bucket_strategy_score()`.
+- Added `summarize_backtest_by_preset()`.
+- Added `summarize_backtest_by_score_bucket()`.
+- Added `summarize_backtest_by_dominant_style()`.
+- Added `summarize_backtest_by_consensus_level()`.
+- Added `build_backtest_metrics_summary()`.
+- Score buckets are `high_score` for scores >= 75, `mid_score` for scores >= 50 and < 75, `low_score` for scores < 50, and `insufficient_score` for missing or invalid scores.
+- Metrics include total count, valid count, insufficient-data count, outcome counts and ratios, 1/3/5/10 day forward-return averages, average forward drawdown, warnings, and read-only metadata.
+- The module only uses caller-provided samples and does not access real data sources.
+
+### Tests
+
+- Added `tests/test_strategy_backtest_metrics.py`.
+- Updated `tests/test_strategy_backtest.py` with a lightweight metrics summary aggregation check.
+- Covered empty input, missing fields, score buckets, preset/style/consensus grouping, outcome distribution, return and drawdown averages, input immutability, safety wording, and legacy/UI dependency boundaries.
+
+### Next Step
+
+- V1.4.15 can add schema validation or export helpers for backtest metric summaries, still without UI integration or real data downloads.
+
 ## 2026-05-28
 
 ### Target

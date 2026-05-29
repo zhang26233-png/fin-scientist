@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 from strategy.backtest import (
+    build_backtest_metrics_summary,
     build_backtest_sample,
     calculate_forward_return,
     classify_backtest_outcome,
@@ -112,6 +113,24 @@ def test_strategy_backtest_summarizes_outcome_distribution():
     assert summary["outcome_label_counts"]["failed_follow_through"] == 1
     assert summary["outcome_label_counts"]["insufficient_data"] == 1
     assert summary["outcome_label_counts"]["high_drawdown_risk"] == 1
+    assert summary["metadata"]["uses_real_data_source"] is False
+    assert_no_forbidden_words(summary)
+
+
+def test_strategy_backtest_builds_metrics_summary_by_research_dimensions():
+    samples = [
+        build_backtest_sample(candidate(), [100, 102, 103, 104, 105, 106]),
+        build_backtest_sample({**candidate(), "strategy_score": 82}, [100, 99, 98, 97, 96, 95]),
+        build_backtest_sample({**candidate(), "dominant_style": "quality_value"}, [100]),
+    ]
+    summary = build_backtest_metrics_summary(samples)
+
+    assert summary["total_count"] == 3
+    assert summary["by_preset"]["balanced_research"]["total_count"] == 3
+    assert summary["by_score_bucket"]["high_score"]["total_count"] == 1
+    assert summary["by_score_bucket"]["mid_score"]["total_count"] == 2
+    assert summary["by_dominant_style"]["trend_momentum"]["total_count"] == 2
+    assert summary["by_consensus_level"]["style_specific_high"]["total_count"] == 3
     assert summary["metadata"]["uses_real_data_source"] is False
     assert_no_forbidden_words(summary)
 

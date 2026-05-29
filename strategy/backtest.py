@@ -14,6 +14,13 @@ OUTCOME_LABELS = (
     "insufficient_data",
 )
 
+SCORE_BUCKETS = (
+    "high_score",
+    "mid_score",
+    "low_score",
+    "insufficient_score",
+)
+
 
 def _to_number(value):
     if value is None:
@@ -50,6 +57,18 @@ def _extract_candidate(candidate):
     return {}
 
 
+def _samples_to_records(samples):
+    if isinstance(samples, pd.DataFrame):
+        return copy.deepcopy(samples.to_dict(orient="records"))
+    if isinstance(samples, pd.Series):
+        return [copy.deepcopy(samples.to_dict())]
+    if isinstance(samples, list):
+        return copy.deepcopy(samples)
+    if isinstance(samples, tuple):
+        return copy.deepcopy(list(samples))
+    return []
+
+
 def _price_series(forward_prices=None, price_col="close"):
     if isinstance(forward_prices, pd.DataFrame):
         if price_col in forward_prices.columns:
@@ -72,6 +91,115 @@ def _price_series(forward_prices=None, price_col="close"):
             drop=True
         )
     return pd.Series(dtype=float)
+
+
+def bucket_strategy_score(score):
+    value = _to_number(score)
+    if math.isnan(value):
+        return "insufficient_score"
+    if value >= 75:
+        return "high_score"
+    if value >= 50:
+        return "mid_score"
+    return "low_score"
+
+
+def _normalize_outcome_label(value):
+    return value if value in OUTCOME_LABELS else "insufficient_data"
+
+
+def _group_text(value, fallback):
+    text = _safe_text(value).strip()
+    return text if text else fallback
+
+
+def _average_numeric(records, key):
+    values = []
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        value = _to_number(record.get(key))
+        if not math.isnan(value):
+            values.append(value)
+    return None if not values else round(sum(values) / len(values), 6)
+
+
+def _summarize_metric_records(records):
+    normalized = [record if isinstance(record, dict) else {} for record in records]
+    total = len(normalized)
+    outcome_counts = {label: 0 for label in OUTCOME_LABELS}
+    warnings = []
+    for record in normalized:
+        label = _normalize_outcome_label(record.get("outcome_label"))
+        outcome_counts[label] += 1
+        warnings.extend(str(item) for item in record.get("warnings", []) if item)
+
+    insufficient_data_count = outcome_counts["insufficient_data"]
+    return {
+        "total_count": total,
+        "valid_count": total - insufficient_data_count,
+        "insufficient_data_count": insufficient_data_count,
+        "outcome_counts": outcome_counts,
+        "outcome_ratios": {
+            key: (round(value / total, 4) if total else 0.0) for key, value in outcome_counts.items()
+        },
+        "average_forward_return_1d": _average_numeric(normalized, "forward_return_1d"),
+        "average_forward_return_3d": _average_numeric(normalized, "forward_return_3d"),
+        "average_forward_return_5d": _average_numeric(normalized, "forward_return_5d"),
+        "average_forward_return_10d": _average_numeric(normalized, "forward_return_10d"),
+        "average_max_drawdown_forward": _average_numeric(normalized, "max_drawdown_forward"),
+        "warnings": list(dict.fromkeys(warnings)),
+        "metadata": {
+            "read_only": True,
+            "uses_real_data_source": False,
+            "ui_connected": False,
+            "metric_scope": "internal_research_validation",
+        },
+    }
+
+
+def _summarize_by_key(samples, key, fallback):
+    records = _samples_to_records(samples)
+    grouped = {}
+    for record in records:
+        group_key = _group_text(record.get(key), fallback) if isinstance(record, dict) else fallback
+        grouped.setdefault(group_key, []).append(record)
+    return {group_key: _summarize_metric_records(group_records) for group_key, group_records in grouped.items()}
+
+
+def summarize_backtest_by_preset(samples):
+    return _summarize_by_key(samples, "preset_name", "unknown_preset")
+
+
+def summarize_backtest_by_score_bucket(samples):
+    records = _samples_to_records(samples)
+    grouped = {bucket: [] for bucket in SCORE_BUCKETS}
+    for record in records:
+        score = record.get("strategy_score") if isinstance(record, dict) else None
+        grouped[bucket_strategy_score(score)].append(record)
+    return {bucket: _summarize_metric_records(grouped[bucket]) for bucket in SCORE_BUCKETS}
+
+
+def summarize_backtest_by_dominant_style(samples):
+    return _summarize_by_key(samples, "dominant_style", "unknown_dominant_style")
+
+
+def summarize_backtest_by_consensus_level(samples):
+    return _summarize_by_key(samples, "consensus_level", "unknown_consensus_level")
+
+
+def build_backtest_metrics_summary(samples):
+    records = _samples_to_records(samples)
+    summary = _summarize_metric_records(records)
+    summary.update(
+        {
+            "by_preset": summarize_backtest_by_preset(records),
+            "by_score_bucket": summarize_backtest_by_score_bucket(records),
+            "by_dominant_style": summarize_backtest_by_dominant_style(records),
+            "by_consensus_level": summarize_backtest_by_consensus_level(records),
+        }
+    )
+    return summary
 
 
 def validate_backtest_input(candidate, forward_prices=None, required_fields=("symbol", "strategy_score")):
@@ -176,7 +304,7 @@ def build_backtest_sample(candidate, forward_prices=None, snapshot_date=None, pr
 
 
 def summarize_backtest_samples(samples):
-    sample_list = copy.deepcopy(samples) if isinstance(samples, list) else []
+    sample_list = _samples_to_records(samples)
     counts = {label: 0 for label in OUTCOME_LABELS}
     valid_returns = []
     warnings = []
@@ -199,6 +327,8 @@ def summarize_backtest_samples(samples):
         "total_count": total,
         "outcome_label_counts": counts,
         "outcome_label_ratios": {key: (round(value / total, 4) if total else 0.0) for key, value in counts.items()},
+        "outcome_counts": counts,
+        "outcome_ratios": {key: (round(value / total, 4) if total else 0.0) for key, value in counts.items()},
         "average_forward_return": average_return,
         "warnings": list(dict.fromkeys(warnings)),
         "metadata": {
@@ -210,9 +340,15 @@ def summarize_backtest_samples(samples):
 
 
 __all__ = [
+    "bucket_strategy_score",
+    "build_backtest_metrics_summary",
     "build_backtest_sample",
     "calculate_forward_return",
     "classify_backtest_outcome",
+    "summarize_backtest_by_consensus_level",
+    "summarize_backtest_by_dominant_style",
+    "summarize_backtest_by_preset",
+    "summarize_backtest_by_score_bucket",
     "summarize_backtest_samples",
     "validate_backtest_input",
 ]

@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.4.13
+Current version: V1.4.14
 
-V1.4.13 adds internal backtest sample helpers that define validation-ready inputs for later strategy-score and multi-preset effectiveness checks without downloading data or connecting to UI. It keeps all scoring internal and does not replace `core/scoring.py`, connect to Streamlit pages, add data sources, change stock pools, change page display, or change existing screening sorting logic.
+V1.4.14 adds internal backtest metric aggregation for research validation. It summarizes caller-provided backtest samples by preset, strategy-score bucket, dominant style, and consensus level without downloading data, connecting to UI, changing stock pools, changing page display, changing sorting, or replacing `core/scoring.py`.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.4.13 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring and comparison checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
+`legacy_app.py` is not an unused backup. In V1.4.14 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy scoring, comparison, and backtest metric checks live in `strategy/` and tests; `legacy_app.py` does not import them in this release.
 
-FinScientist V1.4.13 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.4.14 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不做自动买卖。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,15 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.4.13
+当前版本：V1.4.14
+
+V1.4.14 internal backtest metric aggregation phase:
+
+- Added `bucket_strategy_score()` with `high_score`, `mid_score`, `low_score`, and `insufficient_score` buckets.
+- Added metric summaries by `preset_name`, score bucket, `dominant_style`, and `consensus_level`.
+- Added `build_backtest_metrics_summary()` with total/valid/insufficient counts, outcome distributions, forward-return averages, and average forward drawdown.
+- Aggregation accepts caller-provided lists or DataFrames and does not mutate inputs.
+- No network calls, downloads, real data-source access, UI integration, stock-pool changes, sorting changes, default `strategy_score` logic changes, or `core/scoring.py` changes were introduced.
 
 V1.4.13 internal backtest sample helper phase:
 

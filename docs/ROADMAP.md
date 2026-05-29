@@ -223,6 +223,9 @@
 - V1.4.13 adds `strategy/backtest.py` for internal backtest sample construction, forward-return calculation, outcome labeling, and sample summaries.
 - V1.4.13 does not download data or connect to real data sources; callers must provide forward prices or return inputs.
 - V1.4.13 keeps default strategy scoring unchanged and does not change existing screening output, scoring rules, page display, or sorting logic.
+- V1.4.14 adds internal backtest metric aggregation by preset, score bucket, dominant style, and consensus level.
+- V1.4.14 summarizes outcome distributions, forward-return averages, average forward drawdown, valid counts, and insufficient-data counts from caller-provided samples only.
+- V1.4.14 keeps default strategy scoring unchanged and does not change existing screening output, scoring rules, page display, sorting logic, stock pools, data sources, or `core/scoring.py`.
 - Future V1.4.x work can add factor explanation helpers or internal diagnostics snapshots without changing the current page flow.
 
 ## v1.5 交易纪律模块
