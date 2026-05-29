@@ -229,6 +229,9 @@
 - V1.4.15 adds `strategy/backtest_diagnostics.py` for internal backtest metrics schema validation and neutral diagnostics.
 - V1.4.15 checks required summary fields, grouped metric structures, sample sufficiency, missing metrics, and group coverage across score buckets, presets, dominant styles, and consensus levels.
 - V1.4.15 keeps diagnostics internal and does not change existing screening output, scoring rules, page display, sorting logic, stock pools, data sources, or `core/scoring.py`.
+- V1.4.16 adds `strategy/preview.py` for read-only candidate-pool strategy previews and stable CSV/JSON-like exports.
+- V1.4.16 preview outputs default strategy score, cross-preset comparison fields, per-preset scores, dominant style, consensus level, risk labels, data-quality labels, and warnings.
+- V1.4.16 keeps input order by default and does not change existing screening output, page sorting, scoring rules, stock pools, data sources, or `core/scoring.py`.
 - Future V1.4.x work can add factor explanation helpers or internal diagnostics snapshots without changing the current page flow.
 
 ## v1.5 交易纪律模块

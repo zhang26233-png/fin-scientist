@@ -4,6 +4,35 @@
 
 ### Target
 
+- Complete V1.4.16 internal strategy preview/export phase.
+- Build read-only strategy preview outputs for caller-provided candidate pools using default strategy scoring and cross-preset comparison.
+- Keep V1.4.4-V1.4.15 tests stable without changing UI, screening output, sorting, default strategy scoring, stock pools, data sources, or `core/scoring.py`.
+
+### Strategy Preview
+
+- Added `strategy/preview.py`.
+- Added `build_strategy_preview()`.
+- Added `build_strategy_preview_row()`.
+- Added `export_strategy_preview_to_json_like()`.
+- Added `export_strategy_preview_to_csv()`.
+- Preview fields include symbol, name, original score, default strategy score, preset name, best/worst preset, score spread, average preset score, dominant style, consensus level, per-preset scores, risk labels, data-quality labels, and warnings.
+- Preview output preserves source order by default; optional strategy sorting changes only the preview DataFrame.
+- The module only reads caller-provided candidate pools and does not access real data sources.
+
+### Tests
+
+- Added `tests/test_strategy_preview.py`.
+- Updated `tests/test_module_imports.py` to include `strategy.preview` and V1.4.16 entrypoint version checks.
+- Covered empty input, missing fields, row preview structure, input immutability, default order preservation, optional preview-only sorting, risk/data-quality labels, JSON-like export, CSV export, safety wording, and legacy/UI dependency boundaries.
+
+### Next Step
+
+- V1.4.17 can add an optional manual CLI/script wrapper around `strategy.preview` for local exports, still without UI integration or real data downloads.
+
+## 2026-05-29
+
+### Target
+
 - Complete V1.4.15 internal backtest metrics schema validation and diagnostics phase.
 - Check the structural stability of `build_backtest_metrics_summary()` output and generate neutral research observations by score bucket, preset, dominant style, and consensus level.
 - Keep V1.4.4-V1.4.14 drift, calibration, snapshot, and backtest tests stable without changing UI, screening output, sorting, default strategy scoring, stock pools, data sources, or `core/scoring.py`.
