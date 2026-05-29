@@ -226,6 +226,9 @@
 - V1.4.14 adds internal backtest metric aggregation by preset, score bucket, dominant style, and consensus level.
 - V1.4.14 summarizes outcome distributions, forward-return averages, average forward drawdown, valid counts, and insufficient-data counts from caller-provided samples only.
 - V1.4.14 keeps default strategy scoring unchanged and does not change existing screening output, scoring rules, page display, sorting logic, stock pools, data sources, or `core/scoring.py`.
+- V1.4.15 adds `strategy/backtest_diagnostics.py` for internal backtest metrics schema validation and neutral diagnostics.
+- V1.4.15 checks required summary fields, grouped metric structures, sample sufficiency, missing metrics, and group coverage across score buckets, presets, dominant styles, and consensus levels.
+- V1.4.15 keeps diagnostics internal and does not change existing screening output, scoring rules, page display, sorting logic, stock pools, data sources, or `core/scoring.py`.
 - Future V1.4.x work can add factor explanation helpers or internal diagnostics snapshots without changing the current page flow.
 
 ## v1.5 交易纪律模块

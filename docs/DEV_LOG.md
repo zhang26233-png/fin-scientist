@@ -4,6 +4,37 @@
 
 ### Target
 
+- Complete V1.4.15 internal backtest metrics schema validation and diagnostics phase.
+- Check the structural stability of `build_backtest_metrics_summary()` output and generate neutral research observations by score bucket, preset, dominant style, and consensus level.
+- Keep V1.4.4-V1.4.14 drift, calibration, snapshot, and backtest tests stable without changing UI, screening output, sorting, default strategy scoring, stock pools, data sources, or `core/scoring.py`.
+
+### Backtest Diagnostics
+
+- Added `strategy/backtest_diagnostics.py`.
+- Added `validate_backtest_metrics_schema()`.
+- Added `diagnose_score_bucket_performance()`.
+- Added `diagnose_preset_performance()`.
+- Added `diagnose_style_performance()`.
+- Added `diagnose_consensus_performance()`.
+- Added `build_backtest_diagnostics_report()`.
+- Schema checks cover total count, valid count, insufficient-data count, outcome counts and ratios, average forward returns, average forward drawdown, grouped summaries, warnings, and metadata.
+- Diagnostics identify insufficient sample counts, high insufficient-data ratios, low group coverage, missing grouped structures, and limited score-bucket distinction.
+- The module only reads caller-provided summaries and does not access real data sources.
+
+### Tests
+
+- Added `tests/test_strategy_backtest_diagnostics.py`.
+- Updated `tests/test_module_imports.py` to include `strategy.backtest_diagnostics` and V1.4.15 entrypoint version checks.
+- Covered empty summary, missing fields, valid schema, stronger high-score bucket, limited score-bucket distinction, insufficient samples, preset/style/consensus observations, report assembly, source immutability, safety wording, and legacy/UI dependency boundaries.
+
+### Next Step
+
+- V1.4.16 can add an internal JSON-like export snapshot for diagnostics reports, still without UI integration or real data downloads.
+
+## 2026-05-29
+
+### Target
+
 - Complete V1.4.14 internal backtest metric aggregation phase.
 - Aggregate caller-provided backtest samples by preset, strategy-score bucket, dominant style, and consensus level for research validation only.
 - Keep V1.4.4-V1.4.13 drift, calibration, snapshot, and backtest tests stable without changing UI, screening output, sorting, default strategy scoring, stock pools, data sources, or `core/scoring.py`.
