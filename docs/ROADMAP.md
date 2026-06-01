@@ -246,7 +246,9 @@
 - V1.6.0 recognizes common English and Chinese fundamental field names, but does not create a final fundamental score or change screening, sorting, strategy scoring, stock pools, data sources, or `core/scoring.py`.
 - V1.6.1 adds read-only profitability, growth, valuation, financial-risk, and overall fundamental quality scores for strategy preview.
 - V1.6.1 keeps the new fundamental scores separate from screening, sorting, `strategy_score`, stock pools, data sources, and `core/scoring.py`.
-- Future V1.6.x work can add sector-relative fundamental comparisons or field-level diagnostics on top of the standardized fundamental profile.
+- V1.6.2 adds `strategy/fundamental_relative.py` for read-only industry and sector relative fundamental comparison in strategy preview.
+- V1.6.2 keeps relative labels based only on caller-provided candidate pools and does not change screening, sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
+- Future V1.6.x work can add field-level fundamental diagnostics or a dedicated comparison detail view on top of the standardized fundamental profile.
 
 ## v1.5 交易纪律模块
 

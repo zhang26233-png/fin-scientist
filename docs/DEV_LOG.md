@@ -4,6 +4,32 @@
 
 ### Target
 
+- Complete V1.6.2 industry-relative fundamental comparison phase.
+- Add read-only relative profitability, growth, valuation, financial-risk, and industry-relative quality labels without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
+- Keep V1.4.4-V1.6.1 tests stable.
+
+### Fundamental Relative Comparison
+
+- Added `strategy/fundamental_relative.py` for industry and sector grouped comparison inside the caller-provided candidate pool.
+- Added `relative_profitability_label`, `relative_growth_label`, `relative_valuation_label`, `relative_financial_risk_label`, `industry_relative_quality_label`, and `industry_relative_summary`.
+- Industry grouping recognizes `industry`, `industry_name`, `sector`, `板块`, `行业`, and existing encoded aliases when available.
+- `strategy.preview` applies the relative profile after row-level preview generation and preserves input order.
+- `ui/screening_ui.py` shows the read-only relative fields in the existing strategy preview expander.
+- `legacy_app.py` only updates the version and does not import strategy modules.
+
+### Tests
+
+- Added `tests/test_strategy_fundamental_relative.py` for empty input, missing industry, small peer groups, peer comparisons, multi-industry isolation, order preservation, source immutability, and neutral wording.
+- Expanded `tests/test_strategy_preview.py`, `tests/test_strategy_ui_integration.py`, and `tests/test_module_imports.py` for V1.6.2 relative fields.
+
+### Next Step
+
+- V1.6.3 can add field-level fundamental diagnostics or a compact comparison detail panel while keeping screening and strategy scoring unchanged.
+
+## 2026-06-01
+
+### Target
+
 - Complete V1.6.1 fundamental quality scoring phase.
 - Add read-only profitability, growth, valuation, financial-risk, and overall fundamental quality scores without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
 - Keep V1.4.4-V1.6.0 tests stable.

@@ -32,6 +32,11 @@ def make_screening_result_frame():
                 "近 20 日涨跌幅": -0.08,
                 "return_10d": -0.04,
                 "return_5d": -0.02,
+                "industry": "制造业",
+                "roe": 0.08,
+                "gross_margin": "20%",
+                "net_profit": 20_000_000,
+                "revenue_growth": "3%",
                 "成交量": 60_000,
                 "成交额": 3_000_000,
                 "换手率": 0.001,
@@ -47,6 +52,11 @@ def make_screening_result_frame():
                 "近 20 日涨跌幅": 0.16,
                 "return_10d": 0.09,
                 "return_5d": 0.04,
+                "industry": "制造业",
+                "roe": 0.18,
+                "gross_margin": "42%",
+                "net_profit": 80_000_000,
+                "revenue_growth": "16%",
                 "MA5": 98,
                 "MA10": 95,
                 "MA20": 90,
@@ -103,6 +113,9 @@ def test_strategy_ui_integration_preserves_input_order_by_default():
     assert {"technical_grade", "technical_style", "technical_strength", "technical_risk_level"}.issubset(preview.columns)
     assert {"fundamental_available", "fundamental_data_quality_label", "fundamental_summary_base"}.issubset(preview.columns)
     assert {"fundamental_quality_score", "fundamental_grade", "fundamental_style", "fundamental_risk_level"}.issubset(preview.columns)
+    assert {"industry_relative_quality_label", "relative_profitability_label", "industry_relative_summary"}.issubset(
+        preview.columns
+    )
     assert_no_forbidden_words(preview.to_dict())
 
 

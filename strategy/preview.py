@@ -10,6 +10,7 @@ import pandas as pd
 from strategy.adapter import infer_field_mapping, to_number
 from strategy.explanations import REASON_FIELDS, build_strategy_reason_fields
 from strategy.fundamental import FUNDAMENTAL_PROFILE_FIELDS, build_fundamental_profile
+from strategy.fundamental_relative import RELATIVE_FUNDAMENTAL_FIELDS, build_fundamental_relative_profile
 from strategy.preset_comparison import DEFAULT_COMPARISON_PRESETS, compare_strategy_presets
 from strategy.scoring import calculate_strategy_scores
 from strategy.technical import TECHNICAL_PROFILE_FIELDS, build_technical_profile
@@ -71,6 +72,12 @@ PREVIEW_COLUMNS = [
     "fundamental_style",
     "fundamental_risk_level",
     "fundamental_reason",
+    "relative_profitability_label",
+    "relative_growth_label",
+    "relative_valuation_label",
+    "relative_financial_risk_label",
+    "industry_relative_quality_label",
+    "industry_relative_summary",
 ]
 
 
@@ -121,6 +128,17 @@ def _read_any(row, candidates):
 
 def _empty_preview():
     return pd.DataFrame(columns=PREVIEW_COLUMNS)
+
+
+def _default_relative_profile():
+    return {
+        "relative_profitability_label": "insufficient_data",
+        "relative_growth_label": "insufficient_data",
+        "relative_valuation_label": "insufficient_data",
+        "relative_financial_risk_label": "insufficient_data",
+        "industry_relative_quality_label": "insufficient_industry_data",
+        "industry_relative_summary": "行业字段或同行样本不足，暂不能形成行业相对基本面观察。",
+    }
 
 
 def _preset_score_map(comparison):
@@ -212,6 +230,7 @@ def build_strategy_preview_row(row, preset_names=None):
     reason_context.update(row_data)
     row_data.update(build_technical_profile(reason_context))
     row_data.update(build_fundamental_profile(row_dict))
+    row_data.update(_default_relative_profile())
     reason_context.update(row_data)
     row_data.update(build_strategy_reason_fields(reason_context))
     return {column: row_data.get(column) for column in PREVIEW_COLUMNS}
@@ -228,6 +247,11 @@ def build_strategy_preview(source, preset_names=None, sort_by_strategy=False):
         for _, row in source_copy.iterrows()
     ]
     preview = pd.DataFrame(rows, columns=PREVIEW_COLUMNS)
+    relative = build_fundamental_relative_profile(source_copy)
+    if not relative.empty:
+        for column in RELATIVE_FUNDAMENTAL_FIELDS:
+            if column in relative.columns:
+                preview[column] = list(relative[column])
     if sort_by_strategy:
         preview = preview.sort_values(
             by=["strategy_score", "average_preset_score"],
@@ -297,6 +321,7 @@ __all__ = [
     "PREVIEW_COLUMNS",
     "FUNDAMENTAL_PROFILE_FIELDS",
     "REASON_FIELDS",
+    "RELATIVE_FUNDAMENTAL_FIELDS",
     "TECHNICAL_PROFILE_FIELDS",
     "build_strategy_preview",
     "build_strategy_preview_row",

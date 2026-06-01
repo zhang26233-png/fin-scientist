@@ -45,6 +45,17 @@ def make_candidate_pool():
                 "volatility": 0.35,
                 "valid_trading_days": 90,
                 "score": 42,
+                "industry": "制造业",
+                "roe": 0.08,
+                "gross_margin": "20%",
+                "net_profit": 20_000_000,
+                "operating_cashflow": 10_000_000,
+                "revenue_growth": "3%",
+                "profit_growth": "1%",
+                "pe": 24,
+                "pb": 2.8,
+                "ps": 5,
+                "debt_ratio": "60%",
             },
             {
                 "symbol": "HIGH1",
@@ -92,6 +103,17 @@ def make_candidate_pool():
                 "volatility": 0.95,
                 "valid_trading_days": 90,
                 "score": 72,
+                "industry": "制造业",
+                "roe": -0.02,
+                "gross_margin": "12%",
+                "net_profit": -10_000_000,
+                "operating_cashflow": -20_000_000,
+                "revenue_growth": "-5%",
+                "profit_growth": "-12%",
+                "pe": -6,
+                "pb": 8,
+                "ps": 10,
+                "debt_ratio": "88%",
             },
         ]
     )
@@ -151,6 +173,7 @@ def test_strategy_preview_row_contains_core_fields():
     assert row["fundamental_style"]
     assert row["fundamental_risk_level"]
     assert row["fundamental_reason"]
+    assert row["industry_relative_quality_label"] == "insufficient_industry_data"
     assert_no_forbidden_words(row)
 
 
@@ -199,7 +222,15 @@ def test_strategy_preview_preserves_input_order_by_default():
         "fundamental_style",
         "fundamental_risk_level",
         "fundamental_reason",
+        "relative_profitability_label",
+        "relative_growth_label",
+        "relative_valuation_label",
+        "relative_financial_risk_label",
+        "industry_relative_quality_label",
+        "industry_relative_summary",
     }.issubset(preview.columns)
+    high_row = preview[preview["symbol"] == "HIGH1"].iloc[0]
+    assert high_row["industry_relative_quality_label"] in {"industry_relative_strong", "industry_relative_neutral"}
     assert_no_forbidden_words(preview.to_dict())
 
 
