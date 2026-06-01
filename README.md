@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.6.9
+Current version: V1.7.0
 
-V1.6.9 adds a read-only technical and fundamental confluence layer for strategy preview. The preview now includes confluence label, score, summary, strength points, risk points, and follow-up focus without changing the original screening result table, default sorting, stock pools, data sources, `strategy_score`, or `core/scoring.py`.
+V1.7.0 adds a read-only composite research profile for strategy preview. The preview now integrates technical, fundamental, industry-relative, strategy, risk, data-quality, confidence, and confluence fields without changing the original screening result table, default sorting, stock pools, data sources, `strategy_score`, or `core/scoring.py`.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.6.9 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
+`legacy_app.py` is not an unused backup. In V1.7.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
 
-FinScientist V1.6.9 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.7.0 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,14 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.6.9
+当前版本：V1.7.0
+
+V1.7.0 composite research profile phase:
+
+- Added `strategy/composite_profile.py` for read-only composite research profiles.
+- Added `composite_research_grade`, `composite_research_style`, `composite_research_level`, `composite_risk_level`, `composite_confidence_level`, `composite_summary`, `composite_strength_points`, `composite_risk_points`, `composite_followup_focus`, and `composite_data_quality_note`.
+- Composite profiles combine existing preview fields only and do not change screening, sorting, `strategy_score`, or `core/scoring.py`.
+- The screening page shows these fields only inside the existing strategy preview expander.
 
 V1.6.9 technical and fundamental confluence phase:
 

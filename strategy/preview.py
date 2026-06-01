@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 from strategy.adapter import infer_field_mapping, to_number
+from strategy.composite_profile import COMPOSITE_PROFILE_FIELDS, build_composite_profile
 from strategy.confluence import CONFLUENCE_FIELDS, build_confluence_profile
 from strategy.explanations import REASON_FIELDS, build_strategy_reason_fields
 from strategy.fundamental import FUNDAMENTAL_PROFILE_FIELDS, build_fundamental_profile
@@ -95,6 +96,16 @@ PREVIEW_COLUMNS = [
     "confluence_strength_points",
     "confluence_risk_points",
     "confluence_followup_focus",
+    "composite_research_grade",
+    "composite_research_style",
+    "composite_research_level",
+    "composite_risk_level",
+    "composite_confidence_level",
+    "composite_summary",
+    "composite_strength_points",
+    "composite_risk_points",
+    "composite_followup_focus",
+    "composite_data_quality_note",
 ]
 
 
@@ -261,6 +272,9 @@ def build_strategy_preview_row(row, preset_names=None):
     confluence_frame = build_confluence_profile([row_data])
     if not confluence_frame.empty:
         row_data.update(confluence_frame.iloc[0].to_dict())
+    composite_frame = build_composite_profile([row_data])
+    if not composite_frame.empty:
+        row_data.update(composite_frame.iloc[0].to_dict())
     reason_context.update(row_data)
     row_data.update(build_strategy_reason_fields(reason_context))
     return {column: row_data.get(column) for column in PREVIEW_COLUMNS}
@@ -296,6 +310,11 @@ def build_strategy_preview(source, preset_names=None, sort_by_strategy=False):
         for column in CONFLUENCE_FIELDS:
             if column in confluence.columns:
                 preview[column] = list(confluence[column])
+    composite = build_composite_profile(preview)
+    if not composite.empty:
+        for column in COMPOSITE_PROFILE_FIELDS:
+            if column in composite.columns:
+                preview[column] = list(composite[column])
     if sort_by_strategy:
         preview = preview.sort_values(
             by=["strategy_score", "average_preset_score"],
@@ -363,6 +382,7 @@ def export_strategy_preview_to_csv(preview, path):
 
 __all__ = [
     "PREVIEW_COLUMNS",
+    "COMPOSITE_PROFILE_FIELDS",
     "CONFLUENCE_FIELDS",
     "FUNDAMENTAL_DIAGNOSTIC_FIELDS",
     "FUNDAMENTAL_PROFILE_FIELDS",

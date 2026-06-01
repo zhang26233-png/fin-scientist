@@ -4,6 +4,31 @@
 
 ### Target
 
+- Complete V1.7.0 composite research profile phase.
+- Add read-only composite profile grades, styles, levels, risk, confidence, summaries, strength points, risk points, follow-up focus, and data-quality notes without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
+- Keep prior V1.6 tests stable.
+
+### Composite Profile
+
+- Added `strategy/composite_profile.py` for read-only composite research profiles.
+- Added `composite_research_grade`, `composite_research_style`, `composite_research_level`, `composite_risk_level`, `composite_confidence_level`, `composite_summary`, `composite_strength_points`, `composite_risk_points`, `composite_followup_focus`, and `composite_data_quality_note`.
+- `strategy.preview` computes composite profiles after technical, fundamental, industry-relative, diagnostic, and confluence fields are available.
+- `ui/screening_ui.py` shows the composite fields in the existing strategy preview expander only.
+- `legacy_app.py` only updates the version and does not import strategy modules.
+
+### Tests
+
+- Added `tests/test_strategy_composite_profile.py` for safe empty/missing inputs, strong resonance, technical/fundamental mismatches, high risk, data quality, source immutability, list limits, and neutral wording.
+- Expanded preview and module import tests for V1.7.0 composite fields.
+
+### Next Step
+
+- V1.7.1 can add read-only research-priority experiments on top of composite profile fields while keeping main screening unchanged.
+
+## 2026-06-01
+
+### Target
+
 - Complete V1.6.9 technical and fundamental confluence phase.
 - Add read-only confluence labels, scores, summaries, strength points, risk points, and follow-up focus without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
 - Keep prior V1.6 tests stable.

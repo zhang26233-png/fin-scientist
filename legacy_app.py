@@ -1,6 +1,6 @@
 """Compatibility layer for the pre-module FinScientist implementation.
 
-This file is not a backup. In V1.6.9 it is the explicit compatibility layer for
+This file is not a backup. In V1.7.0 it is the explicit compatibility layer for
 the old research workbench, the legacy screening renderer, and network-adjacent
 fetch orchestration that has not yet been migrated. Keep changes conservative;
 future releases should move functions into config/, data/, core/, and ui/ in
@@ -23,7 +23,7 @@ try:
 except Exception:
     bs = None
 
-APP_VERSION = "V1.6.9"
+APP_VERSION = "V1.7.0"
 LEGACY_COMPATIBILITY_SURFACE = (
     "render_legacy_workbench",
     "render_legacy_app",

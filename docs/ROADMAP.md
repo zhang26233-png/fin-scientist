@@ -252,7 +252,9 @@
 - V1.6.3 combines caller-provided fields, V1.6.1 scores, and V1.6.2 industry-relative labels without changing screening, sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
 - V1.6.9 adds `strategy/confluence.py` for read-only technical and fundamental confluence labels, scores, summaries, strength points, risk points, and follow-up focus.
 - V1.6.9 keeps confluence separate from screening, sorting, `strategy_score`, stock pools, data sources, and `core/scoring.py`.
-- Future V1.7 work can use these read-only confluence fields as a bridge for strategy iteration experiments.
+- V1.7.0 adds `strategy/composite_profile.py` for read-only composite research profiles that combine technical, fundamental, industry-relative, strategy, risk, data-quality, confidence, and confluence fields.
+- V1.7.0 keeps composite profile fields separate from screening, sorting, `strategy_score`, stock pools, data sources, and `core/scoring.py`.
+- Future V1.7 work can add research-priority experiments on top of these read-only profile fields.
 
 ## v1.5 交易纪律模块
 
