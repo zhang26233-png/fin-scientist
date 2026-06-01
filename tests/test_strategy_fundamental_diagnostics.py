@@ -221,3 +221,147 @@ def test_input_dataframe_not_modified_and_output_order_preserved():
     assert list(frame["symbol"]) == ["QUALITY", "EXPENSIVE", "RISK"]
     assert list(result.index) == [0, 1, 2]
     assert_no_forbidden_words(result.to_dict())
+
+
+def test_quality_growth_profile_type_for_high_profitability_and_growth():
+    row = build_fundamental_diagnostics_profile(make_diagnostic_frame()).iloc[0]
+
+    assert row["fundamental_profile_type"] == "quality_growth"
+    assert row["industry_relative_detail"]["industry_relative_quality_label"] == "industry_relative_strong"
+    assert row["relative_advantage_points"]
+    assert row["fundamental_research_questions"]
+    assert_no_forbidden_words(row.to_dict())
+
+
+def test_high_growth_high_valuation_profile_type_and_conflict():
+    frame = pd.DataFrame(
+        [
+            {
+                "symbol": "GROWTH_EXPENSIVE",
+                "roe": 0.14,
+                "gross_margin": "36%",
+                "net_profit": 50_000_000,
+                "operating_cashflow": 45_000_000,
+                "revenue_growth": "35%",
+                "profit_growth": "40%",
+                "pe": 92,
+                "pb": 10,
+                "debt_ratio": "45%",
+                "profitability_score": 72,
+                "growth_score": 88,
+                "valuation_score": 28,
+                "financial_risk_score": 70,
+                "fundamental_quality_score": 66,
+                "fundamental_data_quality_label": "sufficient_fundamental_data",
+                "relative_valuation_label": "relatively_expensive",
+                "industry_relative_quality_label": "industry_relative_neutral",
+            }
+        ]
+    )
+
+    row = build_fundamental_diagnostics_profile(frame).iloc[0]
+
+    assert row["fundamental_profile_type"] == "high_growth_high_valuation"
+    assert "high_growth_high_valuation" in row["fundamental_conflict_flags"]
+    assert any("估值" in question for question in row["fundamental_research_questions"])
+    assert_no_forbidden_words(row.to_dict())
+
+
+def test_high_profit_negative_cashflow_identifies_cashflow_risk_or_conflict():
+    frame = pd.DataFrame(
+        [
+            {
+                "symbol": "CASHFLOW",
+                "roe": 0.16,
+                "gross_margin": "34%",
+                "net_profit": 60_000_000,
+                "operating_cashflow": -15_000_000,
+                "revenue_growth": "8%",
+                "profit_growth": "9%",
+                "pe": 22,
+                "debt_ratio": "50%",
+                "profitability_score": 78,
+                "growth_score": 58,
+                "valuation_score": 62,
+                "financial_risk_score": 38,
+                "fundamental_quality_score": 58,
+                "fundamental_data_quality_label": "sufficient_fundamental_data",
+            }
+        ]
+    )
+
+    row = build_fundamental_diagnostics_profile(frame).iloc[0]
+
+    assert row["fundamental_profile_type"] == "cashflow_risk"
+    assert "high_profit_negative_cashflow" in row["fundamental_conflict_flags"]
+    assert_no_forbidden_words(row.to_dict())
+
+
+def test_high_roe_high_debt_identifies_leverage_pressure_or_conflict():
+    frame = pd.DataFrame(
+        [
+            {
+                "symbol": "LEVERAGE",
+                "roe": 0.22,
+                "gross_margin": "30%",
+                "net_profit": 40_000_000,
+                "operating_cashflow": 30_000_000,
+                "debt_ratio": "82%",
+                "revenue_growth": "6%",
+                "profit_growth": "5%",
+                "profitability_score": 75,
+                "growth_score": 55,
+                "valuation_score": 58,
+                "financial_risk_score": 32,
+                "fundamental_quality_score": 55,
+                "fundamental_data_quality_label": "sufficient_fundamental_data",
+            }
+        ]
+    )
+
+    row = build_fundamental_diagnostics_profile(frame).iloc[0]
+
+    assert row["fundamental_profile_type"] == "leverage_pressure"
+    assert "high_roe_high_debt" in row["fundamental_conflict_flags"]
+    assert_no_forbidden_words(row.to_dict())
+
+
+def test_low_valuation_weak_growth_identifies_value_trap_risk():
+    frame = pd.DataFrame(
+        [
+            {
+                "symbol": "LOW_VALUE_WEAK_GROWTH",
+                "roe": 0.08,
+                "gross_margin": "18%",
+                "net_profit": 10_000_000,
+                "operating_cashflow": 12_000_000,
+                "revenue_growth": "-3%",
+                "profit_growth": "-8%",
+                "pe": 8,
+                "pb": 0.9,
+                "profitability_score": 48,
+                "growth_score": 25,
+                "valuation_score": 76,
+                "financial_risk_score": 60,
+                "fundamental_quality_score": 45,
+                "fundamental_data_quality_label": "sufficient_fundamental_data",
+                "relative_valuation_label": "relatively_cheap_but_needs_check",
+            }
+        ]
+    )
+
+    row = build_fundamental_diagnostics_profile(frame).iloc[0]
+
+    assert "low_valuation_weak_growth" in row["fundamental_conflict_flags"]
+    assert row["valuation_diagnostics"]["level"] == "valuation_low_but_needs_quality_check"
+    assert_no_forbidden_words(row.to_dict())
+
+
+def test_insufficient_industry_relative_detail_safe_return():
+    row = build_fundamental_diagnostics_profile(pd.DataFrame([{"symbol": "NO_INDUSTRY"}])).iloc[0]
+
+    assert row["industry_relative_detail"]["summary"]
+    assert row["industry_relative_detail"]["advantages"] == []
+    assert row["industry_relative_detail"]["disadvantages"] == []
+    assert "insufficient_data_for_conflict_check" in row["fundamental_conflict_flags"]
+    assert_no_forbidden_words(row.to_dict())

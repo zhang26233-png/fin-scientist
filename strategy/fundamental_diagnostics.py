@@ -18,6 +18,14 @@ FUNDAMENTAL_DIAGNOSTIC_FIELDS = [
     "fundamental_strength_points",
     "fundamental_weakness_points",
     "fundamental_diagnostics_summary",
+    "fundamental_profile_type",
+    "fundamental_conflict_flags",
+    "fundamental_conflict_summary",
+    "industry_relative_detail",
+    "relative_advantage_points",
+    "relative_disadvantage_points",
+    "relative_position_summary",
+    "fundamental_research_questions",
 ]
 
 FORBIDDEN_DIAGNOSTIC_WORDS = (
@@ -99,11 +107,208 @@ def _clean_list(items, limit=3):
     return result
 
 
+def _limited_questions(items):
+    return _clean_list(items, limit=4)[:4]
+
+
 def _sanitize_text(text):
     output = str(text)
     for word in FORBIDDEN_DIAGNOSTIC_WORDS:
         output = output.replace(word, "研究")
     return output
+
+
+def _detected_value(row, key):
+    return detect_fundamental_fields(_row_dict(row)).get(key)
+
+
+def _is_high(value, threshold):
+    return value is not None and value >= threshold
+
+
+def _is_low(value, threshold):
+    return value is not None and value <= threshold
+
+
+def build_fundamental_profile_type(row):
+    row_data = _row_dict(row)
+    data = detect_fundamental_fields(row_data)
+    quality_label = row_data.get("fundamental_data_quality_label")
+    profitability = _score(row_data, "profitability_score")
+    growth = _score(row_data, "growth_score")
+    valuation = _score(row_data, "valuation_score")
+    risk = _score(row_data, "financial_risk_score")
+    quality = _score(row_data, "fundamental_quality_score")
+    roe = data.get("roe")
+    debt = data.get("debt_ratio")
+    cashflow = data.get("operating_cashflow")
+    net_profit = data.get("net_profit")
+    pe = data.get("pe")
+    pb = data.get("pb")
+    relative_valuation = row_data.get("relative_valuation_label")
+
+    if quality_label in {"no_fundamental_data", "insufficient_fundamental_data", None}:
+        return "insufficient_data"
+    if isinstance(cashflow, (int, float)) and cashflow < 0 and (
+        (profitability is not None and profitability >= 60) or (isinstance(net_profit, (int, float)) and net_profit > 0)
+    ):
+        return "cashflow_risk"
+    if isinstance(debt, (int, float)) and debt >= 0.75 and (
+        (isinstance(roe, (int, float)) and roe >= 0.15) or (profitability is not None and profitability >= 65)
+    ):
+        return "leverage_pressure"
+    if growth is not None and growth >= 75 and (
+        relative_valuation == "relatively_expensive"
+        or (isinstance(pe, (int, float)) and pe > 60)
+        or (isinstance(pb, (int, float)) and pb > 8)
+    ):
+        return "high_growth_high_valuation"
+    if quality is not None and quality < 40:
+        return "weak_fundamental"
+    if profitability is not None and profitability < 45 and growth is not None and growth >= 55:
+        return "turnaround_watch"
+    if profitability is not None and profitability >= 70 and growth is not None and growth >= 65 and risk is not None and risk >= 55:
+        return "quality_growth"
+    if profitability is not None and profitability >= 65 and valuation is not None and valuation >= 60 and growth is not None and growth < 70:
+        return "profitable_value"
+    if risk is not None and risk < 35:
+        return "weak_fundamental"
+    return "weak_fundamental" if quality is not None and quality < 50 else "profitable_value"
+
+
+def build_fundamental_conflicts(row):
+    row_data = _row_dict(row)
+    data = detect_fundamental_fields(row_data)
+    flags = []
+    profitability = _score(row_data, "profitability_score")
+    growth = _score(row_data, "growth_score")
+    valuation = _score(row_data, "valuation_score")
+    revenue_growth = data.get("revenue_growth")
+    profit_growth = data.get("profit_growth")
+    roe = data.get("roe")
+    debt = data.get("debt_ratio")
+    net_profit = data.get("net_profit")
+    cashflow = data.get("operating_cashflow")
+    pe = data.get("pe")
+    pb = data.get("pb")
+    relative_valuation = row_data.get("relative_valuation_label")
+
+    high_valuation = relative_valuation == "relatively_expensive" or _is_high(pe, 60) or _is_high(pb, 8)
+    low_valuation = relative_valuation == "relatively_cheap_but_needs_check" or (
+        valuation is not None and valuation >= 70 and not high_valuation
+    )
+
+    if row_data.get("fundamental_data_quality_label") in {"no_fundamental_data", "insufficient_fundamental_data", None}:
+        flags.append("insufficient_data_for_conflict_check")
+    if growth is not None and growth >= 75 and high_valuation:
+        flags.append("high_growth_high_valuation")
+    if (
+        (profitability is not None and profitability >= 70) or (isinstance(net_profit, (int, float)) and net_profit > 0)
+    ) and isinstance(cashflow, (int, float)) and cashflow < 0:
+        flags.append("high_profit_negative_cashflow")
+    if low_valuation and growth is not None and growth < 45:
+        flags.append("low_valuation_weak_growth")
+    if isinstance(roe, (int, float)) and roe >= 0.15 and isinstance(debt, (int, float)) and debt >= 0.75:
+        flags.append("high_roe_high_debt")
+    if isinstance(revenue_growth, (int, float)) and revenue_growth > 0 and isinstance(profit_growth, (int, float)) and profit_growth <= 0:
+        flags.append("revenue_growth_without_profit_growth")
+    if isinstance(profit_growth, (int, float)) and profit_growth > 0 and isinstance(revenue_growth, (int, float)) and revenue_growth <= 0:
+        flags.append("profit_growth_without_revenue_growth")
+    return _clean_list(flags, limit=8)
+
+
+def build_fundamental_conflict_summary(flags):
+    if not flags:
+        return "未识别到明显的基本面内部矛盾，仍需结合原始字段持续核查。"
+    if "insufficient_data_for_conflict_check" in flags and len(flags) == 1:
+        return "基本面字段不足，暂不能稳定判断内部矛盾。"
+    messages = {
+        "high_growth_high_valuation": "成长性与估值水平同时偏高",
+        "high_profit_negative_cashflow": "利润表现与经营现金流存在背离",
+        "low_valuation_weak_growth": "低估值同时伴随成长偏弱",
+        "high_roe_high_debt": "较高ROE同时伴随较高负债",
+        "revenue_growth_without_profit_growth": "营收增长未同步转化为利润增长",
+        "profit_growth_without_revenue_growth": "利润增长缺少营收增长同步支撑",
+        "insufficient_data_for_conflict_check": "部分字段不足",
+    }
+    parts = [messages.get(flag, flag) for flag in flags[:3]]
+    return _sanitize_text("；".join(parts) + "，需要在后续研究中重点复核。")
+
+
+def build_industry_relative_detail(row):
+    row_data = _row_dict(row)
+    quality = row_data.get("industry_relative_quality_label")
+    profitability = row_data.get("relative_profitability_label")
+    growth = row_data.get("relative_growth_label")
+    valuation = row_data.get("relative_valuation_label")
+    risk = row_data.get("relative_financial_risk_label")
+    advantages = []
+    disadvantages = []
+
+    if profitability in {"industry_leading", "above_industry_average"}:
+        advantages.append("盈利能力在同行内相对靠前")
+    elif profitability == "below_industry_average":
+        disadvantages.append("盈利能力低于同行观察水平")
+    if growth == "high_relative_growth":
+        advantages.append("成长性在同行内相对靠前")
+    elif growth in {"weak_relative_growth", "negative_relative_growth"}:
+        disadvantages.append("成长性弱于同行观察水平")
+    if valuation == "relatively_reasonable":
+        advantages.append("估值相对位置较为平衡")
+    elif valuation == "relatively_expensive":
+        disadvantages.append("估值水平在同行中偏高")
+    elif valuation in {"relatively_cheap_but_needs_check", "abnormal_valuation_data"}:
+        disadvantages.append("估值可比性需要进一步核查")
+    if risk == "lower_than_industry_risk":
+        advantages.append("财务风险低于同行观察水平")
+    elif risk == "higher_than_industry_risk":
+        disadvantages.append("财务风险高于同行观察水平")
+
+    if quality == "insufficient_industry_data" or not quality:
+        summary = "行业相对字段不足，暂不能形成稳定同行位置诊断。"
+    elif quality == "industry_relative_strong":
+        summary = "行业相对位置具备一定优势，但仍需结合估值和现金流继续核查。"
+    elif quality == "industry_relative_weak":
+        summary = "行业相对位置存在弱项，需要优先复核盈利、成长或财务风险字段。"
+    else:
+        summary = "行业相对位置整体中性，需要结合具体字段继续比较。"
+    return {
+        "relative_profitability_label": profitability,
+        "relative_growth_label": growth,
+        "relative_valuation_label": valuation,
+        "relative_financial_risk_label": risk,
+        "industry_relative_quality_label": quality,
+        "advantages": _clean_list(advantages),
+        "disadvantages": _clean_list(disadvantages),
+        "summary": _sanitize_text(summary),
+    }
+
+
+def build_fundamental_research_questions(row, strengths, weaknesses, conflicts, industry_detail):
+    row_data = _row_dict(row)
+    questions = []
+    if strengths:
+        questions.append("这些基本面强项是否具备连续多个报告期的稳定性？")
+    if "high_growth_high_valuation" in conflicts:
+        questions.append("当前成长速度是否足以支撑偏高的估值水平？")
+    if "high_profit_negative_cashflow" in conflicts:
+        questions.append("经营现金流与利润背离是否来自一次性因素或回款节奏？")
+    if "low_valuation_weak_growth" in conflicts:
+        questions.append("低估值是否反映了成长放缓或行业景气度压力？")
+    if "high_roe_high_debt" in conflicts or row_data.get("fundamental_profile_type") == "leverage_pressure":
+        questions.append("较高ROE是否依赖较高负债水平推动？")
+    if weaknesses:
+        questions.append("主要弱项是否会持续影响基本面质量稳定性？")
+    if industry_detail.get("industry_relative_quality_label") == "insufficient_industry_data":
+        questions.append("行业分类和同行样本是否足以支持相对比较？")
+    elif industry_detail.get("disadvantages"):
+        questions.append("同行相对弱项是否来自行业结构差异或公司自身质量差异？")
+    if len(detect_fundamental_fields(row_data)) < 4:
+        questions.append("是否需要补充更多基本面字段后再形成诊断结论？")
+    if not questions:
+        questions.append("后续应优先核查哪些字段会改变当前基本面画像？")
+        questions.append("行业相对位置是否能在更多同行样本中保持稳定？")
+    return [_sanitize_text(item) for item in _limited_questions(questions)]
 
 
 def build_profitability_diagnostics(row):
@@ -388,6 +593,17 @@ def build_fundamental_diagnostics_row(row):
     strengths = _strength_points(row_data, diagnostics)
     weaknesses = _weakness_points(row_data, diagnostics)
     watch_points = _watch_points(row_data, diagnostics)
+    profile_type = build_fundamental_profile_type(row_data)
+    row_data["fundamental_profile_type"] = profile_type
+    conflict_flags = build_fundamental_conflicts(row_data)
+    conflict_summary = build_fundamental_conflict_summary(conflict_flags)
+    industry_detail = build_industry_relative_detail(row_data)
+    relative_advantages = industry_detail["advantages"]
+    relative_disadvantages = industry_detail["disadvantages"]
+    relative_summary = industry_detail["summary"]
+    research_questions = build_fundamental_research_questions(
+        row_data, strengths, weaknesses, conflict_flags, industry_detail
+    )
     summary = _sanitize_text(_summary(row_data, strengths, weaknesses, watch_points))
     warnings = []
     if row_data.get("industry_relative_quality_label") == "insufficient_industry_data":
@@ -407,7 +623,15 @@ def build_fundamental_diagnostics_row(row):
             "relative_financial_risk_label": row_data.get("relative_financial_risk_label"),
             "industry_relative_quality_label": row_data.get("industry_relative_quality_label"),
             "industry_relative_summary": row_data.get("industry_relative_summary"),
+            "detail": industry_detail,
         },
+        "profile_type": profile_type,
+        "conflict_flags": conflict_flags,
+        "conflict_summary": conflict_summary,
+        "relative_advantage_points": relative_advantages,
+        "relative_disadvantage_points": relative_disadvantages,
+        "relative_position_summary": relative_summary,
+        "research_questions": research_questions,
         "strengths": strengths,
         "weaknesses": weaknesses,
         "watch_points": watch_points,
@@ -429,6 +653,14 @@ def build_fundamental_diagnostics_row(row):
         "fundamental_strength_points": strengths,
         "fundamental_weakness_points": weaknesses,
         "fundamental_diagnostics_summary": summary,
+        "fundamental_profile_type": profile_type,
+        "fundamental_conflict_flags": conflict_flags,
+        "fundamental_conflict_summary": conflict_summary,
+        "industry_relative_detail": industry_detail,
+        "relative_advantage_points": relative_advantages,
+        "relative_disadvantage_points": relative_disadvantages,
+        "relative_position_summary": relative_summary,
+        "fundamental_research_questions": research_questions,
     }
 
 
@@ -443,9 +675,14 @@ def build_fundamental_diagnostics_profile(source):
 __all__ = [
     "FUNDAMENTAL_DIAGNOSTIC_FIELDS",
     "build_financial_risk_diagnostics",
+    "build_fundamental_conflict_summary",
+    "build_fundamental_conflicts",
     "build_fundamental_diagnostics_profile",
     "build_fundamental_diagnostics_row",
+    "build_fundamental_profile_type",
+    "build_fundamental_research_questions",
     "build_growth_diagnostics",
+    "build_industry_relative_detail",
     "build_profitability_diagnostics",
     "build_valuation_diagnostics",
 ]
