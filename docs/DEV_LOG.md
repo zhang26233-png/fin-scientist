@@ -4,6 +4,29 @@
 
 ### Target
 
+- Complete V1.7.1 read-only research priority experiment phase.
+- Add research priority score, level, reasons, and warnings on top of composite profiles without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
+- Keep V1.7.0 tests stable.
+
+### Research Priority Experiment
+
+- Added `derive_research_priority(profile)` in `strategy/composite_profile.py`.
+- Added `research_priority_score`, `research_priority_level`, `research_priority_reasons`, and `research_priority_warnings`.
+- `strategy.preview` and `ui/screening_ui.py` show these fields as preview-only derived observations.
+- The fields are not used for sorting or scoring.
+
+### Tests
+
+- Expanded `tests/test_strategy_composite_profile.py` and `tests/test_strategy_preview.py` for priority, downgrade, insufficient-data, and score preservation checks.
+
+### Next Step
+
+- V1.7.2 can add read-only drift checks for research priority stability across repeated preview generation.
+
+## 2026-06-01
+
+### Target
+
 - Complete V1.7.0 composite research profile phase.
 - Add read-only composite profile grades, styles, levels, risk, confidence, summaries, strength points, risk points, follow-up focus, and data-quality notes without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
 - Keep prior V1.6 tests stable.

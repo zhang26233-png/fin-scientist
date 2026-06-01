@@ -17,6 +17,10 @@ COMPOSITE_PROFILE_FIELDS = [
     "composite_risk_points",
     "composite_followup_focus",
     "composite_data_quality_note",
+    "research_priority_score",
+    "research_priority_level",
+    "research_priority_reasons",
+    "research_priority_warnings",
 ]
 
 FORBIDDEN_COMPOSITE_WORDS = (
@@ -302,6 +306,94 @@ def _summary(grade, style, level, risk_level, confidence_level):
     return f"综合研究画像为 {grade}，研究层级为 {level}，可信度为 {confidence_level}，适合继续做中性研究观察。"
 
 
+def derive_research_priority(profile: dict) -> dict:
+    row = _row_dict(profile)
+    grade = row.get("composite_research_grade")
+    style = row.get("composite_research_style")
+    risk = row.get("composite_risk_level")
+    confidence = row.get("composite_confidence_level")
+    strategy_score = _safe_score(row.get("strategy_score"))
+    confluence_score = _safe_score(row.get("confluence_score"))
+    strengths = _as_list(row.get("composite_strength_points"))
+    risks = _as_list(row.get("composite_risk_points"))
+    warnings = _as_list(row.get("warnings"))
+    data_quality_note = row.get("composite_data_quality_note")
+    reasons = []
+    priority_warnings = []
+
+    if grade == "insufficient_data" or confidence == "insufficient":
+        score = 15
+        level = "insufficient_data"
+        priority_warnings.append("综合画像数据不足")
+    elif grade == "A" and style == "high_quality_resonance" and risk in {"low", "medium"} and confidence in {"high", "medium"}:
+        score = 82
+        level = "priority_research"
+        reasons.append("综合画像等级较高且技术基本面共振")
+    elif grade == "B" and style in {
+        "high_quality_resonance",
+        "technical_momentum_with_fundamental_support",
+        "fundamental_value_waiting_technical_confirmation",
+    } and risk in {"low", "medium"}:
+        score = 68
+        level = "worth_tracking"
+        reasons.append("综合画像具备继续跟踪价值")
+    elif risk == "high" or confidence == "low":
+        score = 42
+        level = "watch_with_caution"
+        priority_warnings.append("风险或可信度导致优先级降级")
+    elif grade in {"C", "D"}:
+        score = 32 if grade == "C" else 22
+        level = "low_priority"
+        priority_warnings.append("综合画像等级偏低")
+    else:
+        score = 52
+        level = "watch_with_caution"
+        reasons.append("综合信号仍需进一步验证")
+
+    if strategy_score is not None:
+        if strategy_score >= 75:
+            score += 6
+            reasons.append("策略评分较高")
+        elif strategy_score < 40:
+            score -= 8
+            priority_warnings.append("策略评分偏低")
+    if confluence_score is not None:
+        if confluence_score >= 75:
+            score += 5
+            reasons.append("技术基本面共振分较高")
+        elif confluence_score < 35:
+            score -= 6
+            priority_warnings.append("技术基本面共振偏弱")
+    if strengths:
+        score += min(6, len(strengths) * 2)
+        reasons.extend(strengths[:2])
+    if risks:
+        score -= min(12, len(risks) * 4)
+        priority_warnings.extend(risks[:2])
+    if warnings:
+        score -= min(10, len(warnings) * 3)
+        priority_warnings.append("存在预警信息")
+    if data_quality_note and ("不足" in str(data_quality_note) or "复核" in str(data_quality_note)):
+        priority_warnings.append("数据质量说明需要复核")
+
+    score = max(0, min(100, int(round(score))))
+    if level != "insufficient_data":
+        if score >= 75 and risk in {"low", "medium"} and confidence in {"high", "medium"}:
+            level = "priority_research"
+        elif score >= 58 and risk in {"low", "medium"}:
+            level = "worth_tracking"
+        elif score >= 35:
+            level = "watch_with_caution"
+        else:
+            level = "low_priority"
+    return {
+        "research_priority_score": score,
+        "research_priority_level": level,
+        "research_priority_reasons": _clean_list(reasons or ["综合画像提供基础研究线索"], 5),
+        "research_priority_warnings": _clean_list(priority_warnings, 5),
+    }
+
+
 def build_composite_profile_row(row):
     row_data = _row_dict(row)
     risk_level = _composite_risk_level(row_data)
@@ -312,7 +404,7 @@ def build_composite_profile_row(row):
     strengths = _strength_points(row_data)
     risks = _risk_points(row_data, risk_level, confidence_level)
     followup = _followup_focus(row_data, risks)
-    return {
+    profile = {
         "composite_research_grade": grade,
         "composite_research_style": style,
         "composite_research_level": level,
@@ -324,6 +416,10 @@ def build_composite_profile_row(row):
         "composite_followup_focus": followup,
         "composite_data_quality_note": _data_quality_note(row_data, confidence_level),
     }
+    priority_context = copy.deepcopy(row_data)
+    priority_context.update(profile)
+    profile.update(derive_research_priority(priority_context))
+    return profile
 
 
 def build_composite_profile(source):
@@ -338,4 +434,5 @@ __all__ = [
     "COMPOSITE_PROFILE_FIELDS",
     "build_composite_profile",
     "build_composite_profile_row",
+    "derive_research_priority",
 ]

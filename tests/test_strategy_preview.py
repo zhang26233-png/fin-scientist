@@ -188,6 +188,8 @@ def test_strategy_preview_row_contains_core_fields():
     assert row["composite_research_grade"]
     assert row["composite_research_style"]
     assert row["composite_summary"]
+    assert row["research_priority_level"]
+    assert 0 <= row["research_priority_score"] <= 100
     assert_no_forbidden_words(row)
 
 
@@ -267,6 +269,10 @@ def test_strategy_preview_preserves_input_order_by_default():
         "composite_risk_points",
         "composite_followup_focus",
         "composite_data_quality_note",
+        "research_priority_score",
+        "research_priority_level",
+        "research_priority_reasons",
+        "research_priority_warnings",
     }.issubset(preview.columns)
     high_row = preview[preview["symbol"] == "HIGH1"].iloc[0]
     assert high_row["industry_relative_quality_label"] in {"industry_relative_strong", "industry_relative_neutral"}

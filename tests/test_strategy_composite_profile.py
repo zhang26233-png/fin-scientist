@@ -3,7 +3,12 @@ import importlib
 
 import pandas as pd
 
-from strategy.composite_profile import COMPOSITE_PROFILE_FIELDS, build_composite_profile, build_composite_profile_row
+from strategy.composite_profile import (
+    COMPOSITE_PROFILE_FIELDS,
+    build_composite_profile,
+    build_composite_profile_row,
+    derive_research_priority,
+)
 
 
 FORBIDDEN_WORDS = [
@@ -58,6 +63,8 @@ def test_empty_input_safe_return():
 
     assert result.empty
     assert list(result.columns) == COMPOSITE_PROFILE_FIELDS
+    assert "research_priority_score" in COMPOSITE_PROFILE_FIELDS
+    assert "research_priority_level" in COMPOSITE_PROFILE_FIELDS
 
 
 def test_missing_technical_fields_safe_return():
@@ -83,6 +90,8 @@ def test_strong_technical_fundamental_confluence_outputs_high_quality_or_priorit
     assert row["composite_research_level"] in {"priority_research", "worth_tracking"}
     assert row["composite_research_grade"] in {"A", "B"}
     assert row["composite_strength_points"]
+    assert row["research_priority_level"] == "priority_research"
+    assert 0 <= row["research_priority_score"] <= 100
 
 
 def test_technical_strong_fundamental_weak_outputs_speculation_watch():
@@ -140,6 +149,7 @@ def test_bad_data_quality_lowers_confidence():
 
     assert row["composite_confidence_level"] == "low"
     assert row["composite_data_quality_note"]
+    assert row["research_priority_level"] in {"watch_with_caution", "low_priority"}
 
 
 def test_insufficient_data_outputs_insufficient():
@@ -148,6 +158,7 @@ def test_insufficient_data_outputs_insufficient():
     assert row["composite_research_grade"] == "insufficient_data"
     assert row["composite_research_level"] == "insufficient_data"
     assert row["composite_confidence_level"] == "insufficient"
+    assert row["research_priority_level"] == "insufficient_data"
 
 
 def test_list_limits_source_immutability_and_neutral_wording():
@@ -162,4 +173,55 @@ def test_list_limits_source_immutability_and_neutral_wording():
         assert len(row["composite_strength_points"]) <= 4
         assert len(row["composite_risk_points"]) <= 4
         assert 2 <= len(row["composite_followup_focus"]) <= 4
+        assert 0 <= row["research_priority_score"] <= 100
     assert_no_forbidden_words(result.to_dict())
+
+
+def test_derive_research_priority_worth_tracking_case():
+    priority = derive_research_priority(
+        {
+            "composite_research_grade": "B",
+            "composite_research_style": "technical_momentum_with_fundamental_support",
+            "composite_risk_level": "medium",
+            "composite_confidence_level": "medium",
+            "composite_strength_points": ["技术结构较强"],
+            "composite_risk_points": [],
+            "strategy_score": 63,
+            "confluence_score": 62,
+        }
+    )
+
+    assert priority["research_priority_level"] == "worth_tracking"
+    assert priority["research_priority_reasons"]
+    assert_no_forbidden_words(priority)
+
+
+def test_derive_research_priority_high_risk_downgrade():
+    priority = derive_research_priority(
+        {
+            "composite_research_grade": "A",
+            "composite_research_style": "high_quality_resonance",
+            "composite_risk_level": "high",
+            "composite_confidence_level": "medium",
+            "composite_risk_points": ["综合风险偏高"],
+        }
+    )
+
+    assert priority["research_priority_level"] == "watch_with_caution"
+    assert priority["research_priority_warnings"]
+
+
+def test_strategy_score_is_not_changed_by_priority_derivation():
+    profile = {
+        "strategy_score": 72,
+        "composite_research_grade": "A",
+        "composite_research_style": "high_quality_resonance",
+        "composite_risk_level": "low",
+        "composite_confidence_level": "high",
+    }
+    before = copy.deepcopy(profile)
+
+    derive_research_priority(profile)
+
+    assert profile == before
+    assert profile["strategy_score"] == 72

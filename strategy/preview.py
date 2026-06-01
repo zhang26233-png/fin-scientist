@@ -106,6 +106,10 @@ PREVIEW_COLUMNS = [
     "composite_risk_points",
     "composite_followup_focus",
     "composite_data_quality_note",
+    "research_priority_score",
+    "research_priority_level",
+    "research_priority_reasons",
+    "research_priority_warnings",
 ]
 
 
