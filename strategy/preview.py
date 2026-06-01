@@ -9,6 +9,7 @@ import pandas as pd
 
 from strategy.adapter import infer_field_mapping, to_number
 from strategy.explanations import REASON_FIELDS, build_strategy_reason_fields
+from strategy.fundamental import FUNDAMENTAL_PROFILE_FIELDS, build_fundamental_profile
 from strategy.preset_comparison import DEFAULT_COMPARISON_PRESETS, compare_strategy_presets
 from strategy.scoring import calculate_strategy_scores
 from strategy.technical import TECHNICAL_PROFILE_FIELDS, build_technical_profile
@@ -56,6 +57,11 @@ PREVIEW_COLUMNS = [
     "technical_risk_level",
     "technical_watch_points",
     "technical_summary_short",
+    "fundamental_available",
+    "fundamental_fields_detected",
+    "missing_fundamental_fields",
+    "fundamental_data_quality_label",
+    "fundamental_summary_base",
 ]
 
 
@@ -196,6 +202,7 @@ def build_strategy_preview_row(row, preset_names=None):
         reason_context["preset_bonus_reasons"] = list(components.get("preset_bonus_reasons", []))
     reason_context.update(row_data)
     row_data.update(build_technical_profile(reason_context))
+    row_data.update(build_fundamental_profile(row_dict))
     reason_context.update(row_data)
     row_data.update(build_strategy_reason_fields(reason_context))
     return {column: row_data.get(column) for column in PREVIEW_COLUMNS}
@@ -279,6 +286,7 @@ def export_strategy_preview_to_csv(preview, path):
 
 __all__ = [
     "PREVIEW_COLUMNS",
+    "FUNDAMENTAL_PROFILE_FIELDS",
     "REASON_FIELDS",
     "TECHNICAL_PROFILE_FIELDS",
     "build_strategy_preview",

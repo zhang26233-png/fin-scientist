@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.5.3
+Current version: V1.6.0
 
-V1.5.3 adds read-only technical research conclusions to the strategy preview. The preview now includes `technical_grade`, `technical_style`, `technical_strength`, `technical_risk_level`, `technical_watch_points`, and `technical_summary_short` without changing the original screening result table, default sorting, stock pools, data sources, research-priority score, or `core/scoring.py`.
+V1.6.0 starts the fundamental-data phase with read-only field detection, normalization, missing-field checks, and base summaries. The strategy preview now includes `fundamental_available`, `fundamental_fields_detected`, `missing_fundamental_fields`, `fundamental_data_quality_label`, and `fundamental_summary_base` without changing the original screening result table, default sorting, stock pools, data sources, `strategy_score`, or `core/scoring.py`.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.5.3 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
+`legacy_app.py` is not an unused backup. In V1.6.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
 
-FinScientist V1.5.3 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.6.0 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,15 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.5.3
+当前版本：V1.6.0
+
+V1.6.0 fundamental field standardization phase:
+
+- Added `strategy/fundamental.py` for read-only fundamental field detection, value normalization, missing-field checks, quality labeling, and base summaries.
+- Recognized fields include revenue, net profit, gross margin, ROE, PE, PB, PS, debt ratio, operating cashflow, revenue growth, profit growth, market cap, and industry.
+- Chinese aliases such as `营业收入`, `净利润`, `毛利率`, `净资产收益率`, `市盈率`, `市净率`, `市销率`, `资产负债率`, `经营现金流`, `营收增长率`, `净利润增长率`, `总市值`, and `行业` are supported.
+- Added preview fields: `fundamental_available`, `fundamental_fields_detected`, `missing_fundamental_fields`, `fundamental_data_quality_label`, and `fundamental_summary_base`.
+- This phase does not create a final fundamental score and does not change screening results, default sorting, stock pools, data sources, `strategy_score`, or `core/scoring.py`.
 
 V1.5.3 technical research conclusion phase:
 

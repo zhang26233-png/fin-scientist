@@ -64,6 +64,19 @@ def make_candidate_pool():
                 "MA10": 95,
                 "MA20": 90,
                 "recent_high": 101,
+                "revenue": "1.2亿",
+                "net_profit": "3,500万",
+                "gross_margin": "35%",
+                "roe": 0.18,
+                "pe": 18,
+                "pb": 2.1,
+                "ps": 4.2,
+                "debt_ratio": "45%",
+                "operating_cashflow": "2,000万",
+                "revenue_growth": "12%",
+                "profit_growth": "8%",
+                "market_cap": "360亿",
+                "industry": "制造业",
             },
             {
                 "symbol": "RISK1",
@@ -130,6 +143,9 @@ def test_strategy_preview_row_contains_core_fields():
     assert row["technical_risk_level"]
     assert isinstance(row["technical_watch_points"], list)
     assert row["technical_summary_short"]
+    assert row["fundamental_available"] is True
+    assert row["fundamental_data_quality_label"] == "sufficient_fundamental_data"
+    assert "fundamental_summary_base" in row
     assert_no_forbidden_words(row)
 
 
@@ -164,6 +180,11 @@ def test_strategy_preview_preserves_input_order_by_default():
         "technical_risk_level",
         "technical_watch_points",
         "technical_summary_short",
+        "fundamental_available",
+        "fundamental_fields_detected",
+        "missing_fundamental_fields",
+        "fundamental_data_quality_label",
+        "fundamental_summary_base",
     }.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 

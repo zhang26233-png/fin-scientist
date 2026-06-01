@@ -4,6 +4,34 @@
 
 ### Target
 
+- Complete V1.6.0 fundamental field standardization phase.
+- Add read-only fundamental field detection, value normalization, missing-field checks, quality labels, and base summaries without changing screening results, default sorting, strategy scoring, stock pools, data sources, or `core/scoring.py`.
+- Keep V1.4.4-V1.5.3 tests stable.
+
+### Fundamental Profile
+
+- Added `strategy/fundamental.py`.
+- Added `normalize_fundamental_value()`, `detect_fundamental_fields()`, `build_fundamental_data_quality()`, `build_fundamental_base_summary()`, and `build_fundamental_profile()`.
+- Recognized fields: revenue, net profit, gross margin, ROE, PE, PB, PS, debt ratio, operating cashflow, revenue growth, profit growth, market cap, and industry.
+- Added Chinese aliases including `营业收入`, `净利润`, `毛利率`, `净资产收益率`, `市盈率`, `市净率`, `市销率`, `资产负债率`, `经营现金流`, `营收增长率`, `净利润增长率`, `总市值`, and `行业`.
+- Added preview fields: `fundamental_available`, `fundamental_fields_detected`, `missing_fundamental_fields`, `fundamental_data_quality_label`, and `fundamental_summary_base`.
+- `ui/screening_ui.py` shows the compact fundamental availability and data-quality summary inside the existing strategy preview expander.
+- `legacy_app.py` only updates the version and does not import strategy modules.
+
+### Tests
+
+- Added `tests/test_strategy_fundamental.py`.
+- Expanded `tests/test_strategy_preview.py` and `tests/test_strategy_ui_integration.py` for fundamental preview fields.
+- Updated `tests/test_module_imports.py` for V1.6.0 and `strategy.fundamental`.
+
+### Next Step
+
+- V1.6.1 can build a basic profitability, growth, valuation, and financial-risk observation layer on top of the standardized fundamental profile, still without changing screening or strategy scoring.
+
+## 2026-06-01
+
+### Target
+
 - Complete V1.5.3 technical research conclusion phase.
 - Convert V1.5.2 technical labels into compact, readable research conclusions without changing screening results, default sorting, scoring rules, stock pools, data sources, or `core/scoring.py`.
 - Keep V1.4.4-V1.5.2 tests stable.

@@ -50,6 +50,10 @@ def make_screening_result_frame():
                 "MA5": 98,
                 "MA10": 95,
                 "MA20": 90,
+                "营业收入": "5亿",
+                "净利润": "8,000万",
+                "毛利率": "42%",
+                "行业": "医药",
                 "成交量": 1_500_000,
                 "成交额": 160_000_000,
                 "换手率": 0.04,
@@ -97,6 +101,7 @@ def test_strategy_ui_integration_preserves_input_order_by_default():
     assert {"strategy_reason", "risk_reason", "data_quality_reason", "confidence_note"}.issubset(preview.columns)
     assert {"ma_structure_label", "trend_quality_label", "technical_profile_summary"}.issubset(preview.columns)
     assert {"technical_grade", "technical_style", "technical_strength", "technical_risk_level"}.issubset(preview.columns)
+    assert {"fundamental_available", "fundamental_data_quality_label", "fundamental_summary_base"}.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 
 

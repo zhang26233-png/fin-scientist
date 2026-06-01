@@ -242,7 +242,9 @@
 - V1.5.2 keeps screening results, default sorting, stock pools, data sources, research-priority score, and `core/scoring.py` unchanged.
 - V1.5.3 adds compact technical research conclusions: grade, style, strength, risk level, watch points, and a short summary.
 - V1.5.3 derives those conclusions only from V1.5.2 technical labels and keeps them neutral, read-only, and separate from screening, sorting, and scoring.
-- Future V1.5.x work can add optional export buttons or tighter preview formatting without changing the original screening flow.
+- V1.6.0 adds `strategy/fundamental.py` for read-only fundamental field detection, normalization, missing-field checks, quality labels, and base summaries.
+- V1.6.0 recognizes common English and Chinese fundamental field names, but does not create a final fundamental score or change screening, sorting, strategy scoring, stock pools, data sources, or `core/scoring.py`.
+- Future V1.6.x work can build profitability, growth, valuation, and financial-risk observation layers on top of the standardized fundamental profile.
 
 ## v1.5 交易纪律模块
 
