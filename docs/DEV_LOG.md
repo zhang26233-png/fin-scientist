@@ -4,6 +4,61 @@
 
 ### Target
 
+- Complete V1.5.3 technical research conclusion phase.
+- Convert V1.5.2 technical labels into compact, readable research conclusions without changing screening results, default sorting, scoring rules, stock pools, data sources, or `core/scoring.py`.
+- Keep V1.4.4-V1.5.2 tests stable.
+
+### Technical Conclusions
+
+- Added `technical_grade`, `technical_style`, `technical_strength`, `technical_risk_level`, `technical_watch_points`, and `technical_summary_short`.
+- `technical_grade` uses A/B/C/D research levels based on trend structure, volume-price confirmation, risk labels, and data sufficiency.
+- `technical_style` summarizes the technical profile as trend momentum, volume breakout, pullback watch, high-volatility watch, weak/choppy, or insufficient data.
+- `technical_risk_level` summarizes severe overheat, high volatility, and volume-downside risk as high-risk technical observations.
+- `ui/screening_ui.py` now shows the compact technical conclusion fields first in the existing strategy preview expander.
+- `legacy_app.py` only updates the version and does not import strategy modules.
+
+### Tests
+
+- Expanded `tests/test_strategy_technical.py` for technical grade, style, strength, risk level, watch points, weak structures, insufficient data, and neutral wording.
+- Expanded `tests/test_strategy_preview.py` and `tests/test_strategy_ui_integration.py` for the new conclusion fields.
+- Updated `tests/test_module_imports.py` for V1.5.3.
+
+### Next Step
+
+- V1.5.4 can add a compact technical detail panel or export view for the conclusion fields while keeping the original screening table unchanged.
+
+## 2026-06-01
+
+### Target
+
+- Complete V1.5.2 technical structure preview phase.
+- Add finer technical labels and summaries to `strategy.preview` without changing screening results, default sorting, scoring rules, stock pools, data sources, or `core/scoring.py`.
+- Keep V1.4.4-V1.5.1 tests stable.
+
+### Technical Structure
+
+- Added `strategy/technical.py`.
+- Added `analyze_moving_average_structure()`, `analyze_trend_quality()`, `analyze_breakout_pullback_state()`, `analyze_volume_price_structure()`, `analyze_short_term_overheat()`, `analyze_volatility_risk()`, and `build_technical_profile()`.
+- Added preview fields: `ma_structure_label`, `trend_quality_label`, `breakout_pullback_label`, `volume_price_structure_label`, `short_term_overheat_label`, `volatility_risk_label`, and `technical_profile_summary`.
+- `strategy.preview` appends these fields to the preview DataFrame while preserving input order by default.
+- `ui/screening_ui.py` displays core technical labels inside the existing collapsed strategy preview expander.
+- `legacy_app.py` only updates the version and does not import strategy modules.
+
+### Tests
+
+- Added `tests/test_strategy_technical.py`.
+- Expanded `tests/test_strategy_preview.py` for technical preview fields.
+- Expanded `tests/test_strategy_ui_integration.py` for technical field presence and order preservation.
+- Updated `tests/test_module_imports.py` for V1.5.2 and `strategy.technical`.
+
+### Next Step
+
+- V1.5.3 can connect these technical labels to a compact detail panel or export view while keeping the original screening table unchanged.
+
+## 2026-06-01
+
+### Target
+
 - Complete V1.5.1 strategy preview explanation phase.
 - Add structured, readable explanations for existing `strategy_score` preview output without changing screening results, default sorting, scoring rules, stock pools, data sources, or `core/scoring.py`.
 - Keep V1.4.4-V1.5.0 tests stable.

@@ -60,6 +60,10 @@ def make_candidate_pool():
                 "volatility": 0.25,
                 "valid_trading_days": 90,
                 "score": 66,
+                "MA5": 98,
+                "MA10": 95,
+                "MA20": 90,
+                "recent_high": 101,
             },
             {
                 "symbol": "RISK1",
@@ -116,6 +120,16 @@ def test_strategy_preview_row_contains_core_fields():
     assert row["trend_reason"]
     assert row["volume_price_reason"]
     assert row["confidence_note"]
+    assert row["ma_structure_label"] == "bullish_alignment"
+    assert row["trend_quality_label"]
+    assert row["volume_price_structure_label"]
+    assert row["technical_profile_summary"]
+    assert row["technical_grade"] in {"A", "B", "C", "D"}
+    assert row["technical_style"]
+    assert row["technical_strength"]
+    assert row["technical_risk_level"]
+    assert isinstance(row["technical_watch_points"], list)
+    assert row["technical_summary_short"]
     assert_no_forbidden_words(row)
 
 
@@ -136,6 +150,21 @@ def test_strategy_preview_preserves_input_order_by_default():
     assert {"strategy_reason", "risk_reason", "data_quality_reason", "preset_reason", "confidence_note"}.issubset(
         preview.columns
     )
+    assert {
+        "ma_structure_label",
+        "trend_quality_label",
+        "breakout_pullback_label",
+        "volume_price_structure_label",
+        "short_term_overheat_label",
+        "volatility_risk_label",
+        "technical_profile_summary",
+        "technical_grade",
+        "technical_style",
+        "technical_strength",
+        "technical_risk_level",
+        "technical_watch_points",
+        "technical_summary_short",
+    }.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 
 

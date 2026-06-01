@@ -237,6 +237,11 @@
 - V1.5.0 keeps strategy preview read-only and does not change existing scoring rules, stock pools, data sources, or `core/scoring.py`.
 - V1.5.1 adds structured explanation fields to the strategy preview: strategy, trend, momentum, volume-price, liquidity, risk, data-quality, preset, and confidence notes.
 - V1.5.1 explains `strategy_score` from existing component scores, penalties, labels, preset comparison, and caller-provided row fields without changing screening results, default sorting, stock pools, data sources, research-priority score, or `core/scoring.py`.
+- V1.5.2 adds `strategy/technical.py` for read-only technical structure labels in the strategy preview.
+- V1.5.2 labels moving-average structure, trend quality, breakout/pullback state, volume-price structure, short-term overheat, and volatility risk from existing row fields only.
+- V1.5.2 keeps screening results, default sorting, stock pools, data sources, research-priority score, and `core/scoring.py` unchanged.
+- V1.5.3 adds compact technical research conclusions: grade, style, strength, risk level, watch points, and a short summary.
+- V1.5.3 derives those conclusions only from V1.5.2 technical labels and keeps them neutral, read-only, and separate from screening, sorting, and scoring.
 - Future V1.5.x work can add optional export buttons or tighter preview formatting without changing the original screening flow.
 
 ## v1.5 交易纪律模块

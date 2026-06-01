@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.5.1
+Current version: V1.5.3
 
-V1.5.1 adds structured explanation fields to the read-only strategy preview so each candidate can show why its `strategy_score` is high or low. The preview now includes strategy, trend, momentum, volume-price, liquidity, risk, data-quality, preset, and confidence notes without changing the original screening result table, default sorting, stock pools, data sources, research-priority score, or `core/scoring.py`.
+V1.5.3 adds read-only technical research conclusions to the strategy preview. The preview now includes `technical_grade`, `technical_style`, `technical_strength`, `technical_risk_level`, `technical_watch_points`, and `technical_summary_short` without changing the original screening result table, default sorting, stock pools, data sources, research-priority score, or `core/scoring.py`.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.5.1 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
+`legacy_app.py` is not an unused backup. In V1.5.3 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
 
-FinScientist V1.5.1 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.5.3 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,23 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.5.1
+当前版本：V1.5.3
+
+V1.5.3 technical research conclusion phase:
+
+- Added `technical_grade`, `technical_style`, `technical_strength`, `technical_risk_level`, `technical_watch_points`, and `technical_summary_short`.
+- Technical conclusions are derived from the V1.5.2 technical labels only: moving-average structure, trend quality, breakout/pullback state, volume-price structure, short-term overheat, and volatility risk.
+- `technical_grade` uses A/B/C/D research levels; A requires stronger trend structure and volume-price confirmation without severe overheat, while D is used for weak, high-risk, or heavily data-limited structures.
+- The screening page shows the compact conclusion fields in the existing collapsed preview expander.
+- No real data source, network download, stock-pool change, sorting change, research-priority score change, or `core/scoring.py` change was introduced.
+
+V1.5.2 technical structure preview phase:
+
+- Added `strategy/technical.py` for read-only row-level technical structure analysis.
+- Added preview fields: `ma_structure_label`, `trend_quality_label`, `breakout_pullback_label`, `volume_price_structure_label`, `short_term_overheat_label`, `volatility_risk_label`, and `technical_profile_summary`.
+- Technical labels use only existing row fields and existing strategy preview fields; no real data source, network download, stock-pool change, sorting change, research-priority score change, or `core/scoring.py` change was introduced.
+- The screening page keeps the strategy preview inside the collapsed expander and shows core technical labels in that preview table.
+- Technical explanations are for research-priority observation only and are not operation instructions.
 
 V1.5.1 strategy preview explanation phase:
 

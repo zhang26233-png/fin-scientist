@@ -11,6 +11,7 @@ from strategy.adapter import infer_field_mapping, to_number
 from strategy.explanations import REASON_FIELDS, build_strategy_reason_fields
 from strategy.preset_comparison import DEFAULT_COMPARISON_PRESETS, compare_strategy_presets
 from strategy.scoring import calculate_strategy_scores
+from strategy.technical import TECHNICAL_PROFILE_FIELDS, build_technical_profile
 
 
 PREVIEW_COLUMNS = [
@@ -42,6 +43,19 @@ PREVIEW_COLUMNS = [
     "data_quality_reason",
     "preset_reason",
     "confidence_note",
+    "ma_structure_label",
+    "trend_quality_label",
+    "breakout_pullback_label",
+    "volume_price_structure_label",
+    "short_term_overheat_label",
+    "volatility_risk_label",
+    "technical_profile_summary",
+    "technical_grade",
+    "technical_style",
+    "technical_strength",
+    "technical_risk_level",
+    "technical_watch_points",
+    "technical_summary_short",
 ]
 
 
@@ -118,10 +132,15 @@ def _source_reason_metrics(row, mapping):
         "volume": _safe_number(_read_mapped(row, mapping, "volume")),
         "turnover": _safe_number(_read_mapped(row, mapping, "turnover")),
         "volume_ratio": _safe_number(_read_mapped(row, mapping, "volume_ratio")),
+        "volatility": _safe_number(_read_mapped(row, mapping, "volatility")),
+        "amplitude": _safe_number(_read_mapped(row, mapping, "amplitude")),
         "return_20d": _safe_number(_read_mapped(row, mapping, "return_20d")),
         "recent_return": _safe_number(_read_mapped(row, mapping, "change_pct")),
         "return_10d": _safe_number(_read_any(row, ("return_10d", "10d_return"))),
         "return_5d": _safe_number(_read_any(row, ("return_5d", "5d_return", "pct_chg", "recent_return"))),
+        "recent_high": _safe_number(_read_any(row, ("recent_high", "high_20d", "highest_20d"))),
+        "recent_low": _safe_number(_read_any(row, ("recent_low", "low_20d", "lowest_20d"))),
+        "support_price": _safe_number(_read_any(row, ("support_price",))),
         "ma5": _safe_number(_read_mapped(row, mapping, "ma5")),
         "ma10": _safe_number(_read_mapped(row, mapping, "ma10")),
         "ma20": _safe_number(_read_mapped(row, mapping, "ma20")),
@@ -175,6 +194,8 @@ def build_strategy_preview_row(row, preset_names=None):
     components = default_score.get("strategy_score_components", {}) if isinstance(default_score, dict) else {}
     if isinstance(components, dict):
         reason_context["preset_bonus_reasons"] = list(components.get("preset_bonus_reasons", []))
+    reason_context.update(row_data)
+    row_data.update(build_technical_profile(reason_context))
     reason_context.update(row_data)
     row_data.update(build_strategy_reason_fields(reason_context))
     return {column: row_data.get(column) for column in PREVIEW_COLUMNS}
@@ -259,6 +280,7 @@ def export_strategy_preview_to_csv(preview, path):
 __all__ = [
     "PREVIEW_COLUMNS",
     "REASON_FIELDS",
+    "TECHNICAL_PROFILE_FIELDS",
     "build_strategy_preview",
     "build_strategy_preview_row",
     "export_strategy_preview_to_csv",

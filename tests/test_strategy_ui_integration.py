@@ -47,6 +47,9 @@ def make_screening_result_frame():
                 "近 20 日涨跌幅": 0.16,
                 "return_10d": 0.09,
                 "return_5d": 0.04,
+                "MA5": 98,
+                "MA10": 95,
+                "MA20": 90,
                 "成交量": 1_500_000,
                 "成交额": 160_000_000,
                 "换手率": 0.04,
@@ -92,6 +95,8 @@ def test_strategy_ui_integration_preserves_input_order_by_default():
     assert list(preview["symbol"]) == ["LOW1", "HIGH1"]
     assert {"strategy_score", "best_preset", "dominant_style", "consensus_level"}.issubset(preview.columns)
     assert {"strategy_reason", "risk_reason", "data_quality_reason", "confidence_note"}.issubset(preview.columns)
+    assert {"ma_structure_label", "trend_quality_label", "technical_profile_summary"}.issubset(preview.columns)
+    assert {"technical_grade", "technical_style", "technical_strength", "technical_risk_level"}.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 
 
