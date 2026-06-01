@@ -250,7 +250,9 @@
 - V1.6.2 keeps relative labels based only on caller-provided candidate pools and does not change screening, sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
 - V1.6.3 adds `strategy/fundamental_diagnostics.py` for read-only field-level fundamental explanations, strengths, weaknesses, watch points, and compact summaries.
 - V1.6.3 combines caller-provided fields, V1.6.1 scores, and V1.6.2 industry-relative labels without changing screening, sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
-- Future V1.6.x work can add a dedicated fundamental comparison detail view or export-friendly diagnostics schema.
+- V1.6.9 adds `strategy/confluence.py` for read-only technical and fundamental confluence labels, scores, summaries, strength points, risk points, and follow-up focus.
+- V1.6.9 keeps confluence separate from screening, sorting, `strategy_score`, stock pools, data sources, and `core/scoring.py`.
+- Future V1.7 work can use these read-only confluence fields as a bridge for strategy iteration experiments.
 
 ## v1.5 交易纪律模块
 

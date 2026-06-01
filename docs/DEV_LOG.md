@@ -4,6 +4,30 @@
 
 ### Target
 
+- Complete V1.6.9 technical and fundamental confluence phase.
+- Add read-only confluence labels, scores, summaries, strength points, risk points, and follow-up focus without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
+- Keep prior V1.6 tests stable.
+
+### Confluence
+
+- Added `strategy/confluence.py` for read-only technical and fundamental confluence analysis.
+- Added `confluence_label`, `confluence_score`, `confluence_summary`, `confluence_strength_points`, `confluence_risk_points`, and `confluence_followup_focus`.
+- `strategy.preview` computes confluence after technical and fundamental diagnostics so the fields remain derived and separate from sorting and scoring.
+- `legacy_app.py` only updates the version and does not import strategy modules.
+
+### Tests
+
+- Added `tests/test_strategy_confluence.py` for resonance, mismatch, risk, insufficient data, score bounds, source immutability, and neutral wording.
+- Expanded preview and module import tests for V1.6.9 confluence fields.
+
+### Next Step
+
+- V1.7 can start strategy-iteration experiments using confluence fields as read-only research inputs.
+
+## 2026-06-01
+
+### Target
+
 - Complete V1.6.3 fundamental diagnostics phase.
 - Add read-only field-level explanations behind fundamental scores and industry-relative labels without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
 - Keep V1.4.4-V1.6.2 tests stable.

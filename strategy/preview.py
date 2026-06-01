@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 from strategy.adapter import infer_field_mapping, to_number
+from strategy.confluence import CONFLUENCE_FIELDS, build_confluence_profile
 from strategy.explanations import REASON_FIELDS, build_strategy_reason_fields
 from strategy.fundamental import FUNDAMENTAL_PROFILE_FIELDS, build_fundamental_profile
 from strategy.fundamental_diagnostics import FUNDAMENTAL_DIAGNOSTIC_FIELDS, build_fundamental_diagnostics_profile
@@ -88,6 +89,12 @@ PREVIEW_COLUMNS = [
     "fundamental_strength_points",
     "fundamental_weakness_points",
     "fundamental_diagnostics_summary",
+    "confluence_label",
+    "confluence_score",
+    "confluence_summary",
+    "confluence_strength_points",
+    "confluence_risk_points",
+    "confluence_followup_focus",
 ]
 
 
@@ -251,6 +258,9 @@ def build_strategy_preview_row(row, preset_names=None):
     diagnostic_frame = build_fundamental_diagnostics_profile([_merge_contexts(row_dict, row_data)])
     if not diagnostic_frame.empty:
         row_data.update(diagnostic_frame.iloc[0].to_dict())
+    confluence_frame = build_confluence_profile([row_data])
+    if not confluence_frame.empty:
+        row_data.update(confluence_frame.iloc[0].to_dict())
     reason_context.update(row_data)
     row_data.update(build_strategy_reason_fields(reason_context))
     return {column: row_data.get(column) for column in PREVIEW_COLUMNS}
@@ -281,6 +291,11 @@ def build_strategy_preview(source, preset_names=None, sort_by_strategy=False):
         for column in FUNDAMENTAL_DIAGNOSTIC_FIELDS:
             if column in diagnostics.columns:
                 preview[column] = list(diagnostics[column])
+    confluence = build_confluence_profile(preview)
+    if not confluence.empty:
+        for column in CONFLUENCE_FIELDS:
+            if column in confluence.columns:
+                preview[column] = list(confluence[column])
     if sort_by_strategy:
         preview = preview.sort_values(
             by=["strategy_score", "average_preset_score"],
@@ -348,6 +363,7 @@ def export_strategy_preview_to_csv(preview, path):
 
 __all__ = [
     "PREVIEW_COLUMNS",
+    "CONFLUENCE_FIELDS",
     "FUNDAMENTAL_DIAGNOSTIC_FIELDS",
     "FUNDAMENTAL_PROFILE_FIELDS",
     "REASON_FIELDS",
