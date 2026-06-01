@@ -26,6 +26,13 @@ FUNDAMENTAL_DIAGNOSTIC_FIELDS = [
     "relative_disadvantage_points",
     "relative_position_summary",
     "fundamental_research_questions",
+    "fundamental_detail_view",
+    "profitability_detail",
+    "growth_detail",
+    "valuation_detail",
+    "financial_risk_detail",
+    "fundamental_key_evidence",
+    "fundamental_uncertainty_notes",
 ]
 
 FORBIDDEN_DIAGNOSTIC_WORDS = (
@@ -309,6 +316,114 @@ def build_fundamental_research_questions(row, strengths, weaknesses, conflicts, 
         questions.append("后续应优先核查哪些字段会改变当前基本面画像？")
         questions.append("行业相对位置是否能在更多同行样本中保持稳定？")
     return [_sanitize_text(item) for item in _limited_questions(questions)]
+
+
+def _detail_block(title, diagnostics, focus):
+    positives = diagnostics.get("positive_signals", []) if isinstance(diagnostics, dict) else []
+    negatives = diagnostics.get("negative_signals", []) if isinstance(diagnostics, dict) else []
+    missing = diagnostics.get("missing_fields", []) if isinstance(diagnostics, dict) else []
+    explanation = diagnostics.get("explanation", "") if isinstance(diagnostics, dict) else ""
+    evidence = positives[:3]
+    if not evidence and negatives:
+        evidence = negatives[:2]
+    if not evidence and missing:
+        evidence = ["关键字段不足"]
+    return {
+        "title": title,
+        "score": diagnostics.get("score") if isinstance(diagnostics, dict) else None,
+        "level": diagnostics.get("level") if isinstance(diagnostics, dict) else "insufficient_data",
+        "focus": focus,
+        "evidence": evidence,
+        "risk_or_gap": negatives[:3] + [f"缺失字段:{field}" for field in missing[:2]],
+        "explanation": _sanitize_text(explanation),
+    }
+
+
+def build_profitability_detail(profitability):
+    return _detail_block("profitability", profitability, "盈利质量、利润规模与现金流匹配度")
+
+
+def build_growth_detail(growth):
+    return _detail_block("growth", growth, "营收增长、利润增长与成长延续性")
+
+
+def build_valuation_detail(valuation):
+    detail = _detail_block("valuation", valuation, "估值可比性、估值压力与质量匹配度")
+    if valuation.get("level") in {"valuation_expensive", "valuation_abnormal"}:
+        detail["risk_or_gap"] = _clean_list(["估值压力需要结合盈利和成长质量复核"] + detail["risk_or_gap"], limit=5)
+    return detail
+
+
+def build_financial_risk_detail(financial_risk):
+    detail = _detail_block("financial_risk", financial_risk, "负债、现金流与利润稳定性")
+    if financial_risk.get("level") in {"high_debt_pressure", "weak_cashflow", "loss_or_negative_profit"}:
+        detail["risk_or_gap"] = _clean_list(["财务风险字段存在压力"] + detail["risk_or_gap"], limit=5)
+    return detail
+
+
+def build_fundamental_key_evidence(diagnostics, strengths, industry_detail):
+    evidence = []
+    for item in strengths:
+        evidence.append(item)
+    for key in ("profitability", "growth", "valuation", "financial_risk"):
+        block = diagnostics.get(key, {})
+        for signal in block.get("positive_signals", [])[:2]:
+            evidence.append(signal)
+    for item in industry_detail.get("advantages", []):
+        evidence.append(item)
+    if not evidence:
+        evidence.append("基本面有效支撑证据有限")
+    return [_sanitize_text(item) for item in _clean_list(evidence, limit=5)]
+
+
+def build_fundamental_uncertainty_notes(row, diagnostics, conflicts, industry_detail):
+    row_data = _row_dict(row)
+    notes = []
+    if row_data.get("fundamental_data_quality_label") in {"no_fundamental_data", "insufficient_fundamental_data", None}:
+        notes.append("基本面字段不足，诊断可信度有限")
+    for key in ("profitability", "growth", "valuation", "financial_risk"):
+        block = diagnostics.get(key, {})
+        if block.get("missing_fields"):
+            notes.append(f"{key}存在缺失字段")
+    if industry_detail.get("industry_relative_quality_label") in {"insufficient_industry_data", None}:
+        notes.append("行业或同行样本不足，行业相对结论有限")
+    if diagnostics.get("valuation", {}).get("level") in {"valuation_abnormal", "insufficient_valuation_data"}:
+        notes.append("估值字段异常或不足，估值可比性有限")
+    if diagnostics.get("financial_risk", {}).get("level") in {"weak_cashflow", "high_debt_pressure"}:
+        notes.append("现金流或负债字段存在异常观察点")
+    if conflicts:
+        notes.append("基本面内部存在需要复核的矛盾信号")
+    if not notes:
+        notes.append("当前不确定性主要来自单期字段稳定性，仍需结合后续数据核查")
+    return [_sanitize_text(item) for item in _clean_list(notes, limit=6)]
+
+
+def build_fundamental_detail_view(
+    row,
+    profitability_detail,
+    growth_detail,
+    valuation_detail,
+    financial_risk_detail,
+    key_evidence,
+    uncertainty_notes,
+):
+    row_data = _row_dict(row)
+    return {
+        "profile_type": row_data.get("fundamental_profile_type"),
+        "profitability": profitability_detail,
+        "growth": growth_detail,
+        "valuation": valuation_detail,
+        "financial_risk": financial_risk_detail,
+        "key_evidence": key_evidence,
+        "uncertainty_notes": uncertainty_notes,
+        "research_boundary": "仅用于基本面研究辅助，不构成操作结论。",
+        "metadata": {
+            "read_only": True,
+            "uses_real_data_source": False,
+            "ranking_changed": False,
+            "strategy_score_changed": False,
+        },
+    }
 
 
 def build_profitability_diagnostics(row):
@@ -604,6 +719,21 @@ def build_fundamental_diagnostics_row(row):
     research_questions = build_fundamental_research_questions(
         row_data, strengths, weaknesses, conflict_flags, industry_detail
     )
+    profitability_detail = build_profitability_detail(profitability)
+    growth_detail = build_growth_detail(growth)
+    valuation_detail = build_valuation_detail(valuation)
+    financial_risk_detail = build_financial_risk_detail(financial_risk)
+    key_evidence = build_fundamental_key_evidence(diagnostics, strengths, industry_detail)
+    uncertainty_notes = build_fundamental_uncertainty_notes(row_data, diagnostics, conflict_flags, industry_detail)
+    detail_view = build_fundamental_detail_view(
+        row_data,
+        profitability_detail,
+        growth_detail,
+        valuation_detail,
+        financial_risk_detail,
+        key_evidence,
+        uncertainty_notes,
+    )
     summary = _sanitize_text(_summary(row_data, strengths, weaknesses, watch_points))
     warnings = []
     if row_data.get("industry_relative_quality_label") == "insufficient_industry_data":
@@ -632,6 +762,9 @@ def build_fundamental_diagnostics_row(row):
         "relative_disadvantage_points": relative_disadvantages,
         "relative_position_summary": relative_summary,
         "research_questions": research_questions,
+        "detail_view": detail_view,
+        "key_evidence": key_evidence,
+        "uncertainty_notes": uncertainty_notes,
         "strengths": strengths,
         "weaknesses": weaknesses,
         "watch_points": watch_points,
@@ -661,6 +794,13 @@ def build_fundamental_diagnostics_row(row):
         "relative_disadvantage_points": relative_disadvantages,
         "relative_position_summary": relative_summary,
         "fundamental_research_questions": research_questions,
+        "fundamental_detail_view": detail_view,
+        "profitability_detail": profitability_detail,
+        "growth_detail": growth_detail,
+        "valuation_detail": valuation_detail,
+        "financial_risk_detail": financial_risk_detail,
+        "fundamental_key_evidence": key_evidence,
+        "fundamental_uncertainty_notes": uncertainty_notes,
     }
 
 
@@ -679,10 +819,17 @@ __all__ = [
     "build_fundamental_conflicts",
     "build_fundamental_diagnostics_profile",
     "build_fundamental_diagnostics_row",
+    "build_fundamental_detail_view",
+    "build_fundamental_key_evidence",
     "build_fundamental_profile_type",
     "build_fundamental_research_questions",
+    "build_fundamental_uncertainty_notes",
+    "build_financial_risk_detail",
+    "build_growth_detail",
     "build_growth_diagnostics",
     "build_industry_relative_detail",
+    "build_profitability_detail",
     "build_profitability_diagnostics",
+    "build_valuation_detail",
     "build_valuation_diagnostics",
 ]

@@ -129,6 +129,9 @@ def test_empty_input_safe_return():
 
     assert result.empty
     assert list(result.columns) == FUNDAMENTAL_DIAGNOSTIC_FIELDS
+    assert "fundamental_detail_view" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
+    assert "fundamental_key_evidence" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
+    assert "fundamental_uncertainty_notes" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
 
 
 def test_missing_fundamental_fields_safe_return():
@@ -137,6 +140,8 @@ def test_missing_fundamental_fields_safe_return():
 
     assert row["profitability_diagnostics"]["level"] == "insufficient_data"
     assert row["growth_diagnostics"]["level"] == "insufficient_growth_data"
+    assert row["fundamental_detail_view"]["profile_type"] == "insufficient_data"
+    assert row["fundamental_uncertainty_notes"]
     assert "fundamental_data_insufficient" in row["fundamental_diagnostics"]["warnings"]
     assert_no_forbidden_words(row.to_dict())
 
@@ -166,6 +171,8 @@ def test_high_profitability_sample_generates_strength_explanation():
     row = build_fundamental_diagnostics_profile(make_diagnostic_frame()).iloc[0]
 
     assert row["profitability_diagnostics"]["level"] == "high_profitability"
+    assert row["profitability_detail"]["score"] == 88
+    assert row["profitability_detail"]["evidence"]
     assert any("盈利" in item for item in row["fundamental_strength_points"])
     assert "ROE" in row["profitability_diagnostics"]["explanation"]
     assert_no_forbidden_words(row.to_dict())
@@ -175,6 +182,8 @@ def test_high_growth_sample_generates_growth_explanation():
     row = build_fundamental_diagnostics_profile(make_diagnostic_frame()).iloc[0]
 
     assert row["growth_diagnostics"]["level"] == "high_growth"
+    assert row["growth_detail"]["level"] == "high_growth"
+    assert row["growth_detail"]["evidence"]
     assert any("成长" in item for item in row["fundamental_strength_points"])
     assert "成长" in row["growth_diagnostics"]["explanation"]
 
@@ -183,6 +192,8 @@ def test_expensive_valuation_sample_generates_valuation_pressure():
     row = build_fundamental_diagnostics_profile(make_diagnostic_frame()).iloc[1]
 
     assert row["valuation_diagnostics"]["level"] == "valuation_expensive"
+    assert row["valuation_detail"]["level"] == "valuation_expensive"
+    assert row["valuation_detail"]["risk_or_gap"]
     assert any("估值" in item for item in row["fundamental_weakness_points"])
     assert "估值" in row["valuation_diagnostics"]["explanation"]
 
@@ -191,6 +202,8 @@ def test_high_debt_or_negative_cashflow_generates_risk_explanation():
     row = build_fundamental_diagnostics_profile(make_diagnostic_frame()).iloc[2]
 
     assert row["financial_risk_diagnostics"]["level"] == "high_debt_pressure"
+    assert row["financial_risk_detail"]["level"] == "high_debt_pressure"
+    assert row["financial_risk_detail"]["risk_or_gap"]
     assert any("风险" in item for item in row["fundamental_weakness_points"])
     assert "负债" in row["financial_risk_diagnostics"]["explanation"]
 
@@ -227,6 +240,8 @@ def test_quality_growth_profile_type_for_high_profitability_and_growth():
     row = build_fundamental_diagnostics_profile(make_diagnostic_frame()).iloc[0]
 
     assert row["fundamental_profile_type"] == "quality_growth"
+    assert row["fundamental_detail_view"]["profile_type"] == "quality_growth"
+    assert 3 <= len(row["fundamental_key_evidence"]) <= 5
     assert row["industry_relative_detail"]["industry_relative_quality_label"] == "industry_relative_strong"
     assert row["relative_advantage_points"]
     assert row["fundamental_research_questions"]
@@ -363,5 +378,29 @@ def test_insufficient_industry_relative_detail_safe_return():
     assert row["industry_relative_detail"]["summary"]
     assert row["industry_relative_detail"]["advantages"] == []
     assert row["industry_relative_detail"]["disadvantages"] == []
+    assert row["fundamental_uncertainty_notes"]
     assert "insufficient_data_for_conflict_check" in row["fundamental_conflict_flags"]
+    assert_no_forbidden_words(row.to_dict())
+
+
+def test_detail_view_contains_all_detail_blocks_and_uncertainty_notes():
+    row = build_fundamental_diagnostics_profile(make_diagnostic_frame()).iloc[1]
+
+    detail_view = row["fundamental_detail_view"]
+
+    assert detail_view["profitability"] == row["profitability_detail"]
+    assert detail_view["growth"] == row["growth_detail"]
+    assert detail_view["valuation"] == row["valuation_detail"]
+    assert detail_view["financial_risk"] == row["financial_risk_detail"]
+    assert detail_view["key_evidence"] == row["fundamental_key_evidence"]
+    assert detail_view["uncertainty_notes"] == row["fundamental_uncertainty_notes"]
+    assert_no_forbidden_words(detail_view)
+
+
+def test_key_evidence_and_uncertainty_notes_are_safe_for_risk_sample():
+    row = build_fundamental_diagnostics_profile(make_diagnostic_frame()).iloc[2]
+
+    assert row["fundamental_key_evidence"]
+    assert row["fundamental_uncertainty_notes"]
+    assert any("现金流" in item or "负债" in item or "矛盾" in item for item in row["fundamental_uncertainty_notes"])
     assert_no_forbidden_words(row.to_dict())
