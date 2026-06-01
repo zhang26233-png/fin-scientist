@@ -39,6 +39,12 @@ FUNDAMENTAL_DIAGNOSTIC_FIELDS = [
     "fundamental_data_completeness_score",
     "fundamental_industry_comparability_label",
     "fundamental_anomaly_flags",
+    "fundamental_research_conclusion",
+    "fundamental_research_level",
+    "fundamental_core_strength",
+    "fundamental_core_risk",
+    "fundamental_followup_focus",
+    "fundamental_summary_tags",
 ]
 
 FORBIDDEN_DIAGNOSTIC_WORDS = (
@@ -551,6 +557,160 @@ def build_fundamental_confidence(row, diagnostics=None, conflicts=None):
     }
 
 
+def _consistency_label(row):
+    value = _row_dict(row).get("fundamental_consistency_label")
+    return str(value) if value else "unknown_consistency"
+
+
+def build_fundamental_research_level(row, diagnostics, conflicts):
+    row_data = _row_dict(row)
+    grade = row_data.get("fundamental_grade")
+    profile_type = row_data.get("fundamental_profile_type")
+    confidence = row_data.get("fundamental_confidence_level")
+    consistency = _consistency_label(row_data)
+    industry_quality = row_data.get("industry_relative_quality_label")
+    risk_level = diagnostics.get("financial_risk", {}).get("level")
+    valuation_level = diagnostics.get("valuation", {}).get("level")
+
+    if confidence == "insufficient" or profile_type == "insufficient_data" or grade == "D" and confidence == "low":
+        return "insufficient_data" if profile_type == "insufficient_data" else "weak_or_risky"
+    if profile_type in {"cashflow_risk", "leverage_pressure", "weak_fundamental"}:
+        return "weak_or_risky"
+    if risk_level in {"high_debt_pressure", "weak_cashflow", "loss_or_negative_profit"}:
+        return "weak_or_risky"
+    if conflicts or valuation_level in {"valuation_expensive", "valuation_abnormal"}:
+        return "mixed_needs_review"
+    if (
+        grade == "A"
+        and profile_type in {"quality_growth", "profitable_value"}
+        and confidence in {"high", "medium"}
+        and consistency not in {"inconsistent", "low_consistency"}
+        and industry_quality in {"industry_relative_strong", "industry_relative_neutral", None}
+    ):
+        return "strong_candidate"
+    if grade in {"A", "B"} and confidence in {"high", "medium"}:
+        return "worth_tracking"
+    if confidence == "low":
+        return "mixed_needs_review"
+    return "worth_tracking"
+
+
+def build_fundamental_core_strength(row, diagnostics, strengths, relative_advantages):
+    row_data = _row_dict(row)
+    points = []
+    if diagnostics.get("profitability", {}).get("level") == "high_profitability":
+        points.append("盈利质量较强")
+    if diagnostics.get("growth", {}).get("level") == "high_growth":
+        points.append("成长表现较好")
+    if row_data.get("fundamental_profile_type") == "quality_growth":
+        points.append("质量成长画像较清晰")
+    if row_data.get("industry_relative_quality_label") == "industry_relative_strong":
+        points.append("同行相对位置占优")
+    points.extend(strengths)
+    points.extend(relative_advantages)
+    return [_sanitize_text(item) for item in _clean_list(points, limit=3)]
+
+
+def build_fundamental_core_risk(row, diagnostics, conflicts, weaknesses, anomaly_flags):
+    row_data = _row_dict(row)
+    points = []
+    if row_data.get("fundamental_confidence_level") in {"low", "insufficient"}:
+        points.append("数据可信度不足")
+    if "high_growth_high_valuation" in conflicts:
+        points.append("成长估值匹配待验证")
+    if "high_profit_negative_cashflow" in conflicts or "negative_cashflow" in anomaly_flags:
+        points.append("现金流需核查")
+    if "high_roe_high_debt" in conflicts or "high_debt" in anomaly_flags:
+        points.append("负债压力需复核")
+    if diagnostics.get("valuation", {}).get("level") in {"valuation_expensive", "valuation_abnormal"}:
+        points.append("估值可比性或估值压力需复核")
+    if row_data.get("industry_relative_quality_label") == "industry_relative_weak":
+        points.append("同行相对弱项需复核")
+    points.extend(weaknesses)
+    return [_sanitize_text(item) for item in _clean_list(points, limit=3)]
+
+
+def build_fundamental_followup_focus(row, research_questions, watch_points, core_risk):
+    row_data = _row_dict(row)
+    focus = []
+    if row_data.get("fundamental_confidence_level") in {"low", "insufficient"}:
+        focus.append("优先补充缺失基本面字段并复核数据质量")
+    focus.extend(core_risk)
+    focus.extend(watch_points)
+    focus.extend(research_questions)
+    return [_sanitize_text(item) for item in _clean_list(focus, limit=4)]
+
+
+def build_fundamental_summary_tags(row, core_strength, core_risk):
+    row_data = _row_dict(row)
+    tags = []
+    profile_type = row_data.get("fundamental_profile_type")
+    if any("盈利" in item for item in core_strength):
+        tags.append("盈利质量较强")
+    if profile_type == "quality_growth":
+        tags.append("质量成长画像")
+    if "成长估值匹配待验证" in core_risk or profile_type == "high_growth_high_valuation":
+        tags.append("成长估值匹配待验证")
+    if "现金流需核查" in core_risk or profile_type == "cashflow_risk":
+        tags.append("现金流需核查")
+    if row_data.get("industry_relative_quality_label") == "industry_relative_strong":
+        tags.append("同行相对占优")
+    if row_data.get("fundamental_confidence_level") in {"low", "insufficient"}:
+        tags.append("数据可信度不足")
+    if not tags and core_risk:
+        tags.append("风险点需复核")
+    if not tags:
+        tags.append("基本面结论中性")
+    return [_sanitize_text(item) for item in _clean_list(tags, limit=5)]
+
+
+def build_fundamental_research_conclusion(row, research_level, core_strength, core_risk):
+    row_data = _row_dict(row)
+    if research_level == "insufficient_data":
+        return "基本面字段和可比信息不足，当前仅适合形成低可信度研究观察。"
+    if research_level == "strong_candidate":
+        return "基本面质量、成长或同行相对位置具备较清晰支撑，可作为后续研究重点观察对象。"
+    if research_level == "worth_tracking":
+        return "基本面存在一定支撑，但仍需结合关键字段和同行相对位置继续跟踪验证。"
+    if research_level == "mixed_needs_review":
+        risk = core_risk[0] if core_risk else "部分指标存在分歧"
+        return _sanitize_text("基本面支撑与风险信号并存，" + risk + "，需要进一步复核。")
+    if research_level == "weak_or_risky":
+        risk = core_risk[0] if core_risk else "风险字段压力较高"
+        return _sanitize_text("基本面存在较明显薄弱点，" + risk + "，当前更适合做质量和风险核查。")
+    if row_data.get("fundamental_confidence_level") in {"low", "insufficient"}:
+        return "基本面诊断可信度不足，需要补充字段后再形成稳定结论。"
+    return "基本面结论偏中性，后续需要围绕盈利、成长、估值和风险字段继续核查。"
+
+
+def build_fundamental_research_conclusion_fields(
+    row,
+    diagnostics,
+    strengths,
+    weaknesses,
+    relative_advantages,
+    conflicts,
+    anomaly_flags,
+    research_questions,
+    watch_points,
+):
+    row_data = _row_dict(row)
+    research_level = build_fundamental_research_level(row_data, diagnostics, conflicts)
+    core_strength = build_fundamental_core_strength(row_data, diagnostics, strengths, relative_advantages)
+    core_risk = build_fundamental_core_risk(row_data, diagnostics, conflicts, weaknesses, anomaly_flags)
+    followup_focus = build_fundamental_followup_focus(row_data, research_questions, watch_points, core_risk)
+    summary_tags = build_fundamental_summary_tags(row_data, core_strength, core_risk)
+    conclusion = build_fundamental_research_conclusion(row_data, research_level, core_strength, core_risk)
+    return {
+        "fundamental_research_conclusion": _sanitize_text(conclusion),
+        "fundamental_research_level": research_level,
+        "fundamental_core_strength": core_strength,
+        "fundamental_core_risk": core_risk,
+        "fundamental_followup_focus": followup_focus,
+        "fundamental_summary_tags": summary_tags,
+    }
+
+
 def build_profitability_diagnostics(row):
     row_data = _row_dict(row)
     data = detect_fundamental_fields(row_data)
@@ -851,6 +1011,18 @@ def build_fundamental_diagnostics_row(row):
     key_evidence = build_fundamental_key_evidence(diagnostics, strengths, industry_detail)
     uncertainty_notes = build_fundamental_uncertainty_notes(row_data, diagnostics, conflict_flags, industry_detail)
     confidence = build_fundamental_confidence(row_data, diagnostics=diagnostics, conflicts=conflict_flags)
+    row_data.update(confidence)
+    conclusion_fields = build_fundamental_research_conclusion_fields(
+        row_data,
+        diagnostics,
+        strengths,
+        weaknesses,
+        relative_advantages,
+        conflict_flags,
+        confidence["fundamental_anomaly_flags"],
+        research_questions,
+        watch_points,
+    )
     detail_view = build_fundamental_detail_view(
         row_data,
         profitability_detail,
@@ -892,6 +1064,7 @@ def build_fundamental_diagnostics_row(row):
         "key_evidence": key_evidence,
         "uncertainty_notes": uncertainty_notes,
         "confidence": confidence,
+        "research_conclusion": conclusion_fields,
         "strengths": strengths,
         "weaknesses": weaknesses,
         "watch_points": watch_points,
@@ -934,6 +1107,7 @@ def build_fundamental_diagnostics_row(row):
         "fundamental_data_completeness_score": confidence["fundamental_data_completeness_score"],
         "fundamental_industry_comparability_label": confidence["fundamental_industry_comparability_label"],
         "fundamental_anomaly_flags": confidence["fundamental_anomaly_flags"],
+        **conclusion_fields,
     }
 
 
@@ -960,6 +1134,13 @@ __all__ = [
     "build_fundamental_industry_comparability_label",
     "build_fundamental_profile_type",
     "build_fundamental_research_questions",
+    "build_fundamental_research_conclusion",
+    "build_fundamental_research_conclusion_fields",
+    "build_fundamental_research_level",
+    "build_fundamental_core_strength",
+    "build_fundamental_core_risk",
+    "build_fundamental_followup_focus",
+    "build_fundamental_summary_tags",
     "build_fundamental_uncertainty_notes",
     "build_financial_risk_detail",
     "build_growth_detail",

@@ -135,6 +135,9 @@ def test_empty_input_safe_return():
     assert "fundamental_confidence_level" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
     assert "fundamental_confidence_score" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
     assert "fundamental_anomaly_flags" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
+    assert "fundamental_research_conclusion" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
+    assert "fundamental_research_level" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
+    assert "fundamental_summary_tags" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
 
 
 def test_missing_fundamental_fields_safe_return():
@@ -249,6 +252,10 @@ def test_quality_growth_profile_type_for_high_profitability_and_growth():
     assert 3 <= len(row["fundamental_key_evidence"]) <= 5
     assert row["fundamental_confidence_level"] in {"high", "medium"}
     assert row["fundamental_data_completeness_score"] >= 70
+    assert row["fundamental_research_level"] in {"strong_candidate", "worth_tracking"}
+    assert row["fundamental_core_strength"]
+    assert row["fundamental_followup_focus"]
+    assert row["fundamental_summary_tags"]
     assert row["industry_relative_detail"]["industry_relative_quality_label"] == "industry_relative_strong"
     assert row["relative_advantage_points"]
     assert row["fundamental_research_questions"]
@@ -450,4 +457,70 @@ def test_field_sparse_sample_has_low_or_insufficient_confidence():
     assert row["fundamental_confidence_level"] in {"low", "insufficient"}
     assert row["fundamental_data_completeness_score"] < 35
     assert "insufficient_data" in row["fundamental_anomaly_flags"]
+    assert_no_forbidden_words(row.to_dict())
+
+
+def test_research_conclusion_for_quality_growth_sample():
+    row = build_fundamental_diagnostics_profile(make_diagnostic_frame()).iloc[0]
+
+    assert row["fundamental_research_level"] in {"strong_candidate", "worth_tracking"}
+    assert row["fundamental_core_strength"]
+    assert row["fundamental_followup_focus"]
+    assert row["fundamental_summary_tags"]
+    assert row["fundamental_research_conclusion"]
+    assert_no_forbidden_words(row.to_dict())
+
+
+def test_research_conclusion_for_high_growth_high_valuation_conflict():
+    frame = pd.DataFrame(
+        [
+            {
+                "symbol": "MIXED",
+                "roe": 0.14,
+                "gross_margin": "36%",
+                "net_profit": 50_000_000,
+                "operating_cashflow": 45_000_000,
+                "revenue_growth": "35%",
+                "profit_growth": "40%",
+                "pe": 92,
+                "pb": 10,
+                "profitability_score": 72,
+                "growth_score": 88,
+                "valuation_score": 28,
+                "financial_risk_score": 70,
+                "fundamental_quality_score": 66,
+                "fundamental_grade": "B",
+                "fundamental_data_quality_label": "sufficient_fundamental_data",
+                "relative_valuation_label": "relatively_expensive",
+                "industry_relative_quality_label": "industry_relative_neutral",
+            }
+        ]
+    )
+
+    row = build_fundamental_diagnostics_profile(frame).iloc[0]
+
+    assert row["fundamental_research_level"] == "mixed_needs_review"
+    assert row["fundamental_core_risk"]
+    assert row["fundamental_followup_focus"]
+    assert row["fundamental_summary_tags"]
+    assert_no_forbidden_words(row.to_dict())
+
+
+def test_research_conclusion_for_weak_or_risky_sample():
+    row = build_fundamental_diagnostics_profile(make_diagnostic_frame()).iloc[2]
+
+    assert row["fundamental_research_level"] == "weak_or_risky"
+    assert row["fundamental_core_risk"]
+    assert row["fundamental_followup_focus"]
+    assert row["fundamental_research_conclusion"]
+    assert_no_forbidden_words(row.to_dict())
+
+
+def test_research_conclusion_for_insufficient_data_sample():
+    row = build_fundamental_diagnostics_profile(pd.DataFrame([{"symbol": "EMPTY"}])).iloc[0]
+
+    assert row["fundamental_research_level"] == "insufficient_data"
+    assert row["fundamental_core_risk"]
+    assert row["fundamental_followup_focus"]
+    assert "数据可信度不足" in row["fundamental_summary_tags"]
     assert_no_forbidden_words(row.to_dict())
