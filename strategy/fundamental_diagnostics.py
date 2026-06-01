@@ -33,6 +33,12 @@ FUNDAMENTAL_DIAGNOSTIC_FIELDS = [
     "financial_risk_detail",
     "fundamental_key_evidence",
     "fundamental_uncertainty_notes",
+    "fundamental_confidence_level",
+    "fundamental_confidence_score",
+    "fundamental_confidence_reasons",
+    "fundamental_data_completeness_score",
+    "fundamental_industry_comparability_label",
+    "fundamental_anomaly_flags",
 ]
 
 FORBIDDEN_DIAGNOSTIC_WORDS = (
@@ -426,6 +432,125 @@ def build_fundamental_detail_view(
     }
 
 
+def build_fundamental_data_completeness_score(row):
+    detected = detect_fundamental_fields(_row_dict(row))
+    total_fields = 13
+    return max(0, min(100, int(round(len(detected) / total_fields * 100))))
+
+
+def build_fundamental_industry_comparability_label(row):
+    row_data = _row_dict(row)
+    quality = row_data.get("industry_relative_quality_label")
+    relative_labels = [
+        row_data.get("relative_profitability_label"),
+        row_data.get("relative_growth_label"),
+        row_data.get("relative_valuation_label"),
+        row_data.get("relative_financial_risk_label"),
+    ]
+    if quality is None and not any(relative_labels):
+        return "no_industry_comparison"
+    if quality == "insufficient_industry_data":
+        return "insufficient_industry_comparison"
+    if quality in {"industry_relative_strong", "industry_relative_neutral", "industry_relative_weak"}:
+        if any(label in {None, "insufficient_data"} for label in relative_labels):
+            return "partial_industry_comparison"
+        return "sufficient_industry_comparison"
+    if any(label and label != "insufficient_data" for label in relative_labels):
+        return "partial_industry_comparison"
+    return "no_industry_comparison"
+
+
+def build_fundamental_anomaly_flags(row, diagnostics=None, conflicts=None):
+    row_data = _row_dict(row)
+    data = detect_fundamental_fields(row_data)
+    diagnostics = diagnostics or {}
+    conflicts = conflicts or []
+    flags = []
+    pe = data.get("pe")
+    pb = data.get("pb")
+    ps = data.get("ps")
+    net_profit = data.get("net_profit")
+    cashflow = data.get("operating_cashflow")
+    debt = data.get("debt_ratio")
+    valuation_level = diagnostics.get("valuation", {}).get("level") if isinstance(diagnostics, dict) else None
+
+    if valuation_level == "valuation_abnormal" or row_data.get("relative_valuation_label") == "abnormal_valuation_data":
+        flags.append("abnormal_valuation")
+    if any(isinstance(value, (int, float)) and (value <= 0 or value > 120) for value in (pe, pb, ps)):
+        flags.append("abnormal_valuation")
+    if isinstance(net_profit, (int, float)) and net_profit < 0:
+        flags.append("negative_profit")
+    if isinstance(cashflow, (int, float)) and cashflow < 0:
+        flags.append("negative_cashflow")
+    if isinstance(debt, (int, float)) and debt > 0.75:
+        flags.append("high_debt")
+    invalid_fields = row_data.get("invalid_numeric_fields")
+    if invalid_fields:
+        flags.append("invalid_numeric_fields")
+    if row_data.get("fundamental_data_quality_label") in {"no_fundamental_data", "insufficient_fundamental_data", None}:
+        flags.append("insufficient_data")
+    if "insufficient_data_for_conflict_check" in conflicts:
+        flags.append("insufficient_data")
+    return _clean_list(flags, limit=8)
+
+
+def build_fundamental_confidence(row, diagnostics=None, conflicts=None):
+    row_data = _row_dict(row)
+    diagnostics = diagnostics or {}
+    conflicts = conflicts or []
+    completeness = build_fundamental_data_completeness_score(row_data)
+    comparability = build_fundamental_industry_comparability_label(row_data)
+    anomalies = build_fundamental_anomaly_flags(row_data, diagnostics=diagnostics, conflicts=conflicts)
+    comparability_score = {
+        "sufficient_industry_comparison": 25,
+        "partial_industry_comparison": 15,
+        "insufficient_industry_comparison": 5,
+        "no_industry_comparison": 0,
+    }.get(comparability, 0)
+    score = int(round(completeness * 0.70 + comparability_score))
+    score -= min(30, len(anomalies) * 8)
+    score -= min(15, len([flag for flag in conflicts if flag != "insufficient_data_for_conflict_check"]) * 4)
+    score = max(0, min(100, score))
+
+    if completeness < 20 or row_data.get("fundamental_data_quality_label") == "no_fundamental_data":
+        level = "insufficient"
+    elif score >= 75:
+        level = "high"
+    elif score >= 55:
+        level = "medium"
+    elif score >= 30:
+        level = "low"
+    else:
+        level = "insufficient"
+
+    reasons = []
+    if completeness >= 70:
+        reasons.append("基本面字段完整度较高")
+    elif completeness >= 35:
+        reasons.append("基本面字段完整度一般")
+    else:
+        reasons.append("基本面字段缺失较多")
+    if comparability == "sufficient_industry_comparison":
+        reasons.append("行业相对比较信息较完整")
+    elif comparability == "partial_industry_comparison":
+        reasons.append("行业相对比较信息部分可用")
+    else:
+        reasons.append("行业相对比较信息不足")
+    if anomalies:
+        reasons.append("存在异常字段或数据质量提示")
+    if conflicts:
+        reasons.append("存在基本面内部矛盾需要复核")
+
+    return {
+        "fundamental_confidence_level": level,
+        "fundamental_confidence_score": score,
+        "fundamental_confidence_reasons": [_sanitize_text(item) for item in _clean_list(reasons, limit=5)],
+        "fundamental_data_completeness_score": completeness,
+        "fundamental_industry_comparability_label": comparability,
+        "fundamental_anomaly_flags": anomalies,
+    }
+
+
 def build_profitability_diagnostics(row):
     row_data = _row_dict(row)
     data = detect_fundamental_fields(row_data)
@@ -725,6 +850,7 @@ def build_fundamental_diagnostics_row(row):
     financial_risk_detail = build_financial_risk_detail(financial_risk)
     key_evidence = build_fundamental_key_evidence(diagnostics, strengths, industry_detail)
     uncertainty_notes = build_fundamental_uncertainty_notes(row_data, diagnostics, conflict_flags, industry_detail)
+    confidence = build_fundamental_confidence(row_data, diagnostics=diagnostics, conflicts=conflict_flags)
     detail_view = build_fundamental_detail_view(
         row_data,
         profitability_detail,
@@ -765,6 +891,7 @@ def build_fundamental_diagnostics_row(row):
         "detail_view": detail_view,
         "key_evidence": key_evidence,
         "uncertainty_notes": uncertainty_notes,
+        "confidence": confidence,
         "strengths": strengths,
         "weaknesses": weaknesses,
         "watch_points": watch_points,
@@ -801,6 +928,12 @@ def build_fundamental_diagnostics_row(row):
         "financial_risk_detail": financial_risk_detail,
         "fundamental_key_evidence": key_evidence,
         "fundamental_uncertainty_notes": uncertainty_notes,
+        "fundamental_confidence_level": confidence["fundamental_confidence_level"],
+        "fundamental_confidence_score": confidence["fundamental_confidence_score"],
+        "fundamental_confidence_reasons": confidence["fundamental_confidence_reasons"],
+        "fundamental_data_completeness_score": confidence["fundamental_data_completeness_score"],
+        "fundamental_industry_comparability_label": confidence["fundamental_industry_comparability_label"],
+        "fundamental_anomaly_flags": confidence["fundamental_anomaly_flags"],
     }
 
 
@@ -817,10 +950,14 @@ __all__ = [
     "build_financial_risk_diagnostics",
     "build_fundamental_conflict_summary",
     "build_fundamental_conflicts",
+    "build_fundamental_anomaly_flags",
+    "build_fundamental_confidence",
+    "build_fundamental_data_completeness_score",
     "build_fundamental_diagnostics_profile",
     "build_fundamental_diagnostics_row",
     "build_fundamental_detail_view",
     "build_fundamental_key_evidence",
+    "build_fundamental_industry_comparability_label",
     "build_fundamental_profile_type",
     "build_fundamental_research_questions",
     "build_fundamental_uncertainty_notes",

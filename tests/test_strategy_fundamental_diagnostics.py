@@ -132,6 +132,9 @@ def test_empty_input_safe_return():
     assert "fundamental_detail_view" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
     assert "fundamental_key_evidence" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
     assert "fundamental_uncertainty_notes" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
+    assert "fundamental_confidence_level" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
+    assert "fundamental_confidence_score" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
+    assert "fundamental_anomaly_flags" in FUNDAMENTAL_DIAGNOSTIC_FIELDS
 
 
 def test_missing_fundamental_fields_safe_return():
@@ -142,6 +145,8 @@ def test_missing_fundamental_fields_safe_return():
     assert row["growth_diagnostics"]["level"] == "insufficient_growth_data"
     assert row["fundamental_detail_view"]["profile_type"] == "insufficient_data"
     assert row["fundamental_uncertainty_notes"]
+    assert row["fundamental_confidence_level"] in {"low", "insufficient"}
+    assert row["fundamental_industry_comparability_label"] == "no_industry_comparison"
     assert "fundamental_data_insufficient" in row["fundamental_diagnostics"]["warnings"]
     assert_no_forbidden_words(row.to_dict())
 
@@ -242,6 +247,8 @@ def test_quality_growth_profile_type_for_high_profitability_and_growth():
     assert row["fundamental_profile_type"] == "quality_growth"
     assert row["fundamental_detail_view"]["profile_type"] == "quality_growth"
     assert 3 <= len(row["fundamental_key_evidence"]) <= 5
+    assert row["fundamental_confidence_level"] in {"high", "medium"}
+    assert row["fundamental_data_completeness_score"] >= 70
     assert row["industry_relative_detail"]["industry_relative_quality_label"] == "industry_relative_strong"
     assert row["relative_advantage_points"]
     assert row["fundamental_research_questions"]
@@ -309,6 +316,7 @@ def test_high_profit_negative_cashflow_identifies_cashflow_risk_or_conflict():
 
     assert row["fundamental_profile_type"] == "cashflow_risk"
     assert "high_profit_negative_cashflow" in row["fundamental_conflict_flags"]
+    assert "negative_cashflow" in row["fundamental_anomaly_flags"]
     assert_no_forbidden_words(row.to_dict())
 
 
@@ -338,6 +346,7 @@ def test_high_roe_high_debt_identifies_leverage_pressure_or_conflict():
 
     assert row["fundamental_profile_type"] == "leverage_pressure"
     assert "high_roe_high_debt" in row["fundamental_conflict_flags"]
+    assert "high_debt" in row["fundamental_anomaly_flags"]
     assert_no_forbidden_words(row.to_dict())
 
 
@@ -380,6 +389,7 @@ def test_insufficient_industry_relative_detail_safe_return():
     assert row["industry_relative_detail"]["disadvantages"] == []
     assert row["fundamental_uncertainty_notes"]
     assert "insufficient_data_for_conflict_check" in row["fundamental_conflict_flags"]
+    assert row["fundamental_industry_comparability_label"] == "no_industry_comparison"
     assert_no_forbidden_words(row.to_dict())
 
 
@@ -403,4 +413,41 @@ def test_key_evidence_and_uncertainty_notes_are_safe_for_risk_sample():
     assert row["fundamental_key_evidence"]
     assert row["fundamental_uncertainty_notes"]
     assert any("现金流" in item or "负债" in item or "矛盾" in item for item in row["fundamental_uncertainty_notes"])
+    assert "abnormal_valuation" in row["fundamental_anomaly_flags"]
+    assert "negative_cashflow" in row["fundamental_anomaly_flags"]
+    assert_no_forbidden_words(row.to_dict())
+
+
+def test_confidence_score_is_bounded_and_reasons_are_available():
+    result = build_fundamental_diagnostics_profile(make_diagnostic_frame())
+
+    for _, row in result.iterrows():
+        assert 0 <= row["fundamental_confidence_score"] <= 100
+        assert row["fundamental_confidence_level"] in {"high", "medium", "low", "insufficient"}
+        assert row["fundamental_confidence_reasons"]
+        assert row["fundamental_industry_comparability_label"] in {
+            "sufficient_industry_comparison",
+            "partial_industry_comparison",
+            "insufficient_industry_comparison",
+            "no_industry_comparison",
+        }
+    assert_no_forbidden_words(result.to_dict())
+
+
+def test_field_sparse_sample_has_low_or_insufficient_confidence():
+    frame = pd.DataFrame(
+        [
+            {
+                "symbol": "SPARSE",
+                "net_profit": -100,
+                "fundamental_data_quality_label": "insufficient_fundamental_data",
+            }
+        ]
+    )
+
+    row = build_fundamental_diagnostics_profile(frame).iloc[0]
+
+    assert row["fundamental_confidence_level"] in {"low", "insufficient"}
+    assert row["fundamental_data_completeness_score"] < 35
+    assert "insufficient_data" in row["fundamental_anomaly_flags"]
     assert_no_forbidden_words(row.to_dict())
