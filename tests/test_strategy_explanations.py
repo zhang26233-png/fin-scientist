@@ -1,7 +1,7 @@
 import copy
 from pathlib import Path
 
-from strategy.explanations import build_strategy_explanations
+from strategy.explanations import REASON_FIELDS, build_strategy_explanations, build_strategy_reason_fields
 
 
 FORBIDDEN_EXPLANATION_WORDS = [
@@ -65,6 +65,86 @@ def test_strategy_explanations_handles_missing_fields_safely():
     assert result["items"]
     assert result["warnings"]
     assert result["penalty_breakdown"]["total_penalty"] == 0
+    assert_no_forbidden_words(result)
+
+
+def test_strategy_reason_fields_empty_and_missing_input_safe_return():
+    empty = build_strategy_reason_fields(None)
+    missing = build_strategy_reason_fields({"symbol": "MISS1"})
+
+    assert set(REASON_FIELDS).issubset(empty)
+    assert set(REASON_FIELDS).issubset(missing)
+    assert empty["confidence_note"]
+    assert missing["strategy_reason"]
+    assert_no_forbidden_words(empty)
+    assert_no_forbidden_words(missing)
+
+
+def test_strategy_reason_fields_explain_trend_strength():
+    result = build_strategy_reason_fields(
+        {
+            "strategy_score": 72,
+            "trend_score": 82,
+            "momentum_score": 68,
+            "volume_price_score": 60,
+            "liquidity_score": 62,
+            "return_20d": 0.18,
+            "close": 118,
+            "ma5": 112,
+            "ma10": 108,
+            "ma20": 101,
+            "dominant_style": "trend_momentum",
+            "consensus_level": "broad_consensus_high",
+        }
+    )
+
+    assert "趋势" in result["strategy_reason"]
+    assert "20日/近期收益 18.0%" in result["trend_reason"]
+    assert "均线" in result["trend_reason"]
+    assert "可信度较高" in result["confidence_note"]
+    assert_no_forbidden_words(result)
+
+
+def test_strategy_reason_fields_explain_volume_price_confirmation():
+    result = build_strategy_reason_fields(
+        {
+            "volume_price_score": 78,
+            "amount": 150_000_000,
+            "volume": 1_500_000,
+            "volume_ratio": 1.6,
+            "turnover": 0.04,
+            "preset_bonus_reasons": ["volume_price_confirmed"],
+            "best_preset": "volume_breakout",
+        }
+    )
+
+    assert "量价互相确认" in result["volume_price_reason"]
+    assert "volume_breakout" in result["preset_reason"]
+    assert_no_forbidden_words(result)
+
+
+def test_strategy_reason_fields_explain_risk_and_data_quality():
+    result = build_strategy_reason_fields(
+        {
+            "risk_penalty": 38,
+            "data_quality_penalty": 22,
+            "risk_labels": ["high_volatility", "overheated_turnover"],
+            "data_quality_labels": ["missing_price_fields", "invalid_numeric_fields"],
+            "warnings": ["field warning"],
+            "consensus_level": "mixed_signal",
+        }
+    )
+
+    assert "高波动" in result["risk_reason"]
+    assert "数值字段" in result["data_quality_reason"]
+    assert "可信度有限" in result["confidence_note"]
+    assert_no_forbidden_words(result)
+
+
+def test_strategy_reason_fields_confidence_detects_preset_divergence():
+    result = build_strategy_reason_fields({"consensus_level": "mixed_signal"})
+
+    assert "分歧" in result["confidence_note"]
     assert_no_forbidden_words(result)
 
 

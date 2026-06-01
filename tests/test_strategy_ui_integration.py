@@ -91,6 +91,7 @@ def test_strategy_ui_integration_preserves_input_order_by_default():
 
     assert list(preview["symbol"]) == ["LOW1", "HIGH1"]
     assert {"strategy_score", "best_preset", "dominant_style", "consensus_level"}.issubset(preview.columns)
+    assert {"strategy_reason", "risk_reason", "data_quality_reason", "confidence_note"}.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 
 

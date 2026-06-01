@@ -112,6 +112,10 @@ def test_strategy_preview_row_contains_core_fields():
     assert row["volume_breakout_score"] is not None
     assert row["low_risk_quality_score"] is not None
     assert row["high_elasticity_watch_score"] is not None
+    assert row["strategy_reason"]
+    assert row["trend_reason"]
+    assert row["volume_price_reason"]
+    assert row["confidence_note"]
     assert_no_forbidden_words(row)
 
 
@@ -129,6 +133,9 @@ def test_strategy_preview_preserves_input_order_by_default():
     preview = build_strategy_preview(frame)
 
     assert list(preview["symbol"]) == ["LOW1", "HIGH1", "RISK1"]
+    assert {"strategy_reason", "risk_reason", "data_quality_reason", "preset_reason", "confidence_note"}.issubset(
+        preview.columns
+    )
     assert_no_forbidden_words(preview.to_dict())
 
 

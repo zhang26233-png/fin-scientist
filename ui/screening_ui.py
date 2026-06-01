@@ -27,6 +27,11 @@ STRATEGY_PREVIEW_COLUMNS = [
     "high_elasticity_watch_score",
     "risk_labels",
     "data_quality_labels",
+    "strategy_reason",
+    "risk_reason",
+    "data_quality_reason",
+    "preset_reason",
+    "confidence_note",
     "warnings",
 ]
 
@@ -36,8 +41,8 @@ def build_screening_strategy_preview(result_df, sort_by_strategy=False):
 
 
 def render_strategy_preview_section(result_df):
-    with st.expander("策略评分预览（研究辅助，不构成交易建议）", expanded=False):
-        st.caption("以下策略评分仅用于研究优先级观察，不构成交易建议；默认不改变原筛选排序。")
+    with st.expander("策略评分预览（研究辅助，不构成投资建议）", expanded=False):
+        st.caption("以下策略评分仅用于研究优先级观察，不构成投资建议；默认不改变原筛选排序。")
         if result_df is None or getattr(result_df, "empty", True):
             st.info("当前候选池为空，暂无可展示的策略评分预览。")
             return build_screening_strategy_preview(result_df)

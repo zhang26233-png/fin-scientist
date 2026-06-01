@@ -235,6 +235,8 @@
 - V1.5.0 adds an optional collapsed strategy preview section to the screening page.
 - V1.5.0 renders `strategy.preview` output after the original screening table while keeping the original result table and default sorting unchanged.
 - V1.5.0 keeps strategy preview read-only and does not change existing scoring rules, stock pools, data sources, or `core/scoring.py`.
+- V1.5.1 adds structured explanation fields to the strategy preview: strategy, trend, momentum, volume-price, liquidity, risk, data-quality, preset, and confidence notes.
+- V1.5.1 explains `strategy_score` from existing component scores, penalties, labels, preset comparison, and caller-provided row fields without changing screening results, default sorting, stock pools, data sources, research-priority score, or `core/scoring.py`.
 - Future V1.5.x work can add optional export buttons or tighter preview formatting without changing the original screening flow.
 
 ## v1.5 交易纪律模块

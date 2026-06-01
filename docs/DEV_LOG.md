@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-06-01
+
+### Target
+
+- Complete V1.5.1 strategy preview explanation phase.
+- Add structured, readable explanations for existing `strategy_score` preview output without changing screening results, default sorting, scoring rules, stock pools, data sources, or `core/scoring.py`.
+- Keep V1.4.4-V1.5.0 tests stable.
+
+### Strategy Preview Explanations
+
+- Added row-level explanation fields: `strategy_reason`, `trend_reason`, `momentum_reason`, `volume_price_reason`, `liquidity_reason`, `risk_reason`, `data_quality_reason`, `preset_reason`, and `confidence_note`.
+- Added `build_strategy_reason_fields()` in `strategy/explanations.py`.
+- `strategy.preview` appends explanation fields to the preview DataFrame while preserving input order by default.
+- `ui/screening_ui.py` displays core explanation columns inside the existing collapsed preview expander.
+- `legacy_app.py` only updates the version and does not import strategy modules.
+
+### Tests
+
+- Expanded `tests/test_strategy_explanations.py` for empty input, missing fields, trend explanation, volume-price confirmation, risk/data-quality explanation, preset reason, confidence notes, and forbidden wording.
+- Expanded `tests/test_strategy_preview.py` and `tests/test_strategy_ui_integration.py` to assert explanation columns and order preservation.
+- Updated `tests/test_module_imports.py` for V1.5.1.
+
+### Next Step
+
+- V1.5.2 can add optional preview export controls for the explanation-enhanced DataFrame while keeping the original screening table unchanged.
+
 ## 2026-05-29
 
 ### Target

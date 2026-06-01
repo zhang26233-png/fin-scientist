@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 from strategy.adapter import infer_field_mapping, to_number
+from strategy.explanations import REASON_FIELDS, build_strategy_reason_fields
 from strategy.preset_comparison import DEFAULT_COMPARISON_PRESETS, compare_strategy_presets
 from strategy.scoring import calculate_strategy_scores
 
@@ -32,6 +33,15 @@ PREVIEW_COLUMNS = [
     "risk_labels",
     "data_quality_labels",
     "warnings",
+    "strategy_reason",
+    "trend_reason",
+    "momentum_reason",
+    "volume_price_reason",
+    "liquidity_reason",
+    "risk_reason",
+    "data_quality_reason",
+    "preset_reason",
+    "confidence_note",
 ]
 
 
@@ -68,6 +78,18 @@ def _score_value(value):
     return None if number is None else int(round(number))
 
 
+def _read_any(row, candidates):
+    for column in candidates:
+        if column in row:
+            return row.get(column)
+    lowered = {str(column).lower(): column for column in row.index}
+    for column in candidates:
+        matched = lowered.get(str(column).lower())
+        if matched is not None:
+            return row.get(matched)
+    return None
+
+
 def _empty_preview():
     return pd.DataFrame(columns=PREVIEW_COLUMNS)
 
@@ -87,6 +109,23 @@ def _preset_name(item):
     if not isinstance(item, dict):
         return ""
     return _safe_text(item.get("preset_name"))
+
+
+def _source_reason_metrics(row, mapping):
+    return {
+        "close": _safe_number(_read_mapped(row, mapping, "close")),
+        "amount": _safe_number(_read_mapped(row, mapping, "amount")),
+        "volume": _safe_number(_read_mapped(row, mapping, "volume")),
+        "turnover": _safe_number(_read_mapped(row, mapping, "turnover")),
+        "volume_ratio": _safe_number(_read_mapped(row, mapping, "volume_ratio")),
+        "return_20d": _safe_number(_read_mapped(row, mapping, "return_20d")),
+        "recent_return": _safe_number(_read_mapped(row, mapping, "change_pct")),
+        "return_10d": _safe_number(_read_any(row, ("return_10d", "10d_return"))),
+        "return_5d": _safe_number(_read_any(row, ("return_5d", "5d_return", "pct_chg", "recent_return"))),
+        "ma5": _safe_number(_read_mapped(row, mapping, "ma5")),
+        "ma10": _safe_number(_read_mapped(row, mapping, "ma10")),
+        "ma20": _safe_number(_read_mapped(row, mapping, "ma20")),
+    }
 
 
 def build_strategy_preview_row(row, preset_names=None):
@@ -130,6 +169,14 @@ def build_strategy_preview_row(row, preset_names=None):
     for column in PREVIEW_COLUMNS:
         if column.endswith("_score") and column not in row_data:
             row_data[column] = preset_scores.get(column)
+    reason_context = {}
+    reason_context.update(_source_reason_metrics(source.iloc[0], mapping))
+    reason_context.update(copy.deepcopy(default_score))
+    components = default_score.get("strategy_score_components", {}) if isinstance(default_score, dict) else {}
+    if isinstance(components, dict):
+        reason_context["preset_bonus_reasons"] = list(components.get("preset_bonus_reasons", []))
+    reason_context.update(row_data)
+    row_data.update(build_strategy_reason_fields(reason_context))
     return {column: row_data.get(column) for column in PREVIEW_COLUMNS}
 
 
@@ -211,6 +258,7 @@ def export_strategy_preview_to_csv(preview, path):
 
 __all__ = [
     "PREVIEW_COLUMNS",
+    "REASON_FIELDS",
     "build_strategy_preview",
     "build_strategy_preview_row",
     "export_strategy_preview_to_csv",
