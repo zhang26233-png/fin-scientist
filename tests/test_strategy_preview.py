@@ -174,6 +174,14 @@ def test_strategy_preview_row_contains_core_fields():
     assert row["fundamental_risk_level"]
     assert row["fundamental_reason"]
     assert row["industry_relative_quality_label"] == "insufficient_industry_data"
+    assert row["fundamental_diagnostics_summary"]
+    assert isinstance(row["profitability_diagnostics"], dict)
+    assert isinstance(row["growth_diagnostics"], dict)
+    assert isinstance(row["valuation_diagnostics"], dict)
+    assert isinstance(row["financial_risk_diagnostics"], dict)
+    assert isinstance(row["fundamental_strength_points"], list)
+    assert isinstance(row["fundamental_weakness_points"], list)
+    assert isinstance(row["fundamental_watch_points"], list)
     assert_no_forbidden_words(row)
 
 
@@ -228,9 +236,22 @@ def test_strategy_preview_preserves_input_order_by_default():
         "relative_financial_risk_label",
         "industry_relative_quality_label",
         "industry_relative_summary",
+        "fundamental_diagnostics",
+        "profitability_diagnostics",
+        "growth_diagnostics",
+        "valuation_diagnostics",
+        "financial_risk_diagnostics",
+        "fundamental_watch_points",
+        "fundamental_strength_points",
+        "fundamental_weakness_points",
+        "fundamental_diagnostics_summary",
     }.issubset(preview.columns)
     high_row = preview[preview["symbol"] == "HIGH1"].iloc[0]
     assert high_row["industry_relative_quality_label"] in {"industry_relative_strong", "industry_relative_neutral"}
+    assert high_row["fundamental_diagnostics_summary"]
+    assert len(high_row["fundamental_strength_points"]) <= 3
+    assert len(high_row["fundamental_weakness_points"]) <= 3
+    assert len(high_row["fundamental_watch_points"]) <= 3
     assert_no_forbidden_words(preview.to_dict())
 
 

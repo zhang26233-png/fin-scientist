@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.6.2
+Current version: V1.6.3
 
-V1.6.2 adds read-only industry-relative fundamental comparison for strategy preview. The preview now includes relative profitability, growth, valuation, financial-risk, industry-relative quality, and summary fields without changing the original screening result table, default sorting, stock pools, data sources, `strategy_score`, or `core/scoring.py`.
+V1.6.3 adds a read-only fundamental diagnostics layer for strategy preview. The preview now explains profitability, growth, valuation, financial-risk, strength points, weakness points, watch points, and a compact diagnostics summary without changing the original screening result table, default sorting, stock pools, data sources, `strategy_score`, or `core/scoring.py`.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.6.2 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
+`legacy_app.py` is not an unused backup. In V1.6.3 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
 
-FinScientist V1.6.2 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.6.3 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,15 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.6.2
+当前版本：V1.6.3
+
+V1.6.3 fundamental diagnostics phase:
+
+- Added `strategy/fundamental_diagnostics.py` for read-only field-level explanations behind the fundamental preview scores.
+- Added `fundamental_diagnostics`, `profitability_diagnostics`, `growth_diagnostics`, `valuation_diagnostics`, `financial_risk_diagnostics`, `fundamental_watch_points`, `fundamental_strength_points`, `fundamental_weakness_points`, and `fundamental_diagnostics_summary`.
+- Diagnostics combine caller-provided fundamental fields, V1.6.1 fundamental scores, and V1.6.2 industry-relative labels.
+- Strength, weakness, and watch-point lists are capped at three items each and preserve neutral research wording.
+- This phase does not change screening results, default sorting, stock pools, data sources, `strategy_score`, or `core/scoring.py`.
 
 V1.6.2 industry-relative fundamental comparison phase:
 

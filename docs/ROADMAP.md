@@ -248,7 +248,9 @@
 - V1.6.1 keeps the new fundamental scores separate from screening, sorting, `strategy_score`, stock pools, data sources, and `core/scoring.py`.
 - V1.6.2 adds `strategy/fundamental_relative.py` for read-only industry and sector relative fundamental comparison in strategy preview.
 - V1.6.2 keeps relative labels based only on caller-provided candidate pools and does not change screening, sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
-- Future V1.6.x work can add field-level fundamental diagnostics or a dedicated comparison detail view on top of the standardized fundamental profile.
+- V1.6.3 adds `strategy/fundamental_diagnostics.py` for read-only field-level fundamental explanations, strengths, weaknesses, watch points, and compact summaries.
+- V1.6.3 combines caller-provided fields, V1.6.1 scores, and V1.6.2 industry-relative labels without changing screening, sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
+- Future V1.6.x work can add a dedicated fundamental comparison detail view or export-friendly diagnostics schema.
 
 ## v1.5 交易纪律模块
 

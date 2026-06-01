@@ -10,6 +10,7 @@ import pandas as pd
 from strategy.adapter import infer_field_mapping, to_number
 from strategy.explanations import REASON_FIELDS, build_strategy_reason_fields
 from strategy.fundamental import FUNDAMENTAL_PROFILE_FIELDS, build_fundamental_profile
+from strategy.fundamental_diagnostics import FUNDAMENTAL_DIAGNOSTIC_FIELDS, build_fundamental_diagnostics_profile
 from strategy.fundamental_relative import RELATIVE_FUNDAMENTAL_FIELDS, build_fundamental_relative_profile
 from strategy.preset_comparison import DEFAULT_COMPARISON_PRESETS, compare_strategy_presets
 from strategy.scoring import calculate_strategy_scores
@@ -78,6 +79,15 @@ PREVIEW_COLUMNS = [
     "relative_financial_risk_label",
     "industry_relative_quality_label",
     "industry_relative_summary",
+    "fundamental_diagnostics",
+    "profitability_diagnostics",
+    "growth_diagnostics",
+    "valuation_diagnostics",
+    "financial_risk_diagnostics",
+    "fundamental_watch_points",
+    "fundamental_strength_points",
+    "fundamental_weakness_points",
+    "fundamental_diagnostics_summary",
 ]
 
 
@@ -139,6 +149,13 @@ def _default_relative_profile():
         "industry_relative_quality_label": "insufficient_industry_data",
         "industry_relative_summary": "行业字段或同行样本不足，暂不能形成行业相对基本面观察。",
     }
+
+
+def _merge_contexts(left, right):
+    merged = copy.deepcopy(left) if isinstance(left, dict) else {}
+    if isinstance(right, dict):
+        merged.update(copy.deepcopy(right))
+    return merged
 
 
 def _preset_score_map(comparison):
@@ -231,6 +248,9 @@ def build_strategy_preview_row(row, preset_names=None):
     row_data.update(build_technical_profile(reason_context))
     row_data.update(build_fundamental_profile(row_dict))
     row_data.update(_default_relative_profile())
+    diagnostic_frame = build_fundamental_diagnostics_profile([_merge_contexts(row_dict, row_data)])
+    if not diagnostic_frame.empty:
+        row_data.update(diagnostic_frame.iloc[0].to_dict())
     reason_context.update(row_data)
     row_data.update(build_strategy_reason_fields(reason_context))
     return {column: row_data.get(column) for column in PREVIEW_COLUMNS}
@@ -252,6 +272,15 @@ def build_strategy_preview(source, preset_names=None, sort_by_strategy=False):
         for column in RELATIVE_FUNDAMENTAL_FIELDS:
             if column in relative.columns:
                 preview[column] = list(relative[column])
+    diagnostic_source = [
+        _merge_contexts(raw_row.to_dict(), preview.iloc[index].to_dict())
+        for index, (_, raw_row) in enumerate(source_copy.iterrows())
+    ]
+    diagnostics = build_fundamental_diagnostics_profile(diagnostic_source)
+    if not diagnostics.empty:
+        for column in FUNDAMENTAL_DIAGNOSTIC_FIELDS:
+            if column in diagnostics.columns:
+                preview[column] = list(diagnostics[column])
     if sort_by_strategy:
         preview = preview.sort_values(
             by=["strategy_score", "average_preset_score"],
@@ -319,6 +348,7 @@ def export_strategy_preview_to_csv(preview, path):
 
 __all__ = [
     "PREVIEW_COLUMNS",
+    "FUNDAMENTAL_DIAGNOSTIC_FIELDS",
     "FUNDAMENTAL_PROFILE_FIELDS",
     "REASON_FIELDS",
     "RELATIVE_FUNDAMENTAL_FIELDS",

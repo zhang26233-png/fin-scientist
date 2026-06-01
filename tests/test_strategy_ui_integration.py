@@ -116,6 +116,16 @@ def test_strategy_ui_integration_preserves_input_order_by_default():
     assert {"industry_relative_quality_label", "relative_profitability_label", "industry_relative_summary"}.issubset(
         preview.columns
     )
+    assert {
+        "fundamental_diagnostics_summary",
+        "fundamental_strength_points",
+        "fundamental_weakness_points",
+        "fundamental_watch_points",
+        "profitability_diagnostics",
+        "growth_diagnostics",
+        "valuation_diagnostics",
+        "financial_risk_diagnostics",
+    }.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 
 

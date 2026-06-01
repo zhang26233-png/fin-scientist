@@ -4,6 +4,32 @@
 
 ### Target
 
+- Complete V1.6.3 fundamental diagnostics phase.
+- Add read-only field-level explanations behind fundamental scores and industry-relative labels without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
+- Keep V1.4.4-V1.6.2 tests stable.
+
+### Fundamental Diagnostics
+
+- Added `strategy/fundamental_diagnostics.py` for profitability, growth, valuation, financial-risk, strength-point, weakness-point, watch-point, and summary diagnostics.
+- Added `fundamental_diagnostics`, `profitability_diagnostics`, `growth_diagnostics`, `valuation_diagnostics`, `financial_risk_diagnostics`, `fundamental_watch_points`, `fundamental_strength_points`, `fundamental_weakness_points`, and `fundamental_diagnostics_summary`.
+- Diagnostics read caller-provided fundamental fields, V1.6.1 fundamental scores, and V1.6.2 industry-relative labels.
+- `strategy.preview` merges raw row fields with preview fields before building diagnostics and preserves input order.
+- `ui/screening_ui.py` shows the read-only diagnostics fields in the existing strategy preview expander.
+- `legacy_app.py` only updates the version and does not import strategy modules.
+
+### Tests
+
+- Added `tests/test_strategy_fundamental_diagnostics.py` for safe empty/missing inputs, scoring explanations, industry-relative explanations, list limits, source immutability, order preservation, and neutral wording.
+- Expanded `tests/test_strategy_preview.py`, `tests/test_strategy_ui_integration.py`, and `tests/test_module_imports.py` for V1.6.3 diagnostics fields.
+
+### Next Step
+
+- V1.6.4 can add a compact fundamental diagnostics detail view or export-focused schema while keeping screening and strategy scoring unchanged.
+
+## 2026-06-01
+
+### Target
+
 - Complete V1.6.2 industry-relative fundamental comparison phase.
 - Add read-only relative profitability, growth, valuation, financial-risk, and industry-relative quality labels without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
 - Keep V1.4.4-V1.6.1 tests stable.
