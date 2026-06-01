@@ -4,6 +4,34 @@
 
 ### Target
 
+- Complete V1.6.1 fundamental quality scoring phase.
+- Add read-only profitability, growth, valuation, financial-risk, and overall fundamental quality scores without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
+- Keep V1.4.4-V1.6.0 tests stable.
+
+### Fundamental Scoring
+
+- Added `profitability_score`, `growth_score`, `valuation_score`, `financial_risk_score`, `fundamental_quality_score`, `fundamental_grade`, `fundamental_style`, `fundamental_risk_level`, and `fundamental_reason`.
+- Profitability uses ROE, gross margin, net profit, and operating cashflow.
+- Growth uses revenue growth and profit growth.
+- Valuation uses PE, PB, and PS with extreme or negative values reducing comparability.
+- Financial risk uses debt ratio, operating cashflow, and net profit.
+- Overall fundamental quality is capped by `fundamental_data_quality_label` so sparse data cannot produce overconfident results.
+- `legacy_app.py` only updates the version and does not import strategy modules.
+
+### Tests
+
+- Expanded `tests/test_strategy_fundamental.py` for score generation, weak fundamentals, high-growth/high-valuation style, insufficient data, no-data certainty, and neutral wording.
+- Expanded `tests/test_strategy_preview.py` and `tests/test_strategy_ui_integration.py` for fundamental scoring fields.
+- Updated `tests/test_module_imports.py` for V1.6.1.
+
+### Next Step
+
+- V1.6.2 can add sector-relative fundamental comparison or field-level diagnostics while keeping screening and strategy scoring unchanged.
+
+## 2026-06-01
+
+### Target
+
 - Complete V1.6.0 fundamental field standardization phase.
 - Add read-only fundamental field detection, value normalization, missing-field checks, quality labels, and base summaries without changing screening results, default sorting, strategy scoring, stock pools, data sources, or `core/scoring.py`.
 - Keep V1.4.4-V1.5.3 tests stable.

@@ -102,6 +102,7 @@ def test_strategy_ui_integration_preserves_input_order_by_default():
     assert {"ma_structure_label", "trend_quality_label", "technical_profile_summary"}.issubset(preview.columns)
     assert {"technical_grade", "technical_style", "technical_strength", "technical_risk_level"}.issubset(preview.columns)
     assert {"fundamental_available", "fundamental_data_quality_label", "fundamental_summary_base"}.issubset(preview.columns)
+    assert {"fundamental_quality_score", "fundamental_grade", "fundamental_style", "fundamental_risk_level"}.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 
 

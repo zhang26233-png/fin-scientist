@@ -244,7 +244,9 @@
 - V1.5.3 derives those conclusions only from V1.5.2 technical labels and keeps them neutral, read-only, and separate from screening, sorting, and scoring.
 - V1.6.0 adds `strategy/fundamental.py` for read-only fundamental field detection, normalization, missing-field checks, quality labels, and base summaries.
 - V1.6.0 recognizes common English and Chinese fundamental field names, but does not create a final fundamental score or change screening, sorting, strategy scoring, stock pools, data sources, or `core/scoring.py`.
-- Future V1.6.x work can build profitability, growth, valuation, and financial-risk observation layers on top of the standardized fundamental profile.
+- V1.6.1 adds read-only profitability, growth, valuation, financial-risk, and overall fundamental quality scores for strategy preview.
+- V1.6.1 keeps the new fundamental scores separate from screening, sorting, `strategy_score`, stock pools, data sources, and `core/scoring.py`.
+- Future V1.6.x work can add sector-relative fundamental comparisons or field-level diagnostics on top of the standardized fundamental profile.
 
 ## v1.5 交易纪律模块
 

@@ -9,7 +9,7 @@ import streamlit as st
 import legacy_app
 from ui.screening_ui import render_screening_page
 
-APP_VERSION = "V1.6.0"
+APP_VERSION = "V1.6.1"
 LEGACY_WORKBENCH_PAGE = "研究工作台"
 SCREENING_PAGE = "自动研究对象筛选"
 

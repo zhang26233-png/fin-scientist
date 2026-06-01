@@ -62,6 +62,15 @@ PREVIEW_COLUMNS = [
     "missing_fundamental_fields",
     "fundamental_data_quality_label",
     "fundamental_summary_base",
+    "profitability_score",
+    "growth_score",
+    "valuation_score",
+    "financial_risk_score",
+    "fundamental_quality_score",
+    "fundamental_grade",
+    "fundamental_style",
+    "fundamental_risk_level",
+    "fundamental_reason",
 ]
 
 

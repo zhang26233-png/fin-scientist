@@ -146,6 +146,11 @@ def test_strategy_preview_row_contains_core_fields():
     assert row["fundamental_available"] is True
     assert row["fundamental_data_quality_label"] == "sufficient_fundamental_data"
     assert "fundamental_summary_base" in row
+    assert row["fundamental_quality_score"] is not None
+    assert row["fundamental_grade"] in {"A", "B", "C", "D"}
+    assert row["fundamental_style"]
+    assert row["fundamental_risk_level"]
+    assert row["fundamental_reason"]
     assert_no_forbidden_words(row)
 
 
@@ -185,6 +190,15 @@ def test_strategy_preview_preserves_input_order_by_default():
         "missing_fundamental_fields",
         "fundamental_data_quality_label",
         "fundamental_summary_base",
+        "profitability_score",
+        "growth_score",
+        "valuation_score",
+        "financial_risk_score",
+        "fundamental_quality_score",
+        "fundamental_grade",
+        "fundamental_style",
+        "fundamental_risk_level",
+        "fundamental_reason",
     }.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 
