@@ -4,11 +4,12 @@
 
 ## v1.7.x - Research Intelligence Layer
 
-Current: v1.7.2.
+Current: v1.7.3.
 
 - v1.7.0: Composite Profile Layer.
 - v1.7.1: Research Priority Layer.
 - v1.7.2: Research Priority Stability Layer completed.
+- v1.7.3: Architecture Audit Layer completed.
 - v1.7.x rules:
   - Keep screening output unchanged.
   - Keep default sorting unchanged.
@@ -28,7 +29,16 @@ Completed v1.7.2 scope:
 
 Next stage:
 
-- v1.8.x event-driven research system.
+- v1.8.x Event-Driven Research System.
+
+Completed v1.7.3 scope:
+
+- Added read-only architecture audit fields for module presence, field registry, boundary, and preview contract diagnostics.
+- Added tests for module presence, field contract, boundary preservation, neutral wording, immutability, and stable ordering.
+- Did not add new data sources.
+- Did not change UI sorting.
+- Did not change `strategy_score`, `research_priority_score`, or `priority_stability_score`.
+- Did not modify `core/scoring.py`.
 
 ## v1.8.x - Event-Driven Research System
 

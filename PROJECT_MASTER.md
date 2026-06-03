@@ -20,16 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v1.7.2
+- CURRENT_VERSION = v1.7.3
 - CURRENT_STAGE = Research Intelligence Layer
-- NEXT_TARGET = v1.8.x
+- NEXT_TARGET = v1.8.0
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "V1.7.2"`
-- `legacy_app.py`: `APP_VERSION = "V1.7.2"`
-- `README.md`: Current version: V1.7.2
-- `docs/DEV_LOG.md`: V1.7.2 read-only research priority stability phase
+- `app.py`: `APP_VERSION = "V1.7.3"`
+- `legacy_app.py`: `APP_VERSION = "V1.7.3"`
+- `README.md`: Current version: V1.7.3
+- `docs/DEV_LOG.md`: V1.7.3 read-only architecture audit phase
+
+V1.7.x Research Intelligence Layer has entered the audit-complete stage. The next planned phase is V1.8.0 Event-Driven Research System.
 
 ## Current Architecture
 
@@ -70,6 +72,7 @@ Generated from the current project root scan on 2026-06-03.
 |   `-- TEST_CHECKLIST.md
 |-- strategy/
 |   |-- __init__.py
+|   |-- architecture_audit.py
 |   |-- adapter.py
 |   |-- backtest.py
 |   |-- backtest_diagnostics.py
@@ -107,6 +110,7 @@ Generated from the current project root scan on 2026-06-03.
 |   |-- test_screening_contract.py
 |   |-- test_sector_strength.py
 |   |-- test_strategy_*.py
+|   |-- test_strategy_architecture_audit.py
 |   |-- test_strategy_priority_stability.py
 |   `-- test_strategy_ui_integration.py
 `-- ui/
@@ -145,6 +149,7 @@ Generated from the current `strategy/` directory.
 | Confluence module | `strategy/confluence.py` | active | Technical/fundamental confluence labels and score |
 | Composite profile | `strategy/composite_profile.py` | active | Composite research profile plus research priority layer |
 | Priority stability | `strategy/priority_stability.py` | active | Read-only stability and drift diagnostics for research priority fields |
+| Architecture audit | `strategy/architecture_audit.py` | active | Read-only module, field, boundary, and contract diagnostics for Research Intelligence Layer |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -326,6 +331,18 @@ Canonical raw fundamental inputs recognized by `strategy.fundamental`:
 | `priority_stability_note` | `strategy.priority_stability` |
 | `priority_drift_detected` | `strategy.priority_stability` |
 | `priority_drift_reason` | `strategy.priority_stability` |
+
+### Architecture Audit Fields
+
+| Field | Source |
+|---|---|
+| `architecture_audit_label` | `strategy.architecture_audit` |
+| `architecture_audit_score` | `strategy.architecture_audit` |
+| `architecture_audit_note` | `strategy.architecture_audit` |
+| `architecture_audit_warnings` | `strategy.architecture_audit` |
+| `field_contract_warnings` | `strategy.architecture_audit` |
+| `module_contract_warnings` | `strategy.architecture_audit` |
+| `boundary_contract_warnings` | `strategy.architecture_audit` |
 
 ## Current Development Principles
 

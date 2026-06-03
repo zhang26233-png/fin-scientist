@@ -132,6 +132,13 @@ def test_strategy_ui_integration_preserves_input_order_by_default():
         "priority_stability_note",
         "priority_drift_detected",
         "priority_drift_reason",
+        "architecture_audit_label",
+        "architecture_audit_score",
+        "architecture_audit_note",
+        "architecture_audit_warnings",
+        "field_contract_warnings",
+        "module_contract_warnings",
+        "boundary_contract_warnings",
     }.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 

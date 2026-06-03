@@ -4,6 +4,29 @@
 
 ### Target
 
+- Complete V1.7.3 read-only architecture audit phase.
+- Add module presence, field registry, boundary, and preview contract diagnostics before the V1.8 event research phase without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
+
+### Architecture Audit
+
+- Added `strategy/architecture_audit.py`.
+- Added `architecture_audit_label`, `architecture_audit_score`, `architecture_audit_note`, `architecture_audit_warnings`, `field_contract_warnings`, `module_contract_warnings`, and `boundary_contract_warnings`.
+- `strategy.preview` and `ui/screening_ui.py` show these fields as preview-only diagnostics.
+- The fields are not used for sorting or scoring.
+
+### Tests
+
+- Added `tests/test_strategy_architecture_audit.py`.
+- Expanded preview, UI integration, and module import tests for architecture audit fields.
+
+### Next Step
+
+- V1.8.0 can begin the event-driven research system.
+
+## 2026-06-03
+
+### Target
+
 - Complete V1.7.2 read-only research priority stability phase.
 - Add stability and drift diagnostics for V1.7.1 research priority fields without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
 

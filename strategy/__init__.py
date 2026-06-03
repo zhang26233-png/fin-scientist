@@ -6,6 +6,7 @@ quantification, previews, and diagnostics.
 
 __all__ = [
     "factors",
+    "architecture_audit",
     "adapter",
     "comparison",
     "filters",

@@ -2,6 +2,13 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v1.7.3
+
+- Added Architecture Audit Layer in `strategy/architecture_audit.py`.
+- Added `architecture_audit_label`, `architecture_audit_score`, `architecture_audit_note`, `architecture_audit_warnings`, `field_contract_warnings`, `module_contract_warnings`, and `boundary_contract_warnings`.
+- Added tests for module presence, field contract, boundary preservation, neutral wording, immutability, and stable ordering.
+- Kept screening output, default sorting, data sources, `strategy_score`, and `core/scoring.py` unchanged.
+
 ## v1.7.2
 
 - Added Research Priority Stability Layer in `strategy/priority_stability.py`.

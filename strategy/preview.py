@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 from strategy.adapter import infer_field_mapping, to_number
+from strategy.architecture_audit import ARCHITECTURE_AUDIT_FIELDS, build_architecture_audit_profile
 from strategy.composite_profile import COMPOSITE_PROFILE_FIELDS, build_composite_profile
 from strategy.confluence import CONFLUENCE_FIELDS, build_confluence_profile
 from strategy.explanations import REASON_FIELDS, build_strategy_reason_fields
@@ -116,6 +117,13 @@ PREVIEW_COLUMNS = [
     "priority_stability_note",
     "priority_drift_detected",
     "priority_drift_reason",
+    "architecture_audit_label",
+    "architecture_audit_score",
+    "architecture_audit_note",
+    "architecture_audit_warnings",
+    "field_contract_warnings",
+    "module_contract_warnings",
+    "boundary_contract_warnings",
 ]
 
 
@@ -288,6 +296,9 @@ def build_strategy_preview_row(row, preset_names=None):
     stability_frame = build_priority_stability_profile([row_data])
     if not stability_frame.empty:
         row_data.update(stability_frame.iloc[0].to_dict())
+    audit_frame = build_architecture_audit_profile([row_data])
+    if not audit_frame.empty:
+        row_data.update(audit_frame.iloc[0].to_dict())
     reason_context.update(row_data)
     row_data.update(build_strategy_reason_fields(reason_context))
     return {column: row_data.get(column) for column in PREVIEW_COLUMNS}
@@ -333,6 +344,11 @@ def build_strategy_preview(source, preset_names=None, sort_by_strategy=False):
         for column in PRIORITY_STABILITY_FIELDS:
             if column in stability.columns:
                 preview[column] = list(stability[column])
+    audit = build_architecture_audit_profile(preview)
+    if not audit.empty:
+        for column in ARCHITECTURE_AUDIT_FIELDS:
+            if column in audit.columns:
+                preview[column] = list(audit[column])
     if sort_by_strategy:
         preview = preview.sort_values(
             by=["strategy_score", "average_preset_score"],
@@ -400,6 +416,7 @@ def export_strategy_preview_to_csv(preview, path):
 
 __all__ = [
     "PREVIEW_COLUMNS",
+    "ARCHITECTURE_AUDIT_FIELDS",
     "COMPOSITE_PROFILE_FIELDS",
     "CONFLUENCE_FIELDS",
     "FUNDAMENTAL_DIAGNOSTIC_FIELDS",

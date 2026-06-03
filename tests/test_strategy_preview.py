@@ -193,6 +193,9 @@ def test_strategy_preview_row_contains_core_fields():
     assert row["priority_stability_label"] in {"Stable", "Watch", "Unavailable"}
     assert 0 <= row["priority_stability_score"] <= 100
     assert isinstance(row["priority_drift_detected"], bool)
+    assert row["architecture_audit_label"] in {"Pass", "Review", "Unavailable"}
+    assert 0 <= row["architecture_audit_score"] <= 100
+    assert isinstance(row["architecture_audit_warnings"], list)
     assert_no_forbidden_words(row)
 
 
@@ -281,6 +284,13 @@ def test_strategy_preview_preserves_input_order_by_default():
         "priority_stability_note",
         "priority_drift_detected",
         "priority_drift_reason",
+        "architecture_audit_label",
+        "architecture_audit_score",
+        "architecture_audit_note",
+        "architecture_audit_warnings",
+        "field_contract_warnings",
+        "module_contract_warnings",
+        "boundary_contract_warnings",
     }.issubset(preview.columns)
     high_row = preview[preview["symbol"] == "HIGH1"].iloc[0]
     assert high_row["industry_relative_quality_label"] in {"industry_relative_strong", "industry_relative_neutral"}
@@ -291,6 +301,7 @@ def test_strategy_preview_preserves_input_order_by_default():
     assert list(preview["symbol"]) == ["LOW1", "HIGH1", "RISK1"]
     assert all(0 <= score <= 100 for score in preview["confluence_score"])
     assert all(0 <= score <= 100 for score in preview["priority_stability_score"])
+    assert all(0 <= score <= 100 for score in preview["architecture_audit_score"])
     assert list(preview["symbol"]) == ["LOW1", "HIGH1", "RISK1"]
     assert high_row["composite_research_grade"] in {"A", "B", "C", "D", "insufficient_data"}
     assert high_row["composite_summary"]
