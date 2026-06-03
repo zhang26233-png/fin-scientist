@@ -4,11 +4,11 @@
 
 ## v1.7.x - Research Intelligence Layer
 
-Current: v1.7.1.
+Current: v1.7.2.
 
 - v1.7.0: Composite Profile Layer.
 - v1.7.1: Research Priority Layer.
-- v1.7.2 target: read-only research priority stability and drift checks.
+- v1.7.2: Research Priority Stability Layer completed.
 - v1.7.x rules:
   - Keep screening output unchanged.
   - Keep default sorting unchanged.
@@ -16,13 +16,19 @@ Current: v1.7.1.
   - Keep `core/scoring.py` unchanged by default.
   - Keep all new outputs neutral and research-only.
 
-Suggested v1.7.2 scope:
+Completed v1.7.2 scope:
 
-- Add read-only drift checks for `research_priority_score` and `research_priority_level` across repeated preview generation.
-- Add tests for idempotence, input immutability, stable ordering, and neutral wording.
-- Add a compact diagnostic note when priority fields are unavailable or unstable.
-- Do not add new data sources.
-- Do not change UI sorting.
+- Added read-only drift checks for `research_priority_score` and `research_priority_level`.
+- Added tests for idempotence, input immutability, stable ordering, unavailable priority fields, and neutral wording.
+- Added compact diagnostic notes when priority fields are unavailable or inconsistent.
+- Did not add new data sources.
+- Did not change UI sorting.
+- Did not change `strategy_score`.
+- Did not modify `core/scoring.py`.
+
+Next stage:
+
+- v1.8.x event-driven research system.
 
 ## v1.8.x - Event-Driven Research System
 

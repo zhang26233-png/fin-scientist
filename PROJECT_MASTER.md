@@ -20,16 +20,16 @@
 
 ## Version State
 
-- CURRENT_VERSION = v1.7.1
+- CURRENT_VERSION = v1.7.2
 - CURRENT_STAGE = Research Intelligence Layer
-- NEXT_TARGET = v1.7.2
+- NEXT_TARGET = v1.8.x
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "V1.7.1"`
-- `legacy_app.py`: `APP_VERSION = "V1.7.1"`
-- `README.md`: Current version: V1.7.1
-- `docs/DEV_LOG.md`: V1.7.1 read-only research priority experiment phase
+- `app.py`: `APP_VERSION = "V1.7.2"`
+- `legacy_app.py`: `APP_VERSION = "V1.7.2"`
+- `README.md`: Current version: V1.7.2
+- `docs/DEV_LOG.md`: V1.7.2 read-only research priority stability phase
 
 ## Current Architecture
 
@@ -85,6 +85,7 @@ Generated from the current project root scan on 2026-06-03.
 |   |-- fundamental_relative.py
 |   |-- presets.py
 |   |-- preset_comparison.py
+|   |-- priority_stability.py
 |   |-- preview.py
 |   |-- report.py
 |   |-- risk.py
@@ -106,6 +107,7 @@ Generated from the current project root scan on 2026-06-03.
 |   |-- test_screening_contract.py
 |   |-- test_sector_strength.py
 |   |-- test_strategy_*.py
+|   |-- test_strategy_priority_stability.py
 |   `-- test_strategy_ui_integration.py
 `-- ui/
     |-- __init__.py
@@ -142,6 +144,7 @@ Generated from the current `strategy/` directory.
 | Fundamental diagnostics | `strategy/fundamental_diagnostics.py` | active | Field-level diagnostics, evidence, confidence, research level |
 | Confluence module | `strategy/confluence.py` | active | Technical/fundamental confluence labels and score |
 | Composite profile | `strategy/composite_profile.py` | active | Composite research profile plus research priority layer |
+| Priority stability | `strategy/priority_stability.py` | active | Read-only stability and drift diagnostics for research priority fields |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -313,6 +316,16 @@ Canonical raw fundamental inputs recognized by `strategy.fundamental`:
 | `research_priority_level` | `strategy.composite_profile` |
 | `research_priority_reasons` | `strategy.composite_profile` |
 | `research_priority_warnings` | `strategy.composite_profile` |
+
+### Priority Stability Fields
+
+| Field | Source |
+|---|---|
+| `priority_stability_label` | `strategy.priority_stability` |
+| `priority_stability_score` | `strategy.priority_stability` |
+| `priority_stability_note` | `strategy.priority_stability` |
+| `priority_drift_detected` | `strategy.priority_stability` |
+| `priority_drift_reason` | `strategy.priority_stability` |
 
 ## Current Development Principles
 

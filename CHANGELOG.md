@@ -2,6 +2,13 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v1.7.2
+
+- Added Research Priority Stability Layer in `strategy/priority_stability.py`.
+- Added `priority_stability_label`, `priority_stability_score`, `priority_stability_note`, `priority_drift_detected`, and `priority_drift_reason`.
+- Added idempotence, input immutability, stable ordering, unavailable priority, score preservation, `core/scoring.py` boundary, and neutral wording tests.
+- Kept priority stability separate from screening output, sorting, stock pools, data sources, `strategy_score`, and `core/scoring.py`.
+
 ## v1.7.1
 
 - Added Research Priority Layer on top of composite profiles.

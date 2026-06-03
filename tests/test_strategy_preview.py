@@ -190,6 +190,9 @@ def test_strategy_preview_row_contains_core_fields():
     assert row["composite_summary"]
     assert row["research_priority_level"]
     assert 0 <= row["research_priority_score"] <= 100
+    assert row["priority_stability_label"] in {"Stable", "Watch", "Unavailable"}
+    assert 0 <= row["priority_stability_score"] <= 100
+    assert isinstance(row["priority_drift_detected"], bool)
     assert_no_forbidden_words(row)
 
 
@@ -273,6 +276,11 @@ def test_strategy_preview_preserves_input_order_by_default():
         "research_priority_level",
         "research_priority_reasons",
         "research_priority_warnings",
+        "priority_stability_label",
+        "priority_stability_score",
+        "priority_stability_note",
+        "priority_drift_detected",
+        "priority_drift_reason",
     }.issubset(preview.columns)
     high_row = preview[preview["symbol"] == "HIGH1"].iloc[0]
     assert high_row["industry_relative_quality_label"] in {"industry_relative_strong", "industry_relative_neutral"}
@@ -282,6 +290,7 @@ def test_strategy_preview_preserves_input_order_by_default():
     assert len(high_row["fundamental_watch_points"]) <= 3
     assert list(preview["symbol"]) == ["LOW1", "HIGH1", "RISK1"]
     assert all(0 <= score <= 100 for score in preview["confluence_score"])
+    assert all(0 <= score <= 100 for score in preview["priority_stability_score"])
     assert list(preview["symbol"]) == ["LOW1", "HIGH1", "RISK1"]
     assert high_row["composite_research_grade"] in {"A", "B", "C", "D", "insufficient_data"}
     assert high_row["composite_summary"]

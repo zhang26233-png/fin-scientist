@@ -15,6 +15,7 @@ from strategy.fundamental import FUNDAMENTAL_PROFILE_FIELDS, build_fundamental_p
 from strategy.fundamental_diagnostics import FUNDAMENTAL_DIAGNOSTIC_FIELDS, build_fundamental_diagnostics_profile
 from strategy.fundamental_relative import RELATIVE_FUNDAMENTAL_FIELDS, build_fundamental_relative_profile
 from strategy.preset_comparison import DEFAULT_COMPARISON_PRESETS, compare_strategy_presets
+from strategy.priority_stability import PRIORITY_STABILITY_FIELDS, build_priority_stability_profile
 from strategy.scoring import calculate_strategy_scores
 from strategy.technical import TECHNICAL_PROFILE_FIELDS, build_technical_profile
 
@@ -110,6 +111,11 @@ PREVIEW_COLUMNS = [
     "research_priority_level",
     "research_priority_reasons",
     "research_priority_warnings",
+    "priority_stability_label",
+    "priority_stability_score",
+    "priority_stability_note",
+    "priority_drift_detected",
+    "priority_drift_reason",
 ]
 
 
@@ -279,6 +285,9 @@ def build_strategy_preview_row(row, preset_names=None):
     composite_frame = build_composite_profile([row_data])
     if not composite_frame.empty:
         row_data.update(composite_frame.iloc[0].to_dict())
+    stability_frame = build_priority_stability_profile([row_data])
+    if not stability_frame.empty:
+        row_data.update(stability_frame.iloc[0].to_dict())
     reason_context.update(row_data)
     row_data.update(build_strategy_reason_fields(reason_context))
     return {column: row_data.get(column) for column in PREVIEW_COLUMNS}
@@ -319,6 +328,11 @@ def build_strategy_preview(source, preset_names=None, sort_by_strategy=False):
         for column in COMPOSITE_PROFILE_FIELDS:
             if column in composite.columns:
                 preview[column] = list(composite[column])
+    stability = build_priority_stability_profile(preview)
+    if not stability.empty:
+        for column in PRIORITY_STABILITY_FIELDS:
+            if column in stability.columns:
+                preview[column] = list(stability[column])
     if sort_by_strategy:
         preview = preview.sort_values(
             by=["strategy_score", "average_preset_score"],
@@ -390,6 +404,7 @@ __all__ = [
     "CONFLUENCE_FIELDS",
     "FUNDAMENTAL_DIAGNOSTIC_FIELDS",
     "FUNDAMENTAL_PROFILE_FIELDS",
+    "PRIORITY_STABILITY_FIELDS",
     "REASON_FIELDS",
     "RELATIVE_FUNDAMENTAL_FIELDS",
     "TECHNICAL_PROFILE_FIELDS",

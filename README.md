@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.7.1
+Current version: V1.7.2
 
-V1.7.1 adds a read-only research priority experiment layer on top of composite profiles. The preview now includes research priority score, level, reasons, and warnings without changing the original screening result table, default sorting, stock pools, data sources, `strategy_score`, or `core/scoring.py`.
+V1.7.2 adds a read-only research priority stability layer on top of V1.7.1 priority fields. The preview now includes priority stability label, score, note, drift flag, and drift reason without changing the original screening result table, default sorting, stock pools, data sources, `strategy_score`, or `core/scoring.py`.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.7.1 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
+`legacy_app.py` is not an unused backup. In V1.7.2 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
 
-FinScientist V1.7.1 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票行情分析、技术指标、基本面字段、板块观察、新闻/事件分析、多股票对比、临时自选股观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.7.2 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票分析、技术指标、基本面字段、板块观察、新闻/事件分析、多对象对比、临时观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,13 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.7.1
+当前版本：V1.7.2
+
+V1.7.2 research priority stability phase:
+
+- Added `strategy/priority_stability.py` for read-only priority stability and drift diagnostics.
+- Added `priority_stability_label`, `priority_stability_score`, `priority_stability_note`, `priority_drift_detected`, and `priority_drift_reason`.
+- Stability diagnostics read existing priority fields only and do not change screening, sorting, `strategy_score`, or `core/scoring.py`.
 
 V1.7.1 research priority experiment phase:
 

@@ -1,5 +1,28 @@
 # Development Log
 
+## 2026-06-03
+
+### Target
+
+- Complete V1.7.2 read-only research priority stability phase.
+- Add stability and drift diagnostics for V1.7.1 research priority fields without changing screening results, default sorting, `strategy_score`, stock pools, data sources, or `core/scoring.py`.
+
+### Research Priority Stability
+
+- Added `strategy/priority_stability.py`.
+- Added `priority_stability_label`, `priority_stability_score`, `priority_stability_note`, `priority_drift_detected`, and `priority_drift_reason`.
+- `strategy.preview` and `ui/screening_ui.py` show these fields as preview-only diagnostics.
+- The fields are not used for sorting or scoring.
+
+### Tests
+
+- Added `tests/test_strategy_priority_stability.py`.
+- Expanded preview and UI integration tests for stability fields.
+
+### Next Step
+
+- V1.8.x can begin event-driven research context while preserving the research-only boundary.
+
 ## 2026-06-01
 
 ### Target

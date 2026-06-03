@@ -126,6 +126,13 @@ def test_strategy_ui_integration_preserves_input_order_by_default():
         "valuation_diagnostics",
         "financial_risk_diagnostics",
     }.issubset(preview.columns)
+    assert {
+        "priority_stability_label",
+        "priority_stability_score",
+        "priority_stability_note",
+        "priority_drift_detected",
+        "priority_drift_reason",
+    }.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 
 

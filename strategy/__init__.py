@@ -1,7 +1,7 @@
 """Research-strategy helper framework.
 
 The strategy package provides pure helper functions for research-priority
-quantification. It is not wired into the Streamlit workflow in V1.3.0.
+quantification, previews, and diagnostics.
 """
 
 __all__ = [
@@ -10,6 +10,9 @@ __all__ = [
     "comparison",
     "filters",
     "presets",
+    "preset_comparison",
+    "priority_stability",
+    "preview",
     "report",
     "risk",
     "scoring",
