@@ -4,6 +4,29 @@
 
 ### Target
 
+- Complete V1.8.3 Event Research Summary Layer.
+- Add Agent-ready event research notes without changing screening results, default sorting, stock pools, data sources, `strategy_score`, research priority fields, priority stability fields, architecture audit fields, event confidence fields, event confluence fields, or `core/scoring.py`.
+
+### Event Research Summary
+
+- Added `strategy/event_research_summary.py`.
+- Added event research summary, research level, key evidence, key risks, validation focus, Agent note, and summary warnings.
+- `strategy.preview` and `ui/screening_ui.py` expose these fields as read-only event research notes.
+- The fields are not used for sorting or scoring.
+
+### Tests
+
+- Added `tests/test_strategy_event_research_summary.py`.
+- Expanded preview, UI integration, module import, and architecture audit tests for event research summary fields.
+
+### Next Step
+
+- V1.8.4 can focus on Event Panel Polish / Export Readiness.
+
+## 2026-06-04
+
+### Target
+
 - Complete V1.8.2 Event Confluence Layer.
 - Add event-to-research-profile confluence review without changing screening results, default sorting, stock pools, data sources, `strategy_score`, research priority fields, priority stability fields, architecture audit fields, event confidence fields, or `core/scoring.py`.
 

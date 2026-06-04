@@ -163,6 +163,13 @@ def test_strategy_ui_integration_preserves_input_order_by_default():
         "event_conflict_points",
         "event_followup_focus",
         "event_confluence_warnings",
+        "event_research_summary",
+        "event_research_level",
+        "event_key_evidence",
+        "event_key_risks",
+        "event_validation_focus",
+        "event_agent_note",
+        "event_summary_warnings",
     }.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 

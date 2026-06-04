@@ -2,6 +2,13 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v1.8.3
+
+- Added Event Research Summary Layer in `strategy/event_research_summary.py`.
+- Added event research summary, research level, key evidence, key risks, validation focus, Agent note, and summary warnings.
+- Added tests for empty inputs, missing events, complete events, evidence points, risk points, validation focus, Agent note, immutability, stable ordering, score preservation, neutral wording, and module import.
+- Kept screening output, default sorting, stock pools, data sources, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, and `core/scoring.py` unchanged.
+
 ## v1.8.2
 
 - Added Event Confluence Layer in `strategy/event_confluence.py`.

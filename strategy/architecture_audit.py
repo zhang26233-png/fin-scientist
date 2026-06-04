@@ -28,6 +28,7 @@ REQUIRED_MODULES = [
     "strategy.event_context",
     "strategy.event_diagnostics",
     "strategy.event_confluence",
+    "strategy.event_research_summary",
     "strategy.preview",
 ]
 
@@ -113,6 +114,15 @@ FIELD_GROUPS = {
         "event_conflict_points",
         "event_followup_focus",
         "event_confluence_warnings",
+    ],
+    "event_research_summary": [
+        "event_research_summary",
+        "event_research_level",
+        "event_key_evidence",
+        "event_key_risks",
+        "event_validation_focus",
+        "event_agent_note",
+        "event_summary_warnings",
     ],
 }
 

@@ -14,6 +14,7 @@ from strategy.confluence import CONFLUENCE_FIELDS, build_confluence_profile
 from strategy.event_context import EVENT_CONTEXT_FIELDS, build_event_context_profile
 from strategy.event_confluence import EVENT_CONFLUENCE_FIELDS, build_event_confluence_profile
 from strategy.event_diagnostics import EVENT_DIAGNOSTIC_FIELDS, build_event_diagnostics_profile
+from strategy.event_research_summary import EVENT_RESEARCH_SUMMARY_FIELDS, build_event_research_summary_profile
 from strategy.explanations import REASON_FIELDS, build_strategy_reason_fields
 from strategy.fundamental import FUNDAMENTAL_PROFILE_FIELDS, build_fundamental_profile
 from strategy.fundamental_diagnostics import FUNDAMENTAL_DIAGNOSTIC_FIELDS, build_fundamental_diagnostics_profile
@@ -151,6 +152,13 @@ PREVIEW_COLUMNS = [
     "event_conflict_points",
     "event_followup_focus",
     "event_confluence_warnings",
+    "event_research_summary",
+    "event_research_level",
+    "event_key_evidence",
+    "event_key_risks",
+    "event_validation_focus",
+    "event_agent_note",
+    "event_summary_warnings",
 ]
 
 
@@ -332,6 +340,9 @@ def build_strategy_preview_row(row, preset_names=None):
     event_confluence_frame = build_event_confluence_profile([_merge_contexts(row_dict, row_data)])
     if not event_confluence_frame.empty:
         row_data.update(event_confluence_frame.iloc[0].to_dict())
+    event_summary_frame = build_event_research_summary_profile([_merge_contexts(row_dict, row_data)])
+    if not event_summary_frame.empty:
+        row_data.update(event_summary_frame.iloc[0].to_dict())
     audit_frame = build_architecture_audit_profile([row_data])
     if not audit_frame.empty:
         row_data.update(audit_frame.iloc[0].to_dict())
@@ -399,6 +410,11 @@ def build_strategy_preview(source, preset_names=None, sort_by_strategy=False):
         for column in EVENT_CONFLUENCE_FIELDS:
             if column in event_confluence.columns:
                 preview[column] = list(event_confluence[column])
+    event_summary = build_event_research_summary_profile(preview)
+    if not event_summary.empty:
+        for column in EVENT_RESEARCH_SUMMARY_FIELDS:
+            if column in event_summary.columns:
+                preview[column] = list(event_summary[column])
     audit = build_architecture_audit_profile(preview)
     if not audit.empty:
         for column in ARCHITECTURE_AUDIT_FIELDS:
@@ -477,6 +493,7 @@ __all__ = [
     "EVENT_CONTEXT_FIELDS",
     "EVENT_CONFLUENCE_FIELDS",
     "EVENT_DIAGNOSTIC_FIELDS",
+    "EVENT_RESEARCH_SUMMARY_FIELDS",
     "FUNDAMENTAL_DIAGNOSTIC_FIELDS",
     "FUNDAMENTAL_PROFILE_FIELDS",
     "PRIORITY_STABILITY_FIELDS",

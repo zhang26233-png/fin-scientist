@@ -99,6 +99,16 @@ def complete_row(symbol="A"):
         "event_conflict_points": [],
         "event_followup_focus": ["Collect stronger event and profile evidence before confluence review."],
         "event_confluence_warnings": ["event confluence unavailable because event context is not available"],
+        "event_research_summary": "Event research summary is unavailable because usable event context is not present.",
+        "event_research_level": "Unavailable",
+        "event_key_evidence": [],
+        "event_key_risks": ["event summary unavailable due to missing event context"],
+        "event_validation_focus": ["Collect stronger event evidence before deeper synthesis."],
+        "event_agent_note": "Agent note: event context is unavailable; request source evidence before synthesis.",
+        "event_summary_warnings": [
+            "event research summary unavailable",
+            "event risks should be resolved before Agent synthesis",
+        ],
     }
 
 

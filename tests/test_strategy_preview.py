@@ -215,6 +215,13 @@ def test_strategy_preview_row_contains_core_fields():
     assert isinstance(row["event_conflict_points"], list)
     assert isinstance(row["event_followup_focus"], list)
     assert isinstance(row["event_confluence_warnings"], list)
+    assert row["event_research_level"] == "Unavailable"
+    assert row["event_research_summary"]
+    assert isinstance(row["event_key_evidence"], list)
+    assert isinstance(row["event_key_risks"], list)
+    assert isinstance(row["event_validation_focus"], list)
+    assert row["event_agent_note"]
+    assert isinstance(row["event_summary_warnings"], list)
     assert_no_forbidden_words(row)
 
 
@@ -334,6 +341,13 @@ def test_strategy_preview_preserves_input_order_by_default():
         "event_conflict_points",
         "event_followup_focus",
         "event_confluence_warnings",
+        "event_research_summary",
+        "event_research_level",
+        "event_key_evidence",
+        "event_key_risks",
+        "event_validation_focus",
+        "event_agent_note",
+        "event_summary_warnings",
     }.issubset(preview.columns)
     high_row = preview[preview["symbol"] == "HIGH1"].iloc[0]
     assert high_row["industry_relative_quality_label"] in {"industry_relative_strong", "industry_relative_neutral"}
