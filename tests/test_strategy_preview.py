@@ -226,6 +226,17 @@ def test_strategy_preview_row_contains_core_fields():
     assert isinstance(row["research_pipeline_conflicts"], list)
     assert isinstance(row["research_pipeline_warnings"], list)
     assert row["research_pipeline_summary"]
+    assert row["project_assessment_status"] in {"Ready", "Watch", "Not Ready"}
+    assert 0 <= row["project_assessment_score"] <= 100
+    assert row["architecture_assessment_note"]
+    assert row["field_registry_assessment_note"]
+    assert row["test_coverage_assessment_note"]
+    assert row["ui_readability_assessment_note"]
+    assert row["data_source_assessment_note"]
+    assert row["scoring_boundary_assessment_note"]
+    assert row["pre_v2_readiness_level"] in {"High", "Medium", "Low"}
+    assert isinstance(row["pre_v2_blockers"], list)
+    assert isinstance(row["pre_v2_recommendations"], list)
     assert_no_forbidden_words(row)
 
 
@@ -356,6 +367,17 @@ def test_strategy_preview_preserves_input_order_by_default():
         "research_pipeline_conflicts",
         "research_pipeline_warnings",
         "research_pipeline_summary",
+        "project_assessment_status",
+        "project_assessment_score",
+        "architecture_assessment_note",
+        "field_registry_assessment_note",
+        "test_coverage_assessment_note",
+        "ui_readability_assessment_note",
+        "data_source_assessment_note",
+        "scoring_boundary_assessment_note",
+        "pre_v2_readiness_level",
+        "pre_v2_blockers",
+        "pre_v2_recommendations",
     }.issubset(preview.columns)
     high_row = preview[preview["symbol"] == "HIGH1"].iloc[0]
     assert high_row["industry_relative_quality_label"] in {"industry_relative_strong", "industry_relative_neutral"}

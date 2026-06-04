@@ -110,18 +110,26 @@ Boundary:
 
 ## v1.9.x - Research Pipeline Validation Layer
 
-Current: v1.9.0.
+Current: v1.9.1.
 
 Goal: validate whether the research pipeline is complete and internally consistent while keeping outputs read-only.
 
 - v1.9.0: Research Pipeline Validation Layer completed.
-- Next target: v1.9.1 Research Consistency Layer.
+- v1.9.1: Pre-v2 Project Assessment Layer completed.
+- Next target: v2.0.0 Research Memory Foundation.
 
 Completed v1.9.0 scope:
 
 - Added read-only `strategy/research_pipeline_audit.py`.
 - Added research pipeline status, conflicts, warnings, and summary.
 - Checks composite/priority consistency, event diagnostics/confluence consistency, event confluence/summary consistency, required module fields, and pipeline completeness.
+- Does not crawl news, call external APIs, add external data sources, change stock pools, change default sorting, change default screening output, modify `strategy_score`, or modify `core/scoring.py`.
+
+Completed v1.9.1 scope:
+
+- Added read-only `strategy/project_assessment.py`.
+- Added project assessment status, score, architecture note, field registry note, test coverage note, UI readability note, data source note, scoring boundary note, pre-v2 readiness level, blockers, and route fields.
+- Assesses architecture, field registry growth, UI density, test coverage, data-source boundaries, scoring boundaries, and readiness for v2.0.
 - Does not crawl news, call external APIs, add external data sources, change stock pools, change default sorting, change default screening output, modify `strategy_score`, or modify `core/scoring.py`.
 
 Boundary:
@@ -133,25 +141,24 @@ Boundary:
 - No sorting change.
 - No data-source change.
 
-## v2.x - Backtest Validation System
+## v2.x - Research Memory Foundation
 
-Goal: validate whether research fields are stable and useful over historical samples.
+Goal: persist and organize read-only research memory snapshots after the v1.x pipeline is assessed as ready.
 
-- Formal backtest dataset schema.
-- Historical sample builder with explicit data source boundary.
-- Forward-window validation: 1d, 3d, 5d, 10d, 20d.
-- Score bucket diagnostics.
-- Research priority stability diagnostics.
-- Preset-level validation.
-- Industry-level validation.
-- Data-quality-aware validation.
-- Backtest report export.
+- v2.0.0: Research Memory Foundation.
+- Read-only memory snapshot schema.
+- Candidate research memory records.
+- Field-grouped export payloads.
+- Evidence, diagnostics, event, and pipeline memory sections.
+- Memory metadata for version, source boundary, and data-quality notes.
+- No automated decision workflow.
 
 Boundary:
 
-- Backtests are validation tools only.
+- Research memory is for learning and review only.
 - No promise of future performance.
-- No operational recommendation language.
+- No operational language.
+- No score or sorting changes by memory persistence.
 
 ## v3.x - Machine Learning Research Layer
 

@@ -4,6 +4,29 @@
 
 ### Target
 
+- Complete V1.9.1 Pre-v2 Project Assessment Layer.
+- Add read-only project readiness assessment before v2.0 without changing screening results, default sorting, stock pools, data sources, `strategy_score`, research priority fields, priority stability fields, architecture audit fields, event confidence fields, event confluence fields, or `core/scoring.py`.
+
+### Project Assessment
+
+- Added `strategy/project_assessment.py`.
+- Added project assessment status, score, architecture note, field registry note, test coverage note, UI readability note, data source note, scoring boundary note, pre-v2 readiness level, blockers, and route fields.
+- `strategy.preview` and `ui/screening_ui.py` expose these fields as read-only project assessment context.
+- The fields are not used for sorting or scoring.
+
+### Tests
+
+- Added `tests/test_strategy_project_assessment.py`.
+- Expanded preview, UI integration, module import, and architecture audit tests for project assessment fields.
+
+### Next Step
+
+- V2.0.0 can begin Research Memory Foundation.
+
+## 2026-06-04
+
+### Target
+
 - Complete V1.9.0 Research Pipeline Validation Layer.
 - Add read-only pipeline completeness and consistency checks without changing screening results, default sorting, stock pools, data sources, `strategy_score`, research priority fields, priority stability fields, architecture audit fields, event confidence fields, event confluence fields, or `core/scoring.py`.
 

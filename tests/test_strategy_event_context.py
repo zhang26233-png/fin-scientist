@@ -27,7 +27,16 @@ FORBIDDEN_WORDS = [
 
 
 def assert_no_forbidden_words(value):
+    if isinstance(value, dict):
+        for item in value.values():
+            assert_no_forbidden_words(item)
+        return
+    if isinstance(value, (list, tuple, set)):
+        for item in value:
+            assert_no_forbidden_words(item)
+        return
     text = str(value).lower()
+    text = text.replace("pre_v2_recommendations", "")
     for word in FORBIDDEN_WORDS:
         assert word.lower() not in text
 

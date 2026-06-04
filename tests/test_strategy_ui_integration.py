@@ -174,6 +174,17 @@ def test_strategy_ui_integration_preserves_input_order_by_default():
         "research_pipeline_conflicts",
         "research_pipeline_warnings",
         "research_pipeline_summary",
+        "project_assessment_status",
+        "project_assessment_score",
+        "architecture_assessment_note",
+        "field_registry_assessment_note",
+        "test_coverage_assessment_note",
+        "ui_readability_assessment_note",
+        "data_source_assessment_note",
+        "scoring_boundary_assessment_note",
+        "pre_v2_readiness_level",
+        "pre_v2_blockers",
+        "pre_v2_recommendations",
     }.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 

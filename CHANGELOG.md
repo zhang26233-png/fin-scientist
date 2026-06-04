@@ -2,6 +2,13 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v1.9.1
+
+- Added Pre-v2 Project Assessment Layer in `strategy/project_assessment.py`.
+- Added project assessment status, score, architecture note, field registry note, test coverage note, UI readability note, data source note, scoring boundary note, pre-v2 readiness level, blockers, and route fields.
+- Added tests for empty input, single-row assessment, missing-field blockers or warnings, input immutability, stable ordering, score preservation, neutral wording, and module import.
+- Kept screening output, default sorting, stock pools, data sources, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, and `core/scoring.py` unchanged.
+
 ## v1.9.0
 
 - Added Research Pipeline Validation Layer in `strategy/research_pipeline_audit.py`.

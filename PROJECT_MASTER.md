@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v1.9.0
-- CURRENT_STAGE = Research Pipeline Validation Layer
-- NEXT_TARGET = v1.9.1
+- CURRENT_VERSION = v1.9.1
+- CURRENT_STAGE = Pre-v2 Project Assessment
+- NEXT_TARGET = v2.0.0
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "V1.9.0"`
-- `legacy_app.py`: `APP_VERSION = "V1.9.0"`
-- `README.md`: Current version: V1.9.0
-- `docs/DEV_LOG.md`: V1.9.0 Research Pipeline Validation Layer
+- `app.py`: `APP_VERSION = "V1.9.1"`
+- `legacy_app.py`: `APP_VERSION = "V1.9.1"`
+- `README.md`: Current version: V1.9.1
+- `docs/DEV_LOG.md`: V1.9.1 Pre-v2 Project Assessment Layer
 
-V1.9.0 starts the Research Pipeline Validation Layer with a read-only pipeline audit. The pipeline audit checks cross-module completeness, conflicts, warnings, and summary status; it does not fetch news, change data sources, alter sorting, or change scoring.
+V1.9.1 completes a pre-v2 project assessment pass. The project assessment layer reviews architecture, field registry size, test coverage, UI readability, data source boundaries, scoring boundaries, and v2.0 readiness; it does not fetch news, change data sources, alter sorting, or change scoring. The recommended v2.0 main line is Research Memory Foundation.
 
 ## Current Architecture
 
@@ -155,6 +155,7 @@ Generated from the current `strategy/` directory.
 | Event confluence | `strategy/event_confluence.py` | active | Read-only event-to-research-profile confluence review for evidence synthesis |
 | Event research summary | `strategy/event_research_summary.py` | active | Read-only Agent-ready event research notes for evidence synthesis |
 | Research pipeline audit | `strategy/research_pipeline_audit.py` | active | Read-only cross-module pipeline completeness and conflict diagnostics |
+| Project assessment | `strategy/project_assessment.py` | active | Read-only pre-v2 architecture, field, UI, test, data-source, scoring-boundary, and readiness assessment |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -418,6 +419,24 @@ Event Research Summary Fields are read-only and research-only. They do not chang
 | `research_pipeline_summary` | `strategy.research_pipeline_audit` | Neutral summary of pipeline completeness and consistency |
 
 Research Pipeline Audit Fields are read-only and research-only. They do not change default screening output, default sorting, stock pools, data sources, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`.
+
+### Project Assessment Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `project_assessment_status` | `strategy.project_assessment` | Overall pre-v2 assessment status: Ready, Watch, or Not Ready |
+| `project_assessment_score` | `strategy.project_assessment` | Read-only project maturity score, not used for research sorting |
+| `architecture_assessment_note` | `strategy.project_assessment` | Architecture completeness and module-chain assessment |
+| `field_registry_assessment_note` | `strategy.project_assessment` | Field volume, field grouping, and registry-boundary assessment |
+| `test_coverage_assessment_note` | `strategy.project_assessment` | Key test-file presence and coverage assessment |
+| `ui_readability_assessment_note` | `strategy.project_assessment` | Preview UI density and readability assessment |
+| `data_source_assessment_note` | `strategy.project_assessment` | Data-source boundary and reliability assessment |
+| `scoring_boundary_assessment_note` | `strategy.project_assessment` | Scoring boundary and contamination-risk assessment |
+| `pre_v2_readiness_level` | `strategy.project_assessment` | Readiness level for entering v2.0: High, Medium, or Low |
+| `pre_v2_blockers` | `strategy.project_assessment` | Items that should be resolved before v2.0 |
+| `pre_v2_recommendations` | `strategy.project_assessment` | Suggested route for entering Research Memory Foundation |
+
+Project Assessment Fields are read-only and research-only. They do not change default screening output, default sorting, stock pools, data sources, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`.
 
 ## Current Development Principles
 

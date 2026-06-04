@@ -17,6 +17,7 @@ __all__ = [
     "presets",
     "preset_comparison",
     "priority_stability",
+    "project_assessment",
     "preview",
     "research_pipeline_audit",
     "report",

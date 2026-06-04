@@ -30,6 +30,7 @@ REQUIRED_MODULES = [
     "strategy.event_confluence",
     "strategy.event_research_summary",
     "strategy.research_pipeline_audit",
+    "strategy.project_assessment",
     "strategy.preview",
 ]
 
@@ -130,6 +131,19 @@ FIELD_GROUPS = {
         "research_pipeline_conflicts",
         "research_pipeline_warnings",
         "research_pipeline_summary",
+    ],
+    "project_assessment": [
+        "project_assessment_status",
+        "project_assessment_score",
+        "architecture_assessment_note",
+        "field_registry_assessment_note",
+        "test_coverage_assessment_note",
+        "ui_readability_assessment_note",
+        "data_source_assessment_note",
+        "scoring_boundary_assessment_note",
+        "pre_v2_readiness_level",
+        "pre_v2_blockers",
+        "pre_v2_recommendations",
     ],
 }
 
