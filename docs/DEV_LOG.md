@@ -4,6 +4,29 @@
 
 ### Target
 
+- Complete V2.0.0 Research Memory Foundation.
+- Add a read-only Research Snapshot Schema without adding databases, vector stores, APIs, external services, news sources, data-source changes, sorting changes, or scoring changes.
+
+### Research Memory
+
+- Added `memory/research_memory.py`.
+- Added snapshot identity, timestamp, ticker, name, version, stage, summary, and status fields.
+- Added grouped technical, fundamental, industry, composite, priority, event, pipeline, and project snapshot sections.
+- The snapshot builder does not persist data and does not modify input objects.
+
+### Tests
+
+- Added `tests/test_research_memory.py`.
+- Expanded module import tests for the research memory module.
+
+### Next Step
+
+- V2.1.0 can add Research Timeline.
+
+## 2026-06-04
+
+### Target
+
 - Complete V1.9.1 Pre-v2 Project Assessment Layer.
 - Add read-only project readiness assessment before v2.0 without changing screening results, default sorting, stock pools, data sources, `strategy_score`, research priority fields, priority stability fields, architecture audit fields, event confidence fields, event confluence fields, or `core/scoring.py`.
 

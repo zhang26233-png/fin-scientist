@@ -2,6 +2,15 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v2.0.0
+
+- Added Research Memory Foundation in `memory/research_memory.py`.
+- Added Research Snapshot Schema with snapshot identity, timestamp, ticker, name, version, stage, summary, and status.
+- Added grouped snapshots for technical, fundamental, industry, composite, priority, event, pipeline, and project fields.
+- Added tests for empty input, normal generation, missing fields, input immutability, fixed output order, status handling, module import, and score preservation.
+- Kept screening output, default sorting, stock pools, data sources, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, and `core/scoring.py` unchanged.
+- Did not add databases, vector stores, news sources, APIs, or external services.
+
 ## v1.9.1
 
 - Added Pre-v2 Project Assessment Layer in `strategy/project_assessment.py`.

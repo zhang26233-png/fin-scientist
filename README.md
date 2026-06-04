@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.9.1
+Current version: V2.0.0
 
-V1.9.1 adds a read-only Pre-v2 Project Assessment Layer. The preview can now assess project readiness for Research Memory Foundation without changing the original screening result table, default sorting, stock pools, data sources, `strategy_score`, research priority fields, priority stability fields, architecture audit fields, event confidence fields, event confluence fields, or `core/scoring.py`.
+V2.0.0 adds the Research Memory Foundation. The project now defines a read-only Research Snapshot schema for organizing preview results into grouped memory sections without adding a database, vector store, external service, data source, scoring change, or sorting change.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.9.1 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
+`legacy_app.py` is not an unused backup. In V2.0.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
 
-FinScientist V1.9.1 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票分析、技术指标、基本面字段、板块观察、新闻/事件分析、多对象对比、临时观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V2.0.0 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票分析、技术指标、基本面字段、板块观察、新闻/事件分析、多对象对比、临时观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,13 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.9.1
+当前版本：V2.0.0
+
+V2.0.0 research memory foundation phase:
+
+- Added `memory/research_memory.py` for read-only Research Snapshot schema generation.
+- Added snapshot identity fields and grouped technical, fundamental, industry, composite, priority, event, pipeline, and project snapshot sections.
+- This phase does not add a database, vector store, machine learning, Agent workflow, external service, data source, scoring change, or sorting change.
 
 V1.9.1 pre-v2 project assessment phase:
 

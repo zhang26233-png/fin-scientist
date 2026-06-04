@@ -9,7 +9,7 @@ import streamlit as st
 import legacy_app
 from ui.screening_ui import render_screening_page
 
-APP_VERSION = "V1.9.1"
+APP_VERSION = "V2.0.0"
 LEGACY_WORKBENCH_PAGE = "研究工作台"
 SCREENING_PAGE = "自动研究对象筛选"
 
@@ -23,7 +23,7 @@ check_price_data_quality = legacy_app.check_price_data_quality
 def main():
     st.set_page_config(page_title="FinScientist", page_icon="\U0001f4c8", layout="wide")
     st.title("FinScientist")
-    st.caption(f"{APP_VERSION} 架构收尾；所有结果仅供学习和研究，不构成投资建议。")
+    st.caption(f"{APP_VERSION} Research Memory Foundation；所有结果仅供学习和研究，不构成投资建议。")
 
     page = st.sidebar.radio(
         "页面导航",

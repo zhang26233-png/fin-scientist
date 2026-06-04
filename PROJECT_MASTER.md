@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v1.9.1
-- CURRENT_STAGE = Pre-v2 Project Assessment
-- NEXT_TARGET = v2.0.0
+- CURRENT_VERSION = v2.0.0
+- CURRENT_STAGE = Research Memory Foundation
+- NEXT_TARGET = v2.1.0
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "V1.9.1"`
-- `legacy_app.py`: `APP_VERSION = "V1.9.1"`
-- `README.md`: Current version: V1.9.1
-- `docs/DEV_LOG.md`: V1.9.1 Pre-v2 Project Assessment Layer
+- `app.py`: `APP_VERSION = "V2.0.0"`
+- `legacy_app.py`: `APP_VERSION = "V2.0.0"`
+- `README.md`: Current version: V2.0.0
+- `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V1.9.1 completes a pre-v2 project assessment pass. The project assessment layer reviews architecture, field registry size, test coverage, UI readability, data source boundaries, scoring boundaries, and v2.0 readiness; it does not fetch news, change data sources, alter sorting, or change scoring. The recommended v2.0 main line is Research Memory Foundation.
+V2.0.0 starts the Research Memory Foundation. The new memory layer defines a read-only Research Snapshot Schema that groups existing preview outputs into technical, fundamental, industry, composite, priority, event, pipeline, and project snapshot sections. This version does not persist history, add databases, add vector stores, fetch news, call APIs, change data sources, alter sorting, or change scoring. The recommended v2.1 main line is Research Timeline.
 
 ## Current Architecture
 
@@ -43,6 +43,9 @@ Generated from the current project root scan on 2026-06-03.
 |-- AGENTS.md
 |-- app.py
 |-- legacy_app.py
+|-- memory/
+|   |-- __init__.py
+|   `-- research_memory.py
 |-- README.md
 |-- requirements.txt
 |-- streamlit-err.log
@@ -156,6 +159,7 @@ Generated from the current `strategy/` directory.
 | Event research summary | `strategy/event_research_summary.py` | active | Read-only Agent-ready event research notes for evidence synthesis |
 | Research pipeline audit | `strategy/research_pipeline_audit.py` | active | Read-only cross-module pipeline completeness and conflict diagnostics |
 | Project assessment | `strategy/project_assessment.py` | active | Read-only pre-v2 architecture, field, UI, test, data-source, scoring-boundary, and readiness assessment |
+| Research memory | `memory/research_memory.py` | active | Read-only Research Snapshot Schema for grouped memory payloads |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -437,6 +441,29 @@ Research Pipeline Audit Fields are read-only and research-only. They do not chan
 | `pre_v2_recommendations` | `strategy.project_assessment` | Suggested route for entering Research Memory Foundation |
 
 Project Assessment Fields are read-only and research-only. They do not change default screening output, default sorting, stock pools, data sources, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`.
+
+### Research Memory Snapshot Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `snapshot_id` | `memory.research_memory` | Unique Research Snapshot identifier |
+| `snapshot_timestamp` | `memory.research_memory` | UTC snapshot generation timestamp |
+| `snapshot_ticker` | `memory.research_memory` | Security identifier copied from the preview object |
+| `snapshot_name` | `memory.research_memory` | Security display name copied from the preview object |
+| `snapshot_version` | `memory.research_memory` | Project version attached to the snapshot schema |
+| `snapshot_stage` | `memory.research_memory` | Project stage attached to the snapshot schema |
+| `snapshot_summary` | `memory.research_memory` | Neutral summary of snapshot availability and key context |
+| `snapshot_status` | `memory.research_memory` | Snapshot status: Available or Incomplete |
+| `technical_snapshot` | `memory.research_memory` | Grouped technical research fields |
+| `fundamental_snapshot` | `memory.research_memory` | Grouped fundamental research fields |
+| `industry_snapshot` | `memory.research_memory` | Grouped industry-relative research fields |
+| `composite_snapshot` | `memory.research_memory` | Grouped composite research profile fields |
+| `priority_snapshot` | `memory.research_memory` | Grouped research priority and priority stability fields |
+| `event_snapshot` | `memory.research_memory` | Grouped event context, diagnostics, confluence, and summary fields |
+| `pipeline_snapshot` | `memory.research_memory` | Grouped architecture audit and research pipeline audit fields |
+| `project_snapshot` | `memory.research_memory` | Grouped project assessment and pre-v2 readiness fields |
+
+Research Memory Snapshot Fields are schema-only, read-only, and research-only. V2.0.0 does not save historical records, add a database, add a vector store, fetch news, call APIs, add data sources, change default screening output, change default sorting, change stock pools, change `strategy_score`, change `research_priority_score`, change `priority_stability_score`, change `architecture_audit_score`, change `event_confidence_score`, change `event_confluence_score`, or modify `core/scoring.py`.
 
 ## Current Development Principles
 
