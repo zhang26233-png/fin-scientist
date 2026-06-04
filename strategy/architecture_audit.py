@@ -29,6 +29,7 @@ REQUIRED_MODULES = [
     "strategy.event_diagnostics",
     "strategy.event_confluence",
     "strategy.event_research_summary",
+    "strategy.research_pipeline_audit",
     "strategy.preview",
 ]
 
@@ -123,6 +124,12 @@ FIELD_GROUPS = {
         "event_validation_focus",
         "event_agent_note",
         "event_summary_warnings",
+    ],
+    "research_pipeline_audit": [
+        "research_pipeline_status",
+        "research_pipeline_conflicts",
+        "research_pipeline_warnings",
+        "research_pipeline_summary",
     ],
 }
 

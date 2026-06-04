@@ -109,6 +109,10 @@ def complete_row(symbol="A"):
             "event research summary unavailable",
             "event risks should be resolved before Agent synthesis",
         ],
+        "research_pipeline_status": "Healthy",
+        "research_pipeline_conflicts": [],
+        "research_pipeline_warnings": [],
+        "research_pipeline_summary": "Research pipeline appears complete and internally consistent for read-only review.",
     }
 
 

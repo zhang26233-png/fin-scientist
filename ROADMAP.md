@@ -108,6 +108,31 @@ Boundary:
 - No data-source change in v1.8.3.
 - No `strategy_score` change in v1.8.3.
 
+## v1.9.x - Research Pipeline Validation Layer
+
+Current: v1.9.0.
+
+Goal: validate whether the research pipeline is complete and internally consistent while keeping outputs read-only.
+
+- v1.9.0: Research Pipeline Validation Layer completed.
+- Next target: v1.9.1 Research Consistency Layer.
+
+Completed v1.9.0 scope:
+
+- Added read-only `strategy/research_pipeline_audit.py`.
+- Added research pipeline status, conflicts, warnings, and summary.
+- Checks composite/priority consistency, event diagnostics/confluence consistency, event confluence/summary consistency, required module fields, and pipeline completeness.
+- Does not crawl news, call external APIs, add external data sources, change stock pools, change default sorting, change default screening output, modify `strategy_score`, or modify `core/scoring.py`.
+
+Boundary:
+
+- No operational advice.
+- No automatic order execution.
+- No event-triggered trading workflow.
+- No scoring-system change.
+- No sorting change.
+- No data-source change.
+
 ## v2.x - Backtest Validation System
 
 Goal: validate whether research fields are stable and useful over historical samples.

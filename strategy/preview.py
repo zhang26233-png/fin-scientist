@@ -21,6 +21,7 @@ from strategy.fundamental_diagnostics import FUNDAMENTAL_DIAGNOSTIC_FIELDS, buil
 from strategy.fundamental_relative import RELATIVE_FUNDAMENTAL_FIELDS, build_fundamental_relative_profile
 from strategy.preset_comparison import DEFAULT_COMPARISON_PRESETS, compare_strategy_presets
 from strategy.priority_stability import PRIORITY_STABILITY_FIELDS, build_priority_stability_profile
+from strategy.research_pipeline_audit import RESEARCH_PIPELINE_AUDIT_FIELDS, build_research_pipeline_audit_profile
 from strategy.scoring import calculate_strategy_scores
 from strategy.technical import TECHNICAL_PROFILE_FIELDS, build_technical_profile
 
@@ -159,6 +160,10 @@ PREVIEW_COLUMNS = [
     "event_validation_focus",
     "event_agent_note",
     "event_summary_warnings",
+    "research_pipeline_status",
+    "research_pipeline_conflicts",
+    "research_pipeline_warnings",
+    "research_pipeline_summary",
 ]
 
 
@@ -343,6 +348,9 @@ def build_strategy_preview_row(row, preset_names=None):
     event_summary_frame = build_event_research_summary_profile([_merge_contexts(row_dict, row_data)])
     if not event_summary_frame.empty:
         row_data.update(event_summary_frame.iloc[0].to_dict())
+    pipeline_frame = build_research_pipeline_audit_profile([row_data])
+    if not pipeline_frame.empty:
+        row_data.update(pipeline_frame.iloc[0].to_dict())
     audit_frame = build_architecture_audit_profile([row_data])
     if not audit_frame.empty:
         row_data.update(audit_frame.iloc[0].to_dict())
@@ -415,6 +423,11 @@ def build_strategy_preview(source, preset_names=None, sort_by_strategy=False):
         for column in EVENT_RESEARCH_SUMMARY_FIELDS:
             if column in event_summary.columns:
                 preview[column] = list(event_summary[column])
+    pipeline_audit = build_research_pipeline_audit_profile(preview)
+    if not pipeline_audit.empty:
+        for column in RESEARCH_PIPELINE_AUDIT_FIELDS:
+            if column in pipeline_audit.columns:
+                preview[column] = list(pipeline_audit[column])
     audit = build_architecture_audit_profile(preview)
     if not audit.empty:
         for column in ARCHITECTURE_AUDIT_FIELDS:
@@ -498,6 +511,7 @@ __all__ = [
     "FUNDAMENTAL_PROFILE_FIELDS",
     "PRIORITY_STABILITY_FIELDS",
     "REASON_FIELDS",
+    "RESEARCH_PIPELINE_AUDIT_FIELDS",
     "RELATIVE_FUNDAMENTAL_FIELDS",
     "TECHNICAL_PROFILE_FIELDS",
     "build_strategy_preview",

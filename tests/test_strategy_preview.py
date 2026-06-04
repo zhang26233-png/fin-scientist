@@ -222,6 +222,10 @@ def test_strategy_preview_row_contains_core_fields():
     assert isinstance(row["event_validation_focus"], list)
     assert row["event_agent_note"]
     assert isinstance(row["event_summary_warnings"], list)
+    assert row["research_pipeline_status"] in {"Healthy", "Watch", "Conflict", "Incomplete"}
+    assert isinstance(row["research_pipeline_conflicts"], list)
+    assert isinstance(row["research_pipeline_warnings"], list)
+    assert row["research_pipeline_summary"]
     assert_no_forbidden_words(row)
 
 
@@ -348,6 +352,10 @@ def test_strategy_preview_preserves_input_order_by_default():
         "event_validation_focus",
         "event_agent_note",
         "event_summary_warnings",
+        "research_pipeline_status",
+        "research_pipeline_conflicts",
+        "research_pipeline_warnings",
+        "research_pipeline_summary",
     }.issubset(preview.columns)
     high_row = preview[preview["symbol"] == "HIGH1"].iloc[0]
     assert high_row["industry_relative_quality_label"] in {"industry_relative_strong", "industry_relative_neutral"}

@@ -4,6 +4,29 @@
 
 ### Target
 
+- Complete V1.9.0 Research Pipeline Validation Layer.
+- Add read-only pipeline completeness and consistency checks without changing screening results, default sorting, stock pools, data sources, `strategy_score`, research priority fields, priority stability fields, architecture audit fields, event confidence fields, event confluence fields, or `core/scoring.py`.
+
+### Research Pipeline Validation
+
+- Added `strategy/research_pipeline_audit.py`.
+- Added research pipeline status, conflicts, warnings, and summary.
+- `strategy.preview` and `ui/screening_ui.py` expose these fields as read-only pipeline diagnostics.
+- The fields are not used for sorting or scoring.
+
+### Tests
+
+- Added `tests/test_strategy_research_pipeline_audit.py`.
+- Expanded preview, UI integration, module import, and architecture audit tests for pipeline audit fields.
+
+### Next Step
+
+- V1.9.1 can add Research Consistency Layer.
+
+## 2026-06-04
+
+### Target
+
 - Complete V1.8.3 Event Research Summary Layer.
 - Add Agent-ready event research notes without changing screening results, default sorting, stock pools, data sources, `strategy_score`, research priority fields, priority stability fields, architecture audit fields, event confidence fields, event confluence fields, or `core/scoring.py`.
 

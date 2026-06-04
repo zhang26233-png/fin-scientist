@@ -18,6 +18,7 @@ __all__ = [
     "preset_comparison",
     "priority_stability",
     "preview",
+    "research_pipeline_audit",
     "report",
     "risk",
     "scoring",

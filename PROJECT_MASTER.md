@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v1.8.3
-- CURRENT_STAGE = Event-Driven Research System
-- NEXT_TARGET = v1.8.4
+- CURRENT_VERSION = v1.9.0
+- CURRENT_STAGE = Research Pipeline Validation Layer
+- NEXT_TARGET = v1.9.1
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "V1.8.3"`
-- `legacy_app.py`: `APP_VERSION = "V1.8.3"`
-- `README.md`: Current version: V1.8.3
-- `docs/DEV_LOG.md`: V1.8.3 Event Research Summary Layer
+- `app.py`: `APP_VERSION = "V1.9.0"`
+- `legacy_app.py`: `APP_VERSION = "V1.9.0"`
+- `README.md`: Current version: V1.9.0
+- `docs/DEV_LOG.md`: V1.9.0 Research Pipeline Validation Layer
 
-V1.8.3 continues the Event-Driven Research System with a read-only Event Research Summary Layer. The event research summary layer organizes event context, diagnostics, and confluence into Agent-ready research notes; it does not fetch news, change data sources, alter sorting, or change scoring.
+V1.9.0 starts the Research Pipeline Validation Layer with a read-only pipeline audit. The pipeline audit checks cross-module completeness, conflicts, warnings, and summary status; it does not fetch news, change data sources, alter sorting, or change scoring.
 
 ## Current Architecture
 
@@ -154,6 +154,7 @@ Generated from the current `strategy/` directory.
 | Event diagnostics | `strategy/event_diagnostics.py` | active | Read-only event evidence quality diagnostics for Evidence Quality Layer |
 | Event confluence | `strategy/event_confluence.py` | active | Read-only event-to-research-profile confluence review for evidence synthesis |
 | Event research summary | `strategy/event_research_summary.py` | active | Read-only Agent-ready event research notes for evidence synthesis |
+| Research pipeline audit | `strategy/research_pipeline_audit.py` | active | Read-only cross-module pipeline completeness and conflict diagnostics |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -406,6 +407,17 @@ Event Confluence Fields are read-only and research-only. They do not change defa
 | `event_summary_warnings` | `strategy.event_research_summary` | Summary availability, evidence quality, and conflict warnings |
 
 Event Research Summary Fields are read-only and research-only. They do not change default screening output, default sorting, stock pools, data sources, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`.
+
+### Research Pipeline Audit Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `research_pipeline_status` | `strategy.research_pipeline_audit` | Overall pipeline status: Healthy, Watch, Conflict, or Incomplete |
+| `research_pipeline_conflicts` | `strategy.research_pipeline_audit` | Cross-module conflicts found in the research pipeline |
+| `research_pipeline_warnings` | `strategy.research_pipeline_audit` | Missing fields, weak links, and review warnings |
+| `research_pipeline_summary` | `strategy.research_pipeline_audit` | Neutral summary of pipeline completeness and consistency |
+
+Research Pipeline Audit Fields are read-only and research-only. They do not change default screening output, default sorting, stock pools, data sources, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`.
 
 ## Current Development Principles
 
