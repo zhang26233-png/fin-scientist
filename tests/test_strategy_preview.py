@@ -196,6 +196,13 @@ def test_strategy_preview_row_contains_core_fields():
     assert row["architecture_audit_label"] in {"Pass", "Review", "Unavailable"}
     assert 0 <= row["architecture_audit_score"] <= 100
     assert isinstance(row["architecture_audit_warnings"], list)
+    assert row["event_available"] is False
+    assert row["event_type"] == "unknown"
+    assert row["event_recency_label"] == "Unknown"
+    assert row["event_source_quality_label"] == "Unknown"
+    assert row["event_reliability_label"] == "Unknown"
+    assert isinstance(row["event_research_tags"], list)
+    assert isinstance(row["event_warnings"], list)
     assert_no_forbidden_words(row)
 
 
@@ -291,6 +298,14 @@ def test_strategy_preview_preserves_input_order_by_default():
         "field_contract_warnings",
         "module_contract_warnings",
         "boundary_contract_warnings",
+        "event_available",
+        "event_type",
+        "event_recency_label",
+        "event_source_quality_label",
+        "event_reliability_label",
+        "event_context_note",
+        "event_research_tags",
+        "event_warnings",
     }.issubset(preview.columns)
     high_row = preview[preview["symbol"] == "HIGH1"].iloc[0]
     assert high_row["industry_relative_quality_label"] in {"industry_relative_strong", "industry_relative_neutral"}

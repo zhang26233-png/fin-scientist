@@ -25,6 +25,7 @@ REQUIRED_MODULES = [
     "strategy.confluence",
     "strategy.composite_profile",
     "strategy.priority_stability",
+    "strategy.event_context",
     "strategy.preview",
 ]
 
@@ -80,6 +81,16 @@ FIELD_GROUPS = {
         "priority_stability_note",
         "priority_drift_detected",
         "priority_drift_reason",
+    ],
+    "event_context": [
+        "event_available",
+        "event_type",
+        "event_recency_label",
+        "event_source_quality_label",
+        "event_reliability_label",
+        "event_context_note",
+        "event_research_tags",
+        "event_warnings",
     ],
 }
 

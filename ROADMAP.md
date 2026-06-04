@@ -4,7 +4,7 @@
 
 ## v1.7.x - Research Intelligence Layer
 
-Current: v1.7.3.
+Previous completed: v1.7.3.
 
 - v1.7.0: Composite Profile Layer.
 - v1.7.1: Research Priority Layer.
@@ -42,8 +42,12 @@ Completed v1.7.3 scope:
 
 ## v1.8.x - Event-Driven Research System
 
+Current: v1.8.0.
+
 Goal: connect research candidates with event context while keeping outputs non-operational.
 
+- v1.8.0: Event Foundation Layer completed.
+- Next target: v1.8.1 Event Diagnostics Layer.
 - Event field standardization.
 - Event type tags: earnings, policy, industry, macro, product, risk, data-quality, news-only.
 - Event recency and source-quality labels.
@@ -52,11 +56,21 @@ Goal: connect research candidates with event context while keeping outputs non-o
 - Event reliability diagnostics.
 - Optional event panel in the existing Streamlit workflow.
 
+Completed v1.8.0 scope:
+
+- Added read-only `strategy/event_context.py`.
+- Added event availability, type, recency, source quality, reliability, context note, research tags, and warnings.
+- Standardizes caller-provided event fields only.
+- Does not fetch news, add external data sources, change stock pools, change default sorting, change default screening output, modify `strategy_score`, or modify `core/scoring.py`.
+
 Boundary:
 
 - No operational advice.
 - No automatic order execution.
 - No event-triggered trading workflow.
+- No news crawling in v1.8.0.
+- No data-source change in v1.8.0.
+- No `strategy_score` change in v1.8.0.
 
 ## v2.x - Backtest Validation System
 

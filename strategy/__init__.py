@@ -9,6 +9,7 @@ __all__ = [
     "architecture_audit",
     "adapter",
     "comparison",
+    "event_context",
     "filters",
     "presets",
     "preset_comparison",

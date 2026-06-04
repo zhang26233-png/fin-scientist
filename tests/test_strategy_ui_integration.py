@@ -139,6 +139,14 @@ def test_strategy_ui_integration_preserves_input_order_by_default():
         "field_contract_warnings",
         "module_contract_warnings",
         "boundary_contract_warnings",
+        "event_available",
+        "event_type",
+        "event_recency_label",
+        "event_source_quality_label",
+        "event_reliability_label",
+        "event_context_note",
+        "event_research_tags",
+        "event_warnings",
     }.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 

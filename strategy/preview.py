@@ -11,6 +11,7 @@ from strategy.adapter import infer_field_mapping, to_number
 from strategy.architecture_audit import ARCHITECTURE_AUDIT_FIELDS, build_architecture_audit_profile
 from strategy.composite_profile import COMPOSITE_PROFILE_FIELDS, build_composite_profile
 from strategy.confluence import CONFLUENCE_FIELDS, build_confluence_profile
+from strategy.event_context import EVENT_CONTEXT_FIELDS, build_event_context_profile
 from strategy.explanations import REASON_FIELDS, build_strategy_reason_fields
 from strategy.fundamental import FUNDAMENTAL_PROFILE_FIELDS, build_fundamental_profile
 from strategy.fundamental_diagnostics import FUNDAMENTAL_DIAGNOSTIC_FIELDS, build_fundamental_diagnostics_profile
@@ -124,6 +125,14 @@ PREVIEW_COLUMNS = [
     "field_contract_warnings",
     "module_contract_warnings",
     "boundary_contract_warnings",
+    "event_available",
+    "event_type",
+    "event_recency_label",
+    "event_source_quality_label",
+    "event_reliability_label",
+    "event_context_note",
+    "event_research_tags",
+    "event_warnings",
 ]
 
 
@@ -296,6 +305,9 @@ def build_strategy_preview_row(row, preset_names=None):
     stability_frame = build_priority_stability_profile([row_data])
     if not stability_frame.empty:
         row_data.update(stability_frame.iloc[0].to_dict())
+    event_frame = build_event_context_profile([_merge_contexts(row_dict, row_data)])
+    if not event_frame.empty:
+        row_data.update(event_frame.iloc[0].to_dict())
     audit_frame = build_architecture_audit_profile([row_data])
     if not audit_frame.empty:
         row_data.update(audit_frame.iloc[0].to_dict())
@@ -344,6 +356,11 @@ def build_strategy_preview(source, preset_names=None, sort_by_strategy=False):
         for column in PRIORITY_STABILITY_FIELDS:
             if column in stability.columns:
                 preview[column] = list(stability[column])
+    event_context = build_event_context_profile(diagnostic_source)
+    if not event_context.empty:
+        for column in EVENT_CONTEXT_FIELDS:
+            if column in event_context.columns:
+                preview[column] = list(event_context[column])
     audit = build_architecture_audit_profile(preview)
     if not audit.empty:
         for column in ARCHITECTURE_AUDIT_FIELDS:
@@ -419,6 +436,7 @@ __all__ = [
     "ARCHITECTURE_AUDIT_FIELDS",
     "COMPOSITE_PROFILE_FIELDS",
     "CONFLUENCE_FIELDS",
+    "EVENT_CONTEXT_FIELDS",
     "FUNDAMENTAL_DIAGNOSTIC_FIELDS",
     "FUNDAMENTAL_PROFILE_FIELDS",
     "PRIORITY_STABILITY_FIELDS",

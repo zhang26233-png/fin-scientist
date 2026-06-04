@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.7.3
+Current version: V1.8.0
 
-V1.7.3 adds a read-only architecture audit layer for the completed V1.7.x Research Intelligence Layer. The preview now includes architecture audit fields without changing the original screening result table, default sorting, stock pools, data sources, `strategy_score`, or `core/scoring.py`.
+V1.8.0 adds a read-only Event Foundation Layer. The preview can now carry standardized event context fields without changing the original screening result table, default sorting, stock pools, data sources, `strategy_score`, research priority fields, architecture audit fields, or `core/scoring.py`.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.7.3 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
+`legacy_app.py` is not an unused backup. In V1.8.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
 
-FinScientist V1.7.3 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票分析、技术指标、基本面字段、板块观察、新闻/事件分析、多对象对比、临时观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.8.0 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票分析、技术指标、基本面字段、板块观察、新闻/事件分析、多对象对比、临时观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,13 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.7.3
+当前版本：V1.8.0
+
+V1.8.0 event foundation phase:
+
+- Added `strategy/event_context.py` for read-only event field standardization.
+- Added event availability, type, recency, source quality, reliability, context note, research tags, and warnings.
+- Event context fields are preview-only and do not change screening, sorting, stock pools, data sources, `strategy_score`, research priority fields, architecture audit fields, or `core/scoring.py`.
 
 V1.7.3 architecture audit phase:
 

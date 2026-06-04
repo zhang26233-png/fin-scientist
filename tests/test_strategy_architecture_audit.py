@@ -75,6 +75,14 @@ def complete_row(symbol="A"):
         "priority_stability_note": "Priority fields are complete.",
         "priority_drift_detected": False,
         "priority_drift_reason": "",
+        "event_available": False,
+        "event_type": "unknown",
+        "event_recency_label": "Unknown",
+        "event_source_quality_label": "Unknown",
+        "event_reliability_label": "Unknown",
+        "event_context_note": "No usable event context is available for the current research preview.",
+        "event_research_tags": [],
+        "event_warnings": ["event input unavailable"],
     }
 
 

@@ -2,6 +2,14 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v1.8.0
+
+- Added Event Foundation Layer in `strategy/event_context.py`.
+- Added event context fields.
+- Added event availability, type, recency, source quality, reliability, context note, tags, and warnings.
+- Added tests for empty input, missing events, immutability, stable ordering, score preservation, and neutral wording.
+- Kept screening output, default sorting, stock pools, data sources, `strategy_score`, research priority, architecture audit, and `core/scoring.py` unchanged.
+
 ## v1.7.3
 
 - Added Architecture Audit Layer in `strategy/architecture_audit.py`.

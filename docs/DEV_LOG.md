@@ -1,5 +1,28 @@
 # Development Log
 
+## 2026-06-04
+
+### Target
+
+- Complete V1.8.0 Event Foundation Layer.
+- Add event context standardization without changing screening results, default sorting, stock pools, data sources, `strategy_score`, research priority fields, architecture audit fields, or `core/scoring.py`.
+
+### Event Foundation
+
+- Added `strategy/event_context.py`.
+- Added event availability, type, recency, source quality, reliability, context note, research tags, and warnings.
+- `strategy.preview` and `ui/screening_ui.py` expose these fields as read-only research context.
+- The fields are not used for sorting or scoring.
+
+### Tests
+
+- Added `tests/test_strategy_event_context.py`.
+- Expanded preview, UI integration, module import, and architecture audit tests for event context fields.
+
+### Next Step
+
+- V1.8.1 can add Event Diagnostics Layer on top of standardized event fields.
+
 ## 2026-06-03
 
 ### Target

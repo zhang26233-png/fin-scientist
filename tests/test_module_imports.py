@@ -28,6 +28,7 @@ def test_v122_modules_import_cleanly():
         "strategy.comparison",
         "strategy.composite_profile",
         "strategy.confluence",
+        "strategy.event_context",
         "strategy.explanations",
         "strategy.export",
         "strategy.factors",
@@ -79,7 +80,7 @@ def test_v150_entrypoints_keep_explicit_compatibility_boundary():
     legacy_app = importlib.import_module("legacy_app")
     screening_ui = importlib.import_module("ui.screening_ui")
 
-    assert app.APP_VERSION == "V1.7.3"
+    assert app.APP_VERSION == "V1.8.0"
     assert legacy_app.APP_VERSION == app.APP_VERSION
     assert callable(legacy_app.render_legacy_workbench)
     assert "render_screening_section" in legacy_app.LEGACY_COMPATIBILITY_SURFACE

@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v1.7.3
-- CURRENT_STAGE = Research Intelligence Layer
-- NEXT_TARGET = v1.8.0
+- CURRENT_VERSION = v1.8.0
+- CURRENT_STAGE = Event-Driven Research System
+- NEXT_TARGET = v1.8.1
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "V1.7.3"`
-- `legacy_app.py`: `APP_VERSION = "V1.7.3"`
-- `README.md`: Current version: V1.7.3
-- `docs/DEV_LOG.md`: V1.7.3 read-only architecture audit phase
+- `app.py`: `APP_VERSION = "V1.8.0"`
+- `legacy_app.py`: `APP_VERSION = "V1.8.0"`
+- `README.md`: Current version: V1.8.0
+- `docs/DEV_LOG.md`: V1.8.0 Event Foundation Layer
 
-V1.7.x Research Intelligence Layer has entered the audit-complete stage. The next planned phase is V1.8.0 Event-Driven Research System.
+V1.8.0 starts the Event-Driven Research System with a read-only Event Foundation Layer. The event layer standardizes caller-provided event fields into research context only; it does not fetch news, change data sources, alter sorting, or change scoring.
 
 ## Current Architecture
 
@@ -150,6 +150,7 @@ Generated from the current `strategy/` directory.
 | Composite profile | `strategy/composite_profile.py` | active | Composite research profile plus research priority layer |
 | Priority stability | `strategy/priority_stability.py` | active | Read-only stability and drift diagnostics for research priority fields |
 | Architecture audit | `strategy/architecture_audit.py` | active | Read-only module, field, boundary, and contract diagnostics for Research Intelligence Layer |
+| Event context | `strategy/event_context.py` | active | Read-only event field standardization for Evidence Understanding Layer |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -343,6 +344,21 @@ Canonical raw fundamental inputs recognized by `strategy.fundamental`:
 | `field_contract_warnings` | `strategy.architecture_audit` |
 | `module_contract_warnings` | `strategy.architecture_audit` |
 | `boundary_contract_warnings` | `strategy.architecture_audit` |
+
+### Event Context Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `event_available` | `strategy.event_context` | Whether caller-provided event information is available |
+| `event_type` | `strategy.event_context` | Standard event category such as earnings, policy, industry, macro, product, risk, news_only, or unknown |
+| `event_recency_label` | `strategy.event_context` | Event timing label: Recent, Stale, or Unknown |
+| `event_source_quality_label` | `strategy.event_context` | Source quality label: Official, Reliable Media, Unverified, or Unknown |
+| `event_reliability_label` | `strategy.event_context` | Reliability label: High, Medium, Low, or Unknown |
+| `event_context_note` | `strategy.event_context` | Neutral research-context note for follow-up evidence review |
+| `event_research_tags` | `strategy.event_context` | Tags for future diagnostics and Agent task routing |
+| `event_warnings` | `strategy.event_context` | Missing-field, unclear-type, source-quality, and reliability warnings |
+
+Event Context Fields are read-only and research-only. They do not change default screening output, default sorting, stock pools, data sources, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, or `core/scoring.py`.
 
 ## Current Development Principles
 
