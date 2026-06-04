@@ -2,6 +2,13 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v1.8.2
+
+- Added Event Confluence Layer in `strategy/event_confluence.py`.
+- Added event confluence label, score, summary, support points, conflict points, follow-up focus, and warnings.
+- Added tests for empty inputs, missing events, high-quality events, low-quality warnings, support points, conflict points, immutability, stable ordering, score preservation, and neutral wording.
+- Kept screening output, default sorting, stock pools, data sources, `strategy_score`, research priority, priority stability, architecture audit, event confidence, and `core/scoring.py` unchanged.
+
 ## v1.8.1
 
 - Added Event Diagnostics Layer in `strategy/event_diagnostics.py`.

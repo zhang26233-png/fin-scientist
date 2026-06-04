@@ -4,6 +4,29 @@
 
 ### Target
 
+- Complete V1.8.2 Event Confluence Layer.
+- Add event-to-research-profile confluence review without changing screening results, default sorting, stock pools, data sources, `strategy_score`, research priority fields, priority stability fields, architecture audit fields, event confidence fields, or `core/scoring.py`.
+
+### Event Confluence
+
+- Added `strategy/event_confluence.py`.
+- Added event confluence label, score, summary, support points, conflict points, follow-up focus, and warnings.
+- `strategy.preview` and `ui/screening_ui.py` expose these fields as read-only event confluence context.
+- The fields are not used for sorting or scoring.
+
+### Tests
+
+- Added `tests/test_strategy_event_confluence.py`.
+- Expanded preview, UI integration, module import, and architecture audit tests for event confluence fields.
+
+### Next Step
+
+- V1.8.3 can add Event Research Summary Layer.
+
+## 2026-06-04
+
+### Target
+
 - Complete V1.8.1 Event Diagnostics Layer.
 - Add event evidence quality diagnostics without changing screening results, default sorting, stock pools, data sources, `strategy_score`, research priority fields, priority stability fields, architecture audit fields, or `core/scoring.py`.
 

@@ -156,6 +156,13 @@ def test_strategy_ui_integration_preserves_input_order_by_default():
         "event_followup_questions",
         "event_evidence_gaps",
         "event_quality_warnings",
+        "event_confluence_label",
+        "event_confluence_score",
+        "event_confluence_summary",
+        "event_support_points",
+        "event_conflict_points",
+        "event_followup_focus",
+        "event_confluence_warnings",
     }.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 

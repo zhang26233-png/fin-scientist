@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v1.8.1
+- CURRENT_VERSION = v1.8.2
 - CURRENT_STAGE = Event-Driven Research System
-- NEXT_TARGET = v1.8.2
+- NEXT_TARGET = v1.8.3
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "V1.8.1"`
-- `legacy_app.py`: `APP_VERSION = "V1.8.1"`
-- `README.md`: Current version: V1.8.1
-- `docs/DEV_LOG.md`: V1.8.1 Event Diagnostics Layer
+- `app.py`: `APP_VERSION = "V1.8.2"`
+- `legacy_app.py`: `APP_VERSION = "V1.8.2"`
+- `README.md`: Current version: V1.8.2
+- `docs/DEV_LOG.md`: V1.8.2 Event Confluence Layer
 
-V1.8.1 continues the Event-Driven Research System with a read-only Event Diagnostics Layer. The event diagnostics layer checks completeness, clarity, consistency, confidence, evidence gaps, and follow-up questions for caller-provided event context only; it does not fetch news, change data sources, alter sorting, or change scoring.
+V1.8.2 continues the Event-Driven Research System with a read-only Event Confluence Layer. The event confluence layer compares standardized event context and event diagnostics with the current technical, fundamental, industry-relative, and composite research profile; it does not fetch news, change data sources, alter sorting, or change scoring.
 
 ## Current Architecture
 
@@ -152,6 +152,7 @@ Generated from the current `strategy/` directory.
 | Architecture audit | `strategy/architecture_audit.py` | active | Read-only module, field, boundary, and contract diagnostics for Research Intelligence Layer |
 | Event context | `strategy/event_context.py` | active | Read-only event field standardization for Evidence Understanding Layer |
 | Event diagnostics | `strategy/event_diagnostics.py` | active | Read-only event evidence quality diagnostics for Evidence Quality Layer |
+| Event confluence | `strategy/event_confluence.py` | active | Read-only event-to-research-profile confluence review for evidence synthesis |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -376,6 +377,20 @@ Event Context Fields are read-only and research-only. They do not change default
 | `event_quality_warnings` | `strategy.event_diagnostics` | Source, reliability, and quality warnings for research review |
 
 Event Diagnostics Fields are read-only and research-only. They do not change default screening output, default sorting, stock pools, data sources, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, or `core/scoring.py`.
+
+### Event Confluence Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `event_confluence_label` | `strategy.event_confluence` | Event confluence label: Supportive, Mixed, Conflicting, or Unavailable |
+| `event_confluence_score` | `strategy.event_confluence` | Read-only event confluence score, not used for sorting or main scoring |
+| `event_confluence_summary` | `strategy.event_confluence` | Neutral research summary of event alignment with the current profile |
+| `event_support_points` | `strategy.event_confluence` | Reasons why event context may support current research profile review |
+| `event_conflict_points` | `strategy.event_confluence` | Event/profile mismatches or conflicts for follow-up review |
+| `event_followup_focus` | `strategy.event_confluence` | Follow-up research focus generated from event confluence |
+| `event_confluence_warnings` | `strategy.event_confluence` | Event quality, profile completeness, and confluence availability warnings |
+
+Event Confluence Fields are read-only and research-only. They do not change default screening output, default sorting, stock pools, data sources, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, or `core/scoring.py`.
 
 ## Current Development Principles
 

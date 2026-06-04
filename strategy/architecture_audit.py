@@ -27,6 +27,7 @@ REQUIRED_MODULES = [
     "strategy.priority_stability",
     "strategy.event_context",
     "strategy.event_diagnostics",
+    "strategy.event_confluence",
     "strategy.preview",
 ]
 
@@ -103,6 +104,15 @@ FIELD_GROUPS = {
         "event_followup_questions",
         "event_evidence_gaps",
         "event_quality_warnings",
+    ],
+    "event_confluence": [
+        "event_confluence_label",
+        "event_confluence_score",
+        "event_confluence_summary",
+        "event_support_points",
+        "event_conflict_points",
+        "event_followup_focus",
+        "event_confluence_warnings",
     ],
 }
 

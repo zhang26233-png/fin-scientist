@@ -9,6 +9,7 @@ __all__ = [
     "architecture_audit",
     "adapter",
     "comparison",
+    "event_confluence",
     "event_context",
     "event_diagnostics",
     "filters",

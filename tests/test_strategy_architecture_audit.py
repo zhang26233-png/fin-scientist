@@ -92,6 +92,13 @@ def complete_row(symbol="A"):
         "event_followup_questions": ["What event evidence should be collected before research review?"],
         "event_evidence_gaps": ["event evidence unavailable"],
         "event_quality_warnings": ["event diagnostics unavailable"],
+        "event_confluence_label": "Unavailable",
+        "event_confluence_score": 0,
+        "event_confluence_summary": "Event confluence is unavailable because event context or event quality is insufficient.",
+        "event_support_points": [],
+        "event_conflict_points": [],
+        "event_followup_focus": ["Collect stronger event and profile evidence before confluence review."],
+        "event_confluence_warnings": ["event confluence unavailable because event context is not available"],
     }
 
 
