@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v1.8.0
+- CURRENT_VERSION = v1.8.1
 - CURRENT_STAGE = Event-Driven Research System
-- NEXT_TARGET = v1.8.1
+- NEXT_TARGET = v1.8.2
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "V1.8.0"`
-- `legacy_app.py`: `APP_VERSION = "V1.8.0"`
-- `README.md`: Current version: V1.8.0
-- `docs/DEV_LOG.md`: V1.8.0 Event Foundation Layer
+- `app.py`: `APP_VERSION = "V1.8.1"`
+- `legacy_app.py`: `APP_VERSION = "V1.8.1"`
+- `README.md`: Current version: V1.8.1
+- `docs/DEV_LOG.md`: V1.8.1 Event Diagnostics Layer
 
-V1.8.0 starts the Event-Driven Research System with a read-only Event Foundation Layer. The event layer standardizes caller-provided event fields into research context only; it does not fetch news, change data sources, alter sorting, or change scoring.
+V1.8.1 continues the Event-Driven Research System with a read-only Event Diagnostics Layer. The event diagnostics layer checks completeness, clarity, consistency, confidence, evidence gaps, and follow-up questions for caller-provided event context only; it does not fetch news, change data sources, alter sorting, or change scoring.
 
 ## Current Architecture
 
@@ -151,6 +151,7 @@ Generated from the current `strategy/` directory.
 | Priority stability | `strategy/priority_stability.py` | active | Read-only stability and drift diagnostics for research priority fields |
 | Architecture audit | `strategy/architecture_audit.py` | active | Read-only module, field, boundary, and contract diagnostics for Research Intelligence Layer |
 | Event context | `strategy/event_context.py` | active | Read-only event field standardization for Evidence Understanding Layer |
+| Event diagnostics | `strategy/event_diagnostics.py` | active | Read-only event evidence quality diagnostics for Evidence Quality Layer |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -359,6 +360,22 @@ Canonical raw fundamental inputs recognized by `strategy.fundamental`:
 | `event_warnings` | `strategy.event_context` | Missing-field, unclear-type, source-quality, and reliability warnings |
 
 Event Context Fields are read-only and research-only. They do not change default screening output, default sorting, stock pools, data sources, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, or `core/scoring.py`.
+
+### Event Diagnostics Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `event_completeness_score` | `strategy.event_diagnostics` | Event evidence completeness score based on title, summary, type, date, source, source type, and confidence |
+| `event_clarity_score` | `strategy.event_diagnostics` | Event description clarity score based on type, title, summary, and context note |
+| `event_consistency_score` | `strategy.event_diagnostics` | Consistency score across event type, source quality, reliability, recency, and warnings |
+| `event_confidence_score` | `strategy.event_diagnostics` | Overall event evidence quality confidence score |
+| `event_diagnostic_level` | `strategy.event_diagnostics` | Event diagnostic level: Strong, Usable, Weak, or Unavailable |
+| `event_diagnostic_summary` | `strategy.event_diagnostics` | Neutral research summary of event evidence quality |
+| `event_followup_questions` | `strategy.event_diagnostics` | Follow-up research questions generated from event gaps |
+| `event_evidence_gaps` | `strategy.event_diagnostics` | Missing or unclear event evidence fields |
+| `event_quality_warnings` | `strategy.event_diagnostics` | Source, reliability, and quality warnings for research review |
+
+Event Diagnostics Fields are read-only and research-only. They do not change default screening output, default sorting, stock pools, data sources, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, or `core/scoring.py`.
 
 ## Current Development Principles
 

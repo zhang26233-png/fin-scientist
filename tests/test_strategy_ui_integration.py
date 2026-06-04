@@ -147,6 +147,15 @@ def test_strategy_ui_integration_preserves_input_order_by_default():
         "event_context_note",
         "event_research_tags",
         "event_warnings",
+        "event_completeness_score",
+        "event_clarity_score",
+        "event_consistency_score",
+        "event_confidence_score",
+        "event_diagnostic_level",
+        "event_diagnostic_summary",
+        "event_followup_questions",
+        "event_evidence_gaps",
+        "event_quality_warnings",
     }.issubset(preview.columns)
     assert_no_forbidden_words(preview.to_dict())
 

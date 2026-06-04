@@ -12,6 +12,7 @@ from strategy.architecture_audit import ARCHITECTURE_AUDIT_FIELDS, build_archite
 from strategy.composite_profile import COMPOSITE_PROFILE_FIELDS, build_composite_profile
 from strategy.confluence import CONFLUENCE_FIELDS, build_confluence_profile
 from strategy.event_context import EVENT_CONTEXT_FIELDS, build_event_context_profile
+from strategy.event_diagnostics import EVENT_DIAGNOSTIC_FIELDS, build_event_diagnostics_profile
 from strategy.explanations import REASON_FIELDS, build_strategy_reason_fields
 from strategy.fundamental import FUNDAMENTAL_PROFILE_FIELDS, build_fundamental_profile
 from strategy.fundamental_diagnostics import FUNDAMENTAL_DIAGNOSTIC_FIELDS, build_fundamental_diagnostics_profile
@@ -133,6 +134,15 @@ PREVIEW_COLUMNS = [
     "event_context_note",
     "event_research_tags",
     "event_warnings",
+    "event_completeness_score",
+    "event_clarity_score",
+    "event_consistency_score",
+    "event_confidence_score",
+    "event_diagnostic_level",
+    "event_diagnostic_summary",
+    "event_followup_questions",
+    "event_evidence_gaps",
+    "event_quality_warnings",
 ]
 
 
@@ -308,6 +318,9 @@ def build_strategy_preview_row(row, preset_names=None):
     event_frame = build_event_context_profile([_merge_contexts(row_dict, row_data)])
     if not event_frame.empty:
         row_data.update(event_frame.iloc[0].to_dict())
+    event_diagnostic_frame = build_event_diagnostics_profile([_merge_contexts(row_dict, row_data)])
+    if not event_diagnostic_frame.empty:
+        row_data.update(event_diagnostic_frame.iloc[0].to_dict())
     audit_frame = build_architecture_audit_profile([row_data])
     if not audit_frame.empty:
         row_data.update(audit_frame.iloc[0].to_dict())
@@ -361,6 +374,15 @@ def build_strategy_preview(source, preset_names=None, sort_by_strategy=False):
         for column in EVENT_CONTEXT_FIELDS:
             if column in event_context.columns:
                 preview[column] = list(event_context[column])
+    event_diagnostics_source = [
+        _merge_contexts(raw_row.to_dict(), preview.iloc[index].to_dict())
+        for index, (_, raw_row) in enumerate(source_copy.iterrows())
+    ]
+    event_diagnostics = build_event_diagnostics_profile(event_diagnostics_source)
+    if not event_diagnostics.empty:
+        for column in EVENT_DIAGNOSTIC_FIELDS:
+            if column in event_diagnostics.columns:
+                preview[column] = list(event_diagnostics[column])
     audit = build_architecture_audit_profile(preview)
     if not audit.empty:
         for column in ARCHITECTURE_AUDIT_FIELDS:
@@ -437,6 +459,7 @@ __all__ = [
     "COMPOSITE_PROFILE_FIELDS",
     "CONFLUENCE_FIELDS",
     "EVENT_CONTEXT_FIELDS",
+    "EVENT_DIAGNOSTIC_FIELDS",
     "FUNDAMENTAL_DIAGNOSTIC_FIELDS",
     "FUNDAMENTAL_PROFILE_FIELDS",
     "PRIORITY_STABILITY_FIELDS",

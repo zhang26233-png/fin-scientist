@@ -83,6 +83,15 @@ def complete_row(symbol="A"):
         "event_context_note": "No usable event context is available for the current research preview.",
         "event_research_tags": [],
         "event_warnings": ["event input unavailable"],
+        "event_completeness_score": 0,
+        "event_clarity_score": 0,
+        "event_consistency_score": 0,
+        "event_confidence_score": 0,
+        "event_diagnostic_level": "Unavailable",
+        "event_diagnostic_summary": "Event diagnostics are unavailable because usable event evidence is not present.",
+        "event_followup_questions": ["What event evidence should be collected before research review?"],
+        "event_evidence_gaps": ["event evidence unavailable"],
+        "event_quality_warnings": ["event diagnostics unavailable"],
     }
 
 

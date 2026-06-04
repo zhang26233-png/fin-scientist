@@ -4,6 +4,29 @@
 
 ### Target
 
+- Complete V1.8.1 Event Diagnostics Layer.
+- Add event evidence quality diagnostics without changing screening results, default sorting, stock pools, data sources, `strategy_score`, research priority fields, priority stability fields, architecture audit fields, or `core/scoring.py`.
+
+### Event Diagnostics
+
+- Added `strategy/event_diagnostics.py`.
+- Added event completeness, clarity, consistency, confidence, diagnostic level, summary, follow-up questions, evidence gaps, and quality warnings.
+- `strategy.preview` and `ui/screening_ui.py` expose these fields as read-only evidence quality diagnostics.
+- The fields are not used for sorting or scoring.
+
+### Tests
+
+- Added `tests/test_strategy_event_diagnostics.py`.
+- Expanded preview, UI integration, module import, and architecture audit tests for event diagnostics fields.
+
+### Next Step
+
+- V1.8.2 can add Event Confluence Layer on top of event context and diagnostics.
+
+## 2026-06-04
+
+### Target
+
 - Complete V1.8.0 Event Foundation Layer.
 - Add event context standardization without changing screening results, default sorting, stock pools, data sources, `strategy_score`, research priority fields, architecture audit fields, or `core/scoring.py`.
 

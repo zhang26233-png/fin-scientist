@@ -42,12 +42,13 @@ Completed v1.7.3 scope:
 
 ## v1.8.x - Event-Driven Research System
 
-Current: v1.8.0.
+Current: v1.8.1.
 
 Goal: connect research candidates with event context while keeping outputs non-operational.
 
 - v1.8.0: Event Foundation Layer completed.
-- Next target: v1.8.1 Event Diagnostics Layer.
+- v1.8.1: Event Diagnostics Layer completed.
+- Next target: v1.8.2 Event Confluence Layer.
 - Event field standardization.
 - Event type tags: earnings, policy, industry, macro, product, risk, data-quality, news-only.
 - Event recency and source-quality labels.
@@ -63,6 +64,13 @@ Completed v1.8.0 scope:
 - Standardizes caller-provided event fields only.
 - Does not fetch news, add external data sources, change stock pools, change default sorting, change default screening output, modify `strategy_score`, or modify `core/scoring.py`.
 
+Completed v1.8.1 scope:
+
+- Added read-only `strategy/event_diagnostics.py`.
+- Added event completeness, clarity, consistency, confidence, diagnostic level, summary, follow-up questions, evidence gaps, and quality warnings.
+- Diagnoses standardized event context and caller-provided raw event fields only.
+- Does not crawl news, call external APIs, add external data sources, change stock pools, change default sorting, change default screening output, modify `strategy_score`, or modify `core/scoring.py`.
+
 Boundary:
 
 - No operational advice.
@@ -71,6 +79,10 @@ Boundary:
 - No news crawling in v1.8.0.
 - No data-source change in v1.8.0.
 - No `strategy_score` change in v1.8.0.
+- No news crawling in v1.8.1.
+- No API integration in v1.8.1.
+- No data-source change in v1.8.1.
+- No `strategy_score` change in v1.8.1.
 
 ## v2.x - Backtest Validation System
 

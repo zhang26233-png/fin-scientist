@@ -26,6 +26,7 @@ REQUIRED_MODULES = [
     "strategy.composite_profile",
     "strategy.priority_stability",
     "strategy.event_context",
+    "strategy.event_diagnostics",
     "strategy.preview",
 ]
 
@@ -91,6 +92,17 @@ FIELD_GROUPS = {
         "event_context_note",
         "event_research_tags",
         "event_warnings",
+    ],
+    "event_diagnostics": [
+        "event_completeness_score",
+        "event_clarity_score",
+        "event_consistency_score",
+        "event_confidence_score",
+        "event_diagnostic_level",
+        "event_diagnostic_summary",
+        "event_followup_questions",
+        "event_evidence_gaps",
+        "event_quality_warnings",
     ],
 }
 

@@ -10,6 +10,7 @@ __all__ = [
     "adapter",
     "comparison",
     "event_context",
+    "event_diagnostics",
     "filters",
     "presets",
     "preset_comparison",

@@ -2,6 +2,13 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v1.8.1
+
+- Added Event Diagnostics Layer in `strategy/event_diagnostics.py`.
+- Added event completeness, clarity, consistency, confidence, diagnostic level, summary, follow-up questions, evidence gaps, and quality warnings.
+- Added tests for missing events, incomplete events, unreliable sources, immutability, stable ordering, score preservation, and neutral wording.
+- Kept screening output, default sorting, stock pools, data sources, `strategy_score`, research priority, priority stability, architecture audit, and `core/scoring.py` unchanged.
+
 ## v1.8.0
 
 - Added Event Foundation Layer in `strategy/event_context.py`.

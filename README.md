@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V1.8.0
+Current version: V1.8.1
 
-V1.8.0 adds a read-only Event Foundation Layer. The preview can now carry standardized event context fields without changing the original screening result table, default sorting, stock pools, data sources, `strategy_score`, research priority fields, architecture audit fields, or `core/scoring.py`.
+V1.8.1 adds a read-only Event Diagnostics Layer. The preview can now carry event evidence quality diagnostics without changing the original screening result table, default sorting, stock pools, data sources, `strategy_score`, research priority fields, priority stability fields, architecture audit fields, or `core/scoring.py`.
 
 Startup command remains:
 
@@ -24,9 +24,9 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V1.8.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
+`legacy_app.py` is not an unused backup. In V1.8.1 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
 
-FinScientist V1.8.0 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票分析、技术指标、基本面字段、板块观察、新闻/事件分析、多对象对比、临时观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+FinScientist V1.8.1 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票分析、技术指标、基本面字段、板块观察、新闻/事件分析、多对象对比、临时观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +36,13 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V1.8.0
+当前版本：V1.8.1
+
+V1.8.1 event diagnostics phase:
+
+- Added `strategy/event_diagnostics.py` for read-only event evidence quality diagnostics.
+- Added event completeness, clarity, consistency, confidence, diagnostic level, summary, follow-up questions, evidence gaps, and quality warnings.
+- Event diagnostics fields are preview-only and do not change screening, sorting, stock pools, data sources, `strategy_score`, research priority fields, priority stability fields, architecture audit fields, or `core/scoring.py`.
 
 V1.8.0 event foundation phase:
 
