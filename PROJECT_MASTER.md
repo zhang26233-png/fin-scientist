@@ -20,9 +20,9 @@
 
 ## Version State
 
-- CURRENT_VERSION = v2.0.0
-- CURRENT_STAGE = Research Memory Foundation
-- NEXT_TARGET = v2.1.0
+- CURRENT_VERSION = v2.1.0
+- CURRENT_STAGE = Research Timeline Layer
+- NEXT_TARGET = v2.2.0
 
 Version evidence from current files:
 
@@ -31,7 +31,7 @@ Version evidence from current files:
 - `README.md`: Current version: V2.0.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V2.0.0 starts the Research Memory Foundation. The new memory layer defines a read-only Research Snapshot Schema that groups existing preview outputs into technical, fundamental, industry, composite, priority, event, pipeline, and project snapshot sections. This version does not persist history, add databases, add vector stores, fetch news, call APIs, change data sources, alter sorting, or change scoring. The recommended v2.1 main line is Research Timeline.
+V2.1.0 adds the Research Timeline Layer. The new timeline layer organizes multiple read-only Research Snapshots for the same research object into a chronological timeline for reviewing priority, event, and pipeline changes. This version does not persist history, add databases, add vector stores, fetch news, call APIs, change data sources, alter sorting, or change scoring. The recommended v2.2 main line is Research Journal.
 
 ## Current Architecture
 
@@ -45,7 +45,8 @@ Generated from the current project root scan on 2026-06-03.
 |-- legacy_app.py
 |-- memory/
 |   |-- __init__.py
-|   `-- research_memory.py
+|   |-- research_memory.py
+|   `-- research_timeline.py
 |-- README.md
 |-- requirements.txt
 |-- streamlit-err.log
@@ -110,6 +111,7 @@ Generated from the current project root scan on 2026-06-03.
 |   |-- test_fundamental_data.py
 |   |-- test_market_data.py
 |   |-- test_module_imports.py
+|   |-- test_research_timeline.py
 |   |-- test_screening_contract.py
 |   |-- test_sector_strength.py
 |   |-- test_strategy_*.py
@@ -160,6 +162,7 @@ Generated from the current `strategy/` directory.
 | Research pipeline audit | `strategy/research_pipeline_audit.py` | active | Read-only cross-module pipeline completeness and conflict diagnostics |
 | Project assessment | `strategy/project_assessment.py` | active | Read-only pre-v2 architecture, field, UI, test, data-source, scoring-boundary, and readiness assessment |
 | Research memory | `memory/research_memory.py` | active | Read-only Research Snapshot Schema for grouped memory payloads |
+| Research timeline | `memory/research_timeline.py` | active | Read-only Research Timeline Layer for organizing same-object snapshots by time |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -464,6 +467,27 @@ Project Assessment Fields are read-only and research-only. They do not change de
 | `project_snapshot` | `memory.research_memory` | Grouped project assessment and pre-v2 readiness fields |
 
 Research Memory Snapshot Fields are schema-only, read-only, and research-only. V2.0.0 does not save historical records, add a database, add a vector store, fetch news, call APIs, add data sources, change default screening output, change default sorting, change stock pools, change `strategy_score`, change `research_priority_score`, change `priority_stability_score`, change `architecture_audit_score`, change `event_confidence_score`, change `event_confluence_score`, or modify `core/scoring.py`.
+
+### Research Timeline Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `timeline_id` | `memory.research_timeline` | Unique Research Timeline identifier |
+| `timeline_ticker` | `memory.research_timeline` | Security identifier shared by the compared snapshots |
+| `timeline_name` | `memory.research_timeline` | Security display name copied from the timeline snapshots |
+| `timeline_snapshot_count` | `memory.research_timeline` | Number of same-ticker snapshots used in the timeline comparison |
+| `timeline_start_time` | `memory.research_timeline` | Earliest snapshot timestamp used in the timeline |
+| `timeline_end_time` | `memory.research_timeline` | Latest snapshot timestamp used in the timeline |
+| `timeline_status` | `memory.research_timeline` | Timeline status: Available or Incomplete |
+| `timeline_direction` | `memory.research_timeline` | Overall research-state direction: Improving, Stable, Deteriorating, Mixed, or Unavailable |
+| `timeline_change_summary` | `memory.research_timeline` | Neutral summary of the observed snapshot-to-snapshot changes |
+| `timeline_key_changes` | `memory.research_timeline` | Cross-section list of priority, event, and pipeline field changes |
+| `timeline_priority_trend` | `memory.research_timeline` | Research priority trend between the first and last same-ticker snapshots |
+| `timeline_event_trend` | `memory.research_timeline` | Event research trend between the first and last same-ticker snapshots |
+| `timeline_pipeline_trend` | `memory.research_timeline` | Research pipeline trend between the first and last same-ticker snapshots |
+| `timeline_warnings` | `memory.research_timeline` | Missing timestamp, insufficient snapshot, inconsistent ticker, and section-availability warnings |
+
+Research Timeline Fields are schema-only, read-only, and research-only. V2.1.0 does not save historical records, add a database, add a vector store, fetch news, call APIs, add data sources, change default screening output, change default sorting, change stock pools, change `strategy_score`, change `research_priority_score`, change `priority_stability_score`, change `architecture_audit_score`, change `event_confidence_score`, change `event_confluence_score`, or modify `core/scoring.py`.
 
 ## Current Development Principles
 

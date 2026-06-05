@@ -2,4 +2,5 @@
 
 __all__ = [
     "research_memory",
+    "research_timeline",
 ]

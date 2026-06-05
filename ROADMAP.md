@@ -145,9 +145,10 @@ Boundary:
 
 Goal: persist and organize read-only research memory snapshots after the v1.x pipeline is assessed as ready.
 
-- Current: v2.0.0.
+- Current: v2.1.0.
 - v2.0.0: Research Memory Foundation completed.
-- Next target: v2.1.0 Research Timeline.
+- v2.1.0: Research Timeline Layer completed.
+- Next target: v2.2.0 Research Journal.
 - Read-only memory snapshot schema.
 - Candidate research memory records.
 - Field-grouped export payloads.
@@ -161,6 +162,15 @@ Completed v2.0.0 scope:
 - Added Research Snapshot Schema with snapshot identity, timestamp, ticker, name, version, stage, summary, status, and grouped research sections.
 - Added grouped technical, fundamental, industry, composite, priority, event, pipeline, and project snapshots.
 - Added tests for empty input, normal generation, missing fields, input immutability, fixed output order, status handling, module import, and score preservation.
+- Did not add databases, vector stores, news sources, APIs, external services, data-source changes, stock-pool changes, sorting changes, default screening changes, scoring changes, or `core/scoring.py` changes.
+
+Completed v2.1.0 scope:
+
+- Added read-only `memory/research_timeline.py`.
+- Added Research Timeline Schema with timeline identity, ticker, name, snapshot count, start time, end time, status, direction, change summary, key changes, priority trend, event trend, pipeline trend, and warnings.
+- Sorts Research Snapshots by `snapshot_timestamp` and compares only same-`snapshot_ticker` snapshots.
+- Emits warnings for empty input, insufficient snapshots, missing timestamps, missing ticker, inconsistent ticker, and missing trend sections.
+- Added tests for empty input, single-snapshot incomplete output, available multi-snapshot timelines, timestamp sorting, ticker inconsistency warning, priority/event/pipeline trend detection, timeline direction, input immutability, module import, and score-field preservation.
 - Did not add databases, vector stores, news sources, APIs, external services, data-source changes, stock-pool changes, sorting changes, default screening changes, scoring changes, or `core/scoring.py` changes.
 
 Future v2.x direction:

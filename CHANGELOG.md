@@ -2,6 +2,17 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v2.1.0
+
+- Added Research Timeline Layer in `memory/research_timeline.py`.
+- Added Research Timeline Schema with timeline identity, ticker, name, snapshot count, start time, end time, status, direction, change summary, key changes, priority trend, event trend, pipeline trend, and warnings.
+- Organizes same-object Research Snapshots by `snapshot_timestamp` for read-only change review.
+- Compares priority, event, and pipeline snapshot sections without modifying Snapshot fields.
+- Emits warnings for empty input, insufficient snapshots, missing timestamps, missing ticker, inconsistent ticker, and missing trend sections.
+- Added tests for empty input, single-snapshot incomplete output, available multi-snapshot timelines, timestamp sorting, ticker warning, trend detection, direction judgment, input immutability, module import, and score-field preservation.
+- Kept screening output, default sorting, stock pools, data sources, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, and `core/scoring.py` unchanged.
+- Did not add databases, vector stores, news sources, APIs, or external services.
+
 ## v2.0.0
 
 - Added Research Memory Foundation in `memory/research_memory.py`.
