@@ -145,10 +145,11 @@ Boundary:
 
 Goal: persist and organize read-only research memory snapshots after the v1.x pipeline is assessed as ready.
 
-- Current: v2.1.0.
+- Current: v2.2.0.
 - v2.0.0: Research Memory Foundation completed.
 - v2.1.0: Research Timeline Layer completed.
-- Next target: v2.2.0 Research Journal.
+- v2.2.0: Research Journal Layer completed.
+- Next target: v2.3.0 Memory Retrieval.
 - Read-only memory snapshot schema.
 - Candidate research memory records.
 - Field-grouped export payloads.
@@ -173,11 +174,21 @@ Completed v2.1.0 scope:
 - Added tests for empty input, single-snapshot incomplete output, available multi-snapshot timelines, timestamp sorting, ticker inconsistency warning, priority/event/pipeline trend detection, timeline direction, input immutability, module import, and score-field preservation.
 - Did not add databases, vector stores, news sources, APIs, external services, data-source changes, stock-pool changes, sorting changes, default screening changes, scoring changes, or `core/scoring.py` changes.
 
+Completed v2.2.0 scope:
+
+- Added read-only `memory/research_journal.py`.
+- Added Research Journal Schema with journal identity, ticker, name, period, status, summary, observations, risk notes, data quality notes, follow-up questions, Agent research tasks, and warnings.
+- Converts one Research Snapshot plus one Research Timeline into human-readable and Agent-ready research notes.
+- Extracts content from `snapshot_summary`, `priority_snapshot`, `event_snapshot`, `pipeline_snapshot`, `timeline_change_summary`, and `timeline_key_changes`.
+- Keeps Agent tasks limited to research review, evidence validation, and pipeline conflict investigation.
+- Added tests for empty input, snapshot-only incomplete output, available Snapshot+Timeline output, generated summary, observations, risk notes, follow-up questions, Agent tasks, input immutability, restricted-word cleanup, module import, and score-field preservation.
+- Did not add databases, vector stores, news sources, APIs, external services, data-source changes, stock-pool changes, sorting changes, default screening changes, scoring changes, or `core/scoring.py` changes.
+
 Future v2.x direction:
 
 - v2.1.0: Research Timeline.
 - v2.2.0: Research Journal.
-- v2.3.0: Research Retrieval.
+- v2.3.0: Memory Retrieval.
 
 Boundary:
 

@@ -2,6 +2,17 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v2.2.0
+
+- Added Research Journal Layer in `memory/research_journal.py`.
+- Added Research Journal Schema with journal identity, ticker, name, period, status, summary, observations, risk notes, data quality notes, follow-up questions, Agent research tasks, and warnings.
+- Converts one Research Snapshot plus one Research Timeline into human-readable and Agent-ready research notes.
+- Extracts journal content from `snapshot_summary`, `priority_snapshot`, `event_snapshot`, `pipeline_snapshot`, `timeline_change_summary`, and `timeline_key_changes`.
+- Keeps Agent tasks limited to research review, evidence validation, and pipeline conflict investigation.
+- Added tests for empty input, snapshot-only incomplete output, available Snapshot+Timeline output, generated summary, observations, risk notes, follow-up questions, Agent tasks, input immutability, restricted-word cleanup, module import, and score-field preservation.
+- Kept screening output, default sorting, stock pools, data sources, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, and `core/scoring.py` unchanged.
+- Did not add databases, vector stores, news sources, APIs, or external services.
+
 ## v2.1.0
 
 - Added Research Timeline Layer in `memory/research_timeline.py`.

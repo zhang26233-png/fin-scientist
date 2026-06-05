@@ -20,9 +20,9 @@
 
 ## Version State
 
-- CURRENT_VERSION = v2.1.0
-- CURRENT_STAGE = Research Timeline Layer
-- NEXT_TARGET = v2.2.0
+- CURRENT_VERSION = v2.2.0
+- CURRENT_STAGE = Research Journal Layer
+- NEXT_TARGET = v2.3.0
 
 Version evidence from current files:
 
@@ -31,7 +31,7 @@ Version evidence from current files:
 - `README.md`: Current version: V2.0.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V2.1.0 adds the Research Timeline Layer. The new timeline layer organizes multiple read-only Research Snapshots for the same research object into a chronological timeline for reviewing priority, event, and pipeline changes. This version does not persist history, add databases, add vector stores, fetch news, call APIs, change data sources, alter sorting, or change scoring. The recommended v2.2 main line is Research Journal.
+V2.2.0 adds the Research Journal Layer. The new journal layer converts a read-only Research Snapshot plus Research Timeline into a structured research journal for human review and future Agent reading. This version does not persist history, add databases, add vector stores, fetch news, call APIs, change data sources, alter sorting, or change scoring. The recommended v2.3 main line is Memory Retrieval.
 
 ## Current Architecture
 
@@ -45,6 +45,7 @@ Generated from the current project root scan on 2026-06-03.
 |-- legacy_app.py
 |-- memory/
 |   |-- __init__.py
+|   |-- research_journal.py
 |   |-- research_memory.py
 |   `-- research_timeline.py
 |-- README.md
@@ -111,6 +112,7 @@ Generated from the current project root scan on 2026-06-03.
 |   |-- test_fundamental_data.py
 |   |-- test_market_data.py
 |   |-- test_module_imports.py
+|   |-- test_research_journal.py
 |   |-- test_research_timeline.py
 |   |-- test_screening_contract.py
 |   |-- test_sector_strength.py
@@ -163,6 +165,7 @@ Generated from the current `strategy/` directory.
 | Project assessment | `strategy/project_assessment.py` | active | Read-only pre-v2 architecture, field, UI, test, data-source, scoring-boundary, and readiness assessment |
 | Research memory | `memory/research_memory.py` | active | Read-only Research Snapshot Schema for grouped memory payloads |
 | Research timeline | `memory/research_timeline.py` | active | Read-only Research Timeline Layer for organizing same-object snapshots by time |
+| Research journal | `memory/research_journal.py` | active | Read-only Research Journal Layer for human-readable and Agent-ready research notes |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -488,6 +491,25 @@ Research Memory Snapshot Fields are schema-only, read-only, and research-only. V
 | `timeline_warnings` | `memory.research_timeline` | Missing timestamp, insufficient snapshot, inconsistent ticker, and section-availability warnings |
 
 Research Timeline Fields are schema-only, read-only, and research-only. V2.1.0 does not save historical records, add a database, add a vector store, fetch news, call APIs, add data sources, change default screening output, change default sorting, change stock pools, change `strategy_score`, change `research_priority_score`, change `priority_stability_score`, change `architecture_audit_score`, change `event_confidence_score`, change `event_confluence_score`, or modify `core/scoring.py`.
+
+### Research Journal Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `journal_id` | `memory.research_journal` | Unique Research Journal identifier |
+| `journal_ticker` | `memory.research_journal` | Security identifier copied from Snapshot or Timeline |
+| `journal_name` | `memory.research_journal` | Security display name copied from Snapshot or Timeline |
+| `journal_period` | `memory.research_journal` | Time period covered by the Snapshot and Timeline inputs |
+| `journal_status` | `memory.research_journal` | Journal status: Available or Incomplete |
+| `journal_summary` | `memory.research_journal` | Human-readable neutral summary of the Snapshot and Timeline context |
+| `journal_observations` | `memory.research_journal` | Main research observations extracted from snapshot sections and timeline changes |
+| `journal_risk_notes` | `memory.research_journal` | Risk, uncertainty, warning, and conflict notes for research review |
+| `journal_data_quality_notes` | `memory.research_journal` | Data quality and source-boundary notes from Snapshot and Timeline context |
+| `journal_followup_questions` | `memory.research_journal` | Follow-up research questions for deeper evidence review |
+| `journal_agent_tasks` | `memory.research_journal` | Future Agent research tasks; no operational tasks |
+| `journal_warnings` | `memory.research_journal` | Missing Snapshot, missing Timeline, incomplete status, missing ticker, and coverage warnings |
+
+Research Journal Fields are schema-only, read-only, and research-only. V2.2.0 does not save historical records, add a database, add a vector store, fetch news, call APIs, add data sources, change default screening output, change default sorting, change stock pools, change `strategy_score`, change `research_priority_score`, change `priority_stability_score`, change `architecture_audit_score`, change `event_confidence_score`, change `event_confluence_score`, or modify `core/scoring.py`.
 
 ## Current Development Principles
 
