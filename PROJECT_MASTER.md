@@ -20,9 +20,9 @@
 
 ## Version State
 
-- CURRENT_VERSION = v3.4.0
-- CURRENT_STAGE = Candidate Pool Engine
-- NEXT_TARGET = v3.5.0
+- CURRENT_VERSION = v3.5.0
+- CURRENT_STAGE = Backtest Foundation Engine
+- NEXT_TARGET = v3.6.0
 
 Version evidence from current files:
 
@@ -31,7 +31,7 @@ Version evidence from current files:
 - `README.md`: Current version: V2.0.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V3.4.0 adds the Candidate Pool Engine on top of the A-Share Universe Engine, Fundamental Screening Package, Technical Screening Engine, and Composite Quant Score Engine. The new screening layer converts composite results into read-only Core, Watch, Exclude, or Unavailable candidate-pool groups, with ranking inside Core/Watch only and without changing row order. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, target prices, backtest results, machine-learning predictions, default sorting changes, stock-pool changes, universe-module changes, fundamental-module changes, technical-module changes, composite-module changes, or event/memory module changes. The recommended v3.5 main line is Backtest Foundation Engine.
+V3.5.0 adds the Backtest Foundation Engine on top of the A-Share Universe Engine, Fundamental Screening Package, Technical Screening Engine, Composite Quant Score Engine, and Candidate Pool Engine. The new backtest layer validates candidate price-history availability, date coverage, and minimum data length without calculating returns or performance metrics. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, target prices, backtest results, performance metrics, machine-learning predictions, default sorting changes, stock-pool changes, universe-module changes, fundamental-module changes, technical-module changes, composite-module changes, candidate-pool changes, or event/memory module changes. The recommended v3.6 main line is Return Analysis Engine.
 
 ## Current Architecture
 
@@ -51,6 +51,9 @@ Generated from the current project root scan on 2026-06-03.
 |-- universe/
 |   |-- __init__.py
 |   `-- a_share_universe.py
+|-- backtest/
+|   |-- __init__.py
+|   `-- backtest_engine.py
 |-- screening/
 |   |-- __init__.py
 |   |-- candidate_pool.py
@@ -181,6 +184,7 @@ Generated from the current `strategy/` directory.
 | Technical screening | `screening/technical_screening.py` | active | Read-only technical screening fields for Universe rows with safe incomplete fallback |
 | Composite quant score | `screening/composite_score_engine.py` | active | Read-only 50/50 composite score from fundamental and technical screening outputs |
 | Candidate pool | `screening/candidate_pool.py` | active | Read-only candidate-pool grouping and rank fields from composite score outputs |
+| Backtest foundation | `backtest/backtest_engine.py` | active | Read-only price-history availability and coverage fields for future validation |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -615,6 +619,20 @@ Composite Quant Score Fields are read-only research fields for standardizing the
 | `candidate_warnings` | `screening.candidate_pool` | Missing, abnormal, or unavailable input warnings |
 
 Candidate Pool Fields are read-only research fields for organizing composite-score outputs before future backtest validation. V3.4.0 does not create buy points, sell points, target prices, position suggestions, backtest results, machine-learning predictions, or automated trading workflows. It does not change default sorting, default screening workflow, stock-pool construction, Universe modules, Fundamental modules, Technical modules, Composite modules, Event modules, Memory modules, trading logic, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`.
+
+### Backtest Foundation Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `backtest_available` | `backtest.backtest_engine` | Whether the candidate has usable price history for future backtest validation |
+| `backtest_status` | `backtest.backtest_engine` | Backtest foundation status: Available or Incomplete |
+| `backtest_start_date` | `backtest.backtest_engine` | Earliest valid price-history date |
+| `backtest_end_date` | `backtest.backtest_engine` | Latest valid price-history date |
+| `backtest_days` | `backtest.backtest_engine` | Count of valid date and close rows |
+| `backtest_price_available` | `backtest.backtest_engine` | Whether valid price history exists |
+| `backtest_warnings` | `backtest.backtest_engine` | Missing or abnormal price-history warnings |
+
+Backtest Foundation Fields are read-only data-availability fields for future validation. V3.5.0 does not calculate returns, cumulative returns, annualized returns, Sharpe ratio, maximum drawdown, win rate, strategy optimization, parameter search, machine-learning predictions, automated trading actions, buy/sell suggestions, target prices, or position suggestions. It does not change default sorting, default screening workflow, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Event modules, Memory modules, trading logic, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`.
 
 ## Current Development Principles
 

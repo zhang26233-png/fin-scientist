@@ -2,6 +2,7 @@
 
 import streamlit as st
 
+from backtest.backtest_engine import build_backtest_dataset
 from config.stock_pools import A_SHARE_SCREENING_POOLS, DEFAULT_A_SHARE_POOL_TYPE
 import legacy_app as legacy_workbench
 from screening.candidate_pool import build_candidate_pool
@@ -187,6 +188,17 @@ CANDIDATE_POOL_COLUMNS = [
     "candidate_warnings",
 ]
 
+BACKTEST_FOUNDATION_COLUMNS = [
+    "ticker",
+    "name",
+    "backtest_available",
+    "backtest_status",
+    "backtest_start_date",
+    "backtest_end_date",
+    "backtest_days",
+    "backtest_warnings",
+]
+
 
 def build_screening_strategy_preview(result_df, sort_by_strategy=False):
     return build_strategy_preview(result_df, sort_by_strategy=sort_by_strategy)
@@ -262,6 +274,18 @@ def render_candidate_pool_section(composite):
         return candidate_pool
 
 
+def render_backtest_foundation_section(candidate_pool):
+    with st.expander("Backtest Foundation (read-only research, not investment advice)", expanded=False):
+        st.caption("Backtest Foundation checks price-history availability only. It does not calculate performance.")
+        backtest_dataset = build_backtest_dataset(candidate_pool)
+        display_columns = [column for column in BACKTEST_FOUNDATION_COLUMNS if column in backtest_dataset.columns]
+        if backtest_dataset.empty:
+            st.info("Current candidate pool is empty. No backtest foundation rows are available.")
+            return backtest_dataset
+        st.dataframe(backtest_dataset[display_columns], hide_index=True, use_container_width=True)
+        return backtest_dataset
+
+
 def render_strategy_preview_section(result_df):
     with st.expander("Strategy preview (research support, not investment advice)", expanded=False):
         st.caption("Strategy preview is only for research-priority review. Default ordering is unchanged.")
@@ -324,7 +348,8 @@ def render_screening_page():
         fundamental_screening = render_fundamental_screening_section(universe)
         technical_screening = render_technical_screening_section(universe)
         composite = render_composite_quant_score_section(universe, fundamental_screening, technical_screening)
-        render_candidate_pool_section(composite)
+        candidate_pool = render_candidate_pool_section(composite)
+        render_backtest_foundation_section(candidate_pool)
 
     if run_screening_button:
         screening_result = legacy_workbench.render_screening_section(

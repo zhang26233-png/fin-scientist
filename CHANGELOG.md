@@ -2,6 +2,18 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v3.5.0
+
+- Added Backtest Foundation Engine in `backtest/backtest_engine.py`.
+- Added `build_backtest_dataset()` for read-only backtest foundation dataset checks from Candidate Pool rows.
+- Added backtest fields for availability, status, start date, end date, valid day count, price availability, and warnings.
+- Supports caller-provided `price_history_dict` with `date` and `close` columns.
+- Marks rows Available only when valid price history has at least 60 rows; otherwise marks Incomplete with warnings.
+- Added a read-only Backtest Foundation panel to the screening page.
+- Added tests for empty input, missing price history, single stock, multiple stocks, shorter-than-60 histories, at-least-60 histories, date calculation, warning generation, input immutability, row-order preservation, no performance metric fields, and module import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, `fundamental_score`, `technical_score`, `composite_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external APIs, external services, machine learning, returns calculations, cumulative returns, annualized returns, Sharpe ratio, maximum drawdown, win rate, strategy optimization, parameter search, target prices, operational trade points, position suggestions, or automated trading interfaces.
+
 ## v3.4.0
 
 - Added Candidate Pool Engine in `screening/candidate_pool.py`.

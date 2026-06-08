@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v3.4.0.
+Current: v3.5.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -209,7 +209,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v3.2.0: Technical Screening completed.
 - v3.3.0: Composite Quant Score Engine completed.
 - v3.4.0: Candidate Pool Engine completed.
-- Next target: v3.5.0 Backtest Foundation Engine.
+- v3.5.0: Backtest Foundation Engine completed.
+- Next target: v3.6.0 Return Analysis Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -270,6 +271,18 @@ Completed v3.4.0 scope:
 - Added a read-only Candidate Pool panel to the screening page without changing default sorting.
 - Added tests for empty input, missing `composite_score`, Core grouping, Watch grouping, Exclude grouping, missing-field warnings, rank generation, rank order preservation, input immutability, `composite_score` preservation, `fundamental_score` preservation, `technical_score` preservation, and module import.
 - Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, `technical_score`, `composite_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, backtest logic, machine-learning logic, or trading logic.
+
+Completed v3.5.0 scope:
+
+- Added `backtest/backtest_engine.py`.
+- Added `build_backtest_dataset()` for read-only backtest foundation dataset checks from Candidate Pool rows.
+- Added backtest fields for availability, status, start date, end date, valid day count, price availability, and warnings.
+- Supports caller-provided `price_history_dict` with `date` and `close` columns.
+- Marks rows Available only when valid price history has at least 60 rows; otherwise marks Incomplete with warnings.
+- Added a read-only Backtest Foundation panel to the screening page without changing default sorting.
+- Added tests for empty input, missing price history, single stock, multiple stocks, shorter-than-60 histories, at-least-60 histories, date calculation, warning generation, input immutability, row-order preservation, no performance metric fields, and module import.
+- Did not calculate returns, cumulative returns, annualized returns, Sharpe ratio, maximum drawdown, win rate, strategy optimization, parameter search, machine-learning predictions, automated trading actions, buy/sell suggestions, target prices, or position suggestions.
+- Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, `technical_score`, `composite_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
 
 Boundary:
 
