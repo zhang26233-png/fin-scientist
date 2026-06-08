@@ -2,6 +2,17 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v3.6.0
+
+- Added Return Analysis Engine in `backtest/return_analysis.py`.
+- Added `build_return_analysis()` for read-only historical metric calculation from Backtest Foundation rows and caller-provided price history.
+- Added return-analysis fields for availability, status, holding-period days, entry price, exit price, period return, annualized return, volatility, maximum drawdown, win rate, summary, and warnings.
+- Calculates metrics only when `backtest_available` is true and valid `date` plus `close` history has at least 60 rows.
+- Added a read-only Return Analysis panel to the screening page.
+- Added tests for empty input, missing price history, unavailable backtest foundation, single stock, multiple stocks, period return, annualized return, volatility, maximum drawdown, win rate, missing `close`, missing `date`, input immutability, row-order preservation, score-field preservation, and module import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external APIs, external services, machine learning, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, or operational conclusions.
+
 ## v3.5.0
 
 - Added Backtest Foundation Engine in `backtest/backtest_engine.py`.
