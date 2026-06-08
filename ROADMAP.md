@@ -200,14 +200,15 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v3.2.0.
+Current: v3.3.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
 - v3.0.0: A-Share Universe Engine completed.
 - v3.1.0: Fundamental Screening completed.
 - v3.2.0: Technical Screening completed.
-- Next target: v3.3.0 Composite Quant Score Engine.
+- v3.3.0: Composite Quant Score Engine completed.
+- Next target: v3.4.0 Candidate Pool Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -246,6 +247,17 @@ Completed v3.2.0 scope:
 - Added a read-only Technical Screening panel to the screening page without changing default sorting.
 - Added tests for empty Universe, missing price data, normal generation, High/Pass output, weak output, RSI warnings, MACD bearish downgrade, missing-field warnings, immutability, order preservation, `fundamental_score` preservation, and module import.
 - Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, fundamental modules, event modules, memory modules, default sorting, default filters, stock pools, data sources, backtest logic, machine-learning logic, or trading logic.
+
+Completed v3.3.0 scope:
+
+- Added `screening/composite_score_engine.py`.
+- Added `build_composite_quant_score()` for read-only composite quant scoring on A-share Universe rows.
+- Added composite fields for availability, score, level, screening status, reasons, warnings, and score breakdown.
+- Uses default weights: 50% `fundamental_score` and 50% `technical_score`.
+- Safely returns Incomplete/Unavailable when Fundamental or Technical inputs are missing or invalid.
+- Added a read-only Composite Quant Score panel to the screening page without changing default sorting.
+- Added tests for empty Universe, missing Fundamental input, missing Technical input, normal generation, High/Pass output, Medium/Watch output, Low/Watch output, Exclude output, readable score breakdown, warnings, immutability, order preservation, `fundamental_score` preservation, `technical_score` preservation, and module import.
+- Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, `technical_score`, Universe modules, Fundamental modules, Technical modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, backtest logic, machine-learning logic, or trading logic.
 
 Boundary:
 

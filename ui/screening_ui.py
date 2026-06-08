@@ -4,11 +4,15 @@ import streamlit as st
 
 from config.stock_pools import A_SHARE_SCREENING_POOLS, DEFAULT_A_SHARE_POOL_TYPE
 import legacy_app as legacy_workbench
+from screening.composite_score_engine import build_composite_quant_score
 from screening.fundamental_screening import build_fundamental_screening
 from screening.technical_screening import build_technical_screening
 from strategy.preview import build_strategy_preview
 from universe.a_share_universe import build_a_share_universe
 
+
+A_SHARE_LABEL = "A\u80a1"
+DEFAULT_SAMPLE_POOL_LABEL = "\u9ed8\u8ba4\u793a\u4f8b\u80a1\u7968\u6c60"
 
 STRATEGY_PREVIEW_COLUMNS = [
     "symbol",
@@ -159,6 +163,17 @@ TECHNICAL_SCREENING_COLUMNS = [
     "technical_warnings",
 ]
 
+COMPOSITE_SCORE_COLUMNS = [
+    "ticker",
+    "name",
+    "composite_score",
+    "composite_level",
+    "composite_screening_status",
+    "score_breakdown",
+    "composite_reasons",
+    "composite_warnings",
+]
+
 
 def build_screening_strategy_preview(result_df, sort_by_strategy=False):
     return build_strategy_preview(result_df, sort_by_strategy=sort_by_strategy)
@@ -210,6 +225,18 @@ def render_technical_screening_section(universe):
         return screening
 
 
+def render_composite_quant_score_section(universe, fundamental_screening, technical_screening):
+    with st.expander("Composite Quant Score (read-only research, not investment advice)", expanded=False):
+        st.caption("Composite Quant Score combines fundamental and technical screening scores without changing sorting.")
+        composite = build_composite_quant_score(universe, fundamental_screening, technical_screening)
+        display_columns = [column for column in COMPOSITE_SCORE_COLUMNS if column in composite.columns]
+        if composite.empty:
+            st.info("Current Universe is empty. No composite score rows are available.")
+            return composite
+        st.dataframe(composite[display_columns], hide_index=True, use_container_width=True)
+        return composite
+
+
 def render_strategy_preview_section(result_df):
     with st.expander("Strategy preview (research support, not investment advice)", expanded=False):
         st.caption("Strategy preview is only for research-priority review. Default ordering is unchanged.")
@@ -240,7 +267,7 @@ def render_screening_page():
         screening_run_mode = st.selectbox("Run mode", options=legacy_workbench.SCREENING_RUN_MODE_OPTIONS, index=0)
         screening_pool_source = st.selectbox("Stock pool", options=legacy_workbench.SCREENING_POOL_OPTIONS, index=0)
         screening_a_share_pool_type = DEFAULT_A_SHARE_POOL_TYPE
-        if screening_market == "A股" and screening_pool_source == "默认示例股票池":
+        if screening_market == A_SHARE_LABEL and screening_pool_source == DEFAULT_SAMPLE_POOL_LABEL:
             screening_a_share_pool_type = st.selectbox(
                 "A-share pool type",
                 options=list(A_SHARE_SCREENING_POOLS.keys()),
@@ -248,7 +275,7 @@ def render_screening_page():
             )
         screening_custom_input = st.text_area(
             "Custom stock pool",
-            value="600519, 300750, 000001" if screening_market == "A股" else "AAPL, MSFT, NVDA",
+            value="600519, 300750, 000001" if screening_market == A_SHARE_LABEL else "AAPL, MSFT, NVDA",
             height=90,
         )
         screening_top_n = st.selectbox("Screening count", options=legacy_workbench.SCREENING_TOP_OPTIONS, index=0)
@@ -267,10 +294,11 @@ def render_screening_page():
         except Exception as exc:
             st.warning(f"Cache clearing failed. Please retry later: {exc}")
 
-    if screening_market == "A股":
+    if screening_market == A_SHARE_LABEL:
         universe = render_a_share_universe_section()
-        render_fundamental_screening_section(universe)
-        render_technical_screening_section(universe)
+        fundamental_screening = render_fundamental_screening_section(universe)
+        technical_screening = render_technical_screening_section(universe)
+        render_composite_quant_score_section(universe, fundamental_screening, technical_screening)
 
     if run_screening_button:
         screening_result = legacy_workbench.render_screening_section(

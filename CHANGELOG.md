@@ -2,6 +2,18 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v3.3.0
+
+- Added Composite Quant Score Engine in `screening/composite_score_engine.py`.
+- Added `build_composite_quant_score()` for read-only composite quant scoring on A-share Universe rows.
+- Added composite fields for availability, composite score, level, screening status, reasons, warnings, and readable score breakdown.
+- Uses default weights: 50% `fundamental_score` and 50% `technical_score`.
+- Safely returns Incomplete/Unavailable when Fundamental or Technical inputs are missing or invalid.
+- Added a read-only Composite Quant Score panel to the screening page.
+- Added tests for empty Universe, missing Fundamental input, missing Technical input, normal field generation, High/Pass output, Medium/Watch output, Low/Watch output, Exclude output, score breakdown, warnings, input immutability, row-order preservation, `fundamental_score` preservation, `technical_score` preservation, and module import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, `fundamental_score`, `technical_score`, Universe modules, Fundamental modules, Technical modules, Event modules, Memory modules, default sorting, default filters, stock pools, backtest logic, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external services, machine learning, backtesting changes, target prices, operational trade points, position suggestions, or automated trading interfaces.
+
 ## v3.2.0
 
 - Added Technical Screening Engine in `screening/technical_screening.py`.
