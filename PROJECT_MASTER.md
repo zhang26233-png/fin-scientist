@@ -20,9 +20,9 @@
 
 ## Version State
 
-- CURRENT_VERSION = v3.1.0
-- CURRENT_STAGE = Fundamental Screening Package
-- NEXT_TARGET = v3.2.0
+- CURRENT_VERSION = v3.2.0
+- CURRENT_STAGE = Technical Screening Engine
+- NEXT_TARGET = v3.3.0
 
 Version evidence from current files:
 
@@ -31,7 +31,7 @@ Version evidence from current files:
 - `README.md`: Current version: V2.0.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V3.1.0 adds the Fundamental Screening Package on top of the A-Share Universe Engine. The new screening layer appends read-only profitability, growth, valuation, financial-risk, and cashflow-quality fields when caller-provided fundamental data is available, and safely marks rows as incomplete when data is missing. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, scoring changes, default sorting changes, stock-pool changes, or event/memory module changes. The recommended v3.2 main line is Technical Screening.
+V3.2.0 adds the Technical Screening Engine on top of the A-Share Universe Engine and Fundamental Screening Package. The new screening layer appends read-only trend, momentum, MACD, and volume fields when caller-provided price data is available, and safely marks rows as incomplete when data is missing. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, scoring changes, default sorting changes, stock-pool changes, fundamental-module changes, or event/memory module changes. The recommended v3.3 main line is Composite Quant Score Engine.
 
 ## Current Architecture
 
@@ -53,7 +53,8 @@ Generated from the current project root scan on 2026-06-03.
 |   `-- a_share_universe.py
 |-- screening/
 |   |-- __init__.py
-|   `-- fundamental_screening.py
+|   |-- fundamental_screening.py
+|   `-- technical_screening.py
 |-- README.md
 |-- requirements.txt
 |-- streamlit-err.log
@@ -175,6 +176,7 @@ Generated from the current `strategy/` directory.
 | Research journal | `memory/research_journal.py` | active | Read-only Research Journal Layer for human-readable and Agent-ready research notes |
 | A-share universe | `universe/a_share_universe.py` | active | All-A-share universe builder for future screening, scoring, and backtest entry points |
 | Fundamental screening | `screening/fundamental_screening.py` | active | Read-only fundamental screening fields for Universe rows with safe incomplete fallback |
+| Technical screening | `screening/technical_screening.py` | active | Read-only technical screening fields for Universe rows with safe incomplete fallback |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -559,6 +561,28 @@ A-Share Universe Fields are research-universe fields for future screening and va
 | `fundamental_warnings` | `screening.fundamental_screening` | Missing, abnormal, or unavailable data warnings |
 
 Fundamental Screening Fields are read-only research fields for early fundamental review. V3.1.0 does not change default sorting, default screening workflow, stock-pool construction, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, event modules, memory modules, trading logic, or `core/scoring.py`.
+
+### Technical Screening Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `technical_available` | `screening.technical_screening` | Whether usable caller-provided technical data exists for the Universe row |
+| `close` | `screening.technical_screening` | Latest close price |
+| `ma20` | `screening.technical_screening` | 20-day moving average |
+| `ma60` | `screening.technical_screening` | 60-day moving average |
+| `above_ma20` | `screening.technical_screening` | Whether close is above MA20 |
+| `above_ma60` | `screening.technical_screening` | Whether close is above MA60 |
+| `ma_trend` | `screening.technical_screening` | Moving-average trend: Uptrend, Downtrend, Mixed, or Unknown |
+| `rsi14` | `screening.technical_screening` | 14-period RSI |
+| `macd_signal` | `screening.technical_screening` | MACD status: Bullish, Bearish, Neutral, or Unknown |
+| `volume_ratio` | `screening.technical_screening` | Current volume relative to recent average volume |
+| `technical_score` | `screening.technical_screening` | Read-only technical research score |
+| `technical_level` | `screening.technical_screening` | Technical level: High, Medium, Low, or Unavailable |
+| `technical_screening_status` | `screening.technical_screening` | Screening status: Pass, Watch, Exclude, or Incomplete |
+| `technical_reasons` | `screening.technical_screening` | Neutral reasons for pass/watch/exclude status |
+| `technical_warnings` | `screening.technical_screening` | Missing, abnormal, or unavailable data warnings |
+
+Technical Screening Fields are read-only research fields for early technical review. V3.2.0 does not create trade points, backtests, machine-learning outputs, automated trading workflows, target prices, or operational conclusions. It does not change default sorting, default screening workflow, stock-pool construction, `fundamental_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, fundamental modules, event modules, memory modules, trading logic, or `core/scoring.py`.
 
 ## Current Development Principles
 

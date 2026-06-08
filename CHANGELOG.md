@@ -2,6 +2,17 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v3.2.0
+
+- Added Technical Screening Engine in `screening/technical_screening.py`.
+- Added `build_technical_screening()` for read-only technical screening on A-share Universe rows.
+- Added technical fields for availability, close, MA20, MA60, MA position, MA trend, RSI14, MACD signal, volume ratio, technical score, level, screening status, reasons, and warnings.
+- Supports caller-provided price snapshots and price history dictionaries with safe missing-data handling.
+- Added a read-only Technical Screening panel to the screening page.
+- Added tests for empty Universe, missing price data, normal field generation, High/Pass output, weak output, RSI warning, MACD bearish downgrade, missing-field warnings, input immutability, row-order preservation, `fundamental_score` preservation, and module import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, `fundamental_score`, fundamental modules, event modules, memory modules, default sorting, default filters, stock pools, backtest logic, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external services, machine learning, backtesting changes, target prices, operational trade points, or automated trading interfaces.
+
 ## v3.1.0
 
 - Added Fundamental Screening Package in `screening/fundamental_screening.py`.

@@ -200,13 +200,14 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v3.1.0.
+Current: v3.2.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
 - v3.0.0: A-Share Universe Engine completed.
 - v3.1.0: Fundamental Screening completed.
-- Next target: v3.2.0 Technical Screening.
+- v3.2.0: Technical Screening completed.
+- Next target: v3.3.0 Composite Quant Score Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -235,6 +236,16 @@ Completed v3.1.0 scope:
 - Added a read-only Fundamental Screening panel to the screening page without changing default sorting.
 - Added tests for empty Universe, missing fundamental data, normal generation, High/Pass output, weak output, warnings, immutability, order preservation, old score preservation, and module import.
 - Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, event modules, memory modules, default sorting, default filters, stock pools, data sources, or trading logic.
+
+Completed v3.2.0 scope:
+
+- Added `screening/technical_screening.py`.
+- Added `build_technical_screening()` for read-only technical screening on A-share Universe rows.
+- Added technical fields for availability, close, MA20, MA60, MA position, MA trend, RSI14, MACD signal, volume ratio, score, level, status, reasons, and warnings.
+- Supports caller-provided price snapshots and price history dictionaries with safe missing-data handling.
+- Added a read-only Technical Screening panel to the screening page without changing default sorting.
+- Added tests for empty Universe, missing price data, normal generation, High/Pass output, weak output, RSI warnings, MACD bearish downgrade, missing-field warnings, immutability, order preservation, `fundamental_score` preservation, and module import.
+- Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, fundamental modules, event modules, memory modules, default sorting, default filters, stock pools, data sources, backtest logic, machine-learning logic, or trading logic.
 
 Boundary:
 

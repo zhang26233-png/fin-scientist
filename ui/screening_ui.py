@@ -1,15 +1,11 @@
-"""Streamlit UI entry for the automatic research-object screening page.
-
-The screening workflow implementation still lives in legacy_app.py. This page
-is the new navigation entry and keeps that dependency explicit until the
-renderer can be migrated safely.
-"""
+"""Streamlit UI entry for the automatic research-object screening page."""
 
 import streamlit as st
 
 from config.stock_pools import A_SHARE_SCREENING_POOLS, DEFAULT_A_SHARE_POOL_TYPE
 import legacy_app as legacy_workbench
 from screening.fundamental_screening import build_fundamental_screening
+from screening.technical_screening import build_technical_screening
 from strategy.preview import build_strategy_preview
 from universe.a_share_universe import build_a_share_universe
 
@@ -153,6 +149,16 @@ FUNDAMENTAL_SCREENING_COLUMNS = [
     "fundamental_warnings",
 ]
 
+TECHNICAL_SCREENING_COLUMNS = [
+    "ticker",
+    "name",
+    "technical_score",
+    "technical_level",
+    "technical_screening_status",
+    "technical_reasons",
+    "technical_warnings",
+]
+
 
 def build_screening_strategy_preview(result_df, sort_by_strategy=False):
     return build_strategy_preview(result_df, sort_by_strategy=sort_by_strategy)
@@ -172,82 +178,99 @@ def render_a_share_universe_section():
 
     st.subheader("A-Share Universe")
     metric_cols = st.columns(3)
-    metric_cols[0].metric("总股票数", total_count)
-    metric_cols[1].metric("过滤后数量", filtered_count)
+    metric_cols[0].metric("Total securities", total_count)
+    metric_cols[1].metric("Filtered securities", filtered_count)
     metric_cols[2].metric("Universe Status", status)
-    st.caption("过滤规则：剔除ST、剔除退市、剔除停牌、剔除上市不足250交易日。")
-    st.info(summary or "Universe Summary 暂无可展示数据。")
+    st.caption("Filter rules: exclude ST, delisted, suspended, and newly listed securities.")
+    st.info(summary or "Universe Summary is not available.")
     return universe
 
 
 def render_fundamental_screening_section(universe):
-    with st.expander("Fundamental Screening（只读研究展示，不构成投资建议）", expanded=False):
-        st.caption("基本面初筛仅用于研究对象初筛观察，不改变默认排序，不构成投资建议。")
+    with st.expander("Fundamental Screening (read-only research, not investment advice)", expanded=False):
+        st.caption("Fundamental screening is read-only research context. It does not change default sorting.")
         screening = build_fundamental_screening(universe)
         display_columns = [column for column in FUNDAMENTAL_SCREENING_COLUMNS if column in screening.columns]
         if screening.empty:
-            st.info("当前 Universe 为空，暂无可展示的基本面初筛结果。")
+            st.info("Current Universe is empty. No fundamental screening rows are available.")
+            return screening
+        st.dataframe(screening[display_columns], hide_index=True, use_container_width=True)
+        return screening
+
+
+def render_technical_screening_section(universe):
+    with st.expander("Technical Screening (read-only research, not investment advice)", expanded=False):
+        st.caption("Technical screening is read-only research context. It does not change default sorting.")
+        screening = build_technical_screening(universe)
+        display_columns = [column for column in TECHNICAL_SCREENING_COLUMNS if column in screening.columns]
+        if screening.empty:
+            st.info("Current Universe is empty. No technical screening rows are available.")
             return screening
         st.dataframe(screening[display_columns], hide_index=True, use_container_width=True)
         return screening
 
 
 def render_strategy_preview_section(result_df):
-    with st.expander("策略评分预览（研究辅助，不构成投资建议）", expanded=False):
-        st.caption("以下策略评分仅用于研究优先级观察，不构成投资建议；默认不改变原筛选排序。")
+    with st.expander("Strategy preview (research support, not investment advice)", expanded=False):
+        st.caption("Strategy preview is only for research-priority review. Default ordering is unchanged.")
         if result_df is None or getattr(result_df, "empty", True):
-            st.info("当前候选池为空，暂无可展示的策略评分预览。")
+            st.info("Current candidate pool is empty. No strategy preview rows are available.")
             return build_screening_strategy_preview(result_df)
 
-        sort_preview = st.checkbox("按 strategy_score 查看预览", value=False)
+        sort_preview = st.checkbox("View preview by strategy_score", value=False)
         preview = build_screening_strategy_preview(result_df, sort_by_strategy=sort_preview)
         display_columns = [column for column in STRATEGY_PREVIEW_COLUMNS if column in preview.columns]
         st.dataframe(preview[display_columns], hide_index=True, use_container_width=True)
 
         warning_rows = preview[preview["warnings"].map(bool)] if "warnings" in preview.columns else preview.iloc[0:0]
         if not warning_rows.empty:
-            st.caption("部分候选对象存在字段缺失或数据质量提示，请结合原始指标继续核对。")
+            st.caption("Some rows include missing-field or data-quality notes for research review.")
         return preview
 
 
 def render_screening_page():
-    """Render the V1.2 screening page with the unchanged V1.1 workflow."""
+    """Render the screening page while keeping the legacy workflow unchanged."""
     st.caption(
-        "缓存用于提升批量筛选速度，不保证实时性。免费数据源可能失败，"
-        "如果结果异常，可清除缓存后重试。"
+        "Cached data may improve batch screening speed but does not guarantee real-time results. "
+        "If results look abnormal, clear the cache and run screening again. Not investment advice."
     )
     with st.sidebar:
-        st.header('\u81ea\u52a8\u7b5b\u9009\u53c2\u6570')
-        screening_market = st.selectbox('\u7b5b\u9009\u5e02\u573a', options=legacy_workbench.SCREENING_MARKET_OPTIONS, index=0)
-        screening_run_mode = st.selectbox('\u8fd0\u884c\u6a21\u5f0f', options=legacy_workbench.SCREENING_RUN_MODE_OPTIONS, index=0)
-        screening_pool_source = st.selectbox('\u80a1\u7968\u6c60\u9009\u62e9', options=legacy_workbench.SCREENING_POOL_OPTIONS, index=0)
+        st.header("Screening parameters")
+        screening_market = st.selectbox("Market", options=legacy_workbench.SCREENING_MARKET_OPTIONS, index=0)
+        screening_run_mode = st.selectbox("Run mode", options=legacy_workbench.SCREENING_RUN_MODE_OPTIONS, index=0)
+        screening_pool_source = st.selectbox("Stock pool", options=legacy_workbench.SCREENING_POOL_OPTIONS, index=0)
         screening_a_share_pool_type = DEFAULT_A_SHARE_POOL_TYPE
-        if screening_market == 'A\u80a1' and screening_pool_source == '\u9ed8\u8ba4\u793a\u4f8b\u80a1\u7968\u6c60':
+        if screening_market == "A股" and screening_pool_source == "默认示例股票池":
             screening_a_share_pool_type = st.selectbox(
-                'A\u80a1\u80a1\u7968\u6c60\u7c7b\u578b',
+                "A-share pool type",
                 options=list(A_SHARE_SCREENING_POOLS.keys()),
                 index=list(A_SHARE_SCREENING_POOLS.keys()).index(DEFAULT_A_SHARE_POOL_TYPE),
             )
         screening_custom_input = st.text_area(
-            '\u81ea\u5b9a\u4e49\u80a1\u7968\u6c60',
-            value="600519, 300750, 000001" if screening_market == 'A\u80a1' else "AAPL, MSFT, NVDA",
+            "Custom stock pool",
+            value="600519, 300750, 000001" if screening_market == "A股" else "AAPL, MSFT, NVDA",
             height=90,
         )
-        screening_top_n = st.selectbox('\u7b5b\u9009\u6570\u91cf', options=legacy_workbench.SCREENING_TOP_OPTIONS, index=0)
-        screening_max_process_count = st.selectbox('\u6700\u5927\u5904\u7406\u6570\u91cf', options=legacy_workbench.SCREENING_MAX_PROCESS_OPTIONS, index=0)
-        clear_screening_cache_button = st.button('\u6e05\u9664\u7f13\u5b58\u5e76\u91cd\u65b0\u83b7\u53d6\u6570\u636e')
-        run_screening_button = st.button('\u751f\u6210\u7814\u7a76\u5019\u9009\u6c60')
+        screening_top_n = st.selectbox("Screening count", options=legacy_workbench.SCREENING_TOP_OPTIONS, index=0)
+        screening_max_process_count = st.selectbox(
+            "Max processing count",
+            options=legacy_workbench.SCREENING_MAX_PROCESS_OPTIONS,
+            index=0,
+        )
+        clear_screening_cache_button = st.button("Clear cache and refetch data")
+        run_screening_button = st.button("Generate research candidate pool")
 
     if clear_screening_cache_button:
         try:
             st.cache_data.clear()
-            st.success('\u7f13\u5b58\u5df2\u6e05\u9664\uff0c\u8bf7\u91cd\u65b0\u8fd0\u884c\u7b5b\u9009\u3002')
+            st.success("Cache cleared. Run screening again when ready.")
         except Exception as exc:
-            st.warning(f"缓存清除失败，请稍后重试：{exc}")
+            st.warning(f"Cache clearing failed. Please retry later: {exc}")
 
-    if screening_market == 'A\u80a1':
+    if screening_market == "A股":
         universe = render_a_share_universe_section()
         render_fundamental_screening_section(universe)
+        render_technical_screening_section(universe)
 
     if run_screening_button:
         screening_result = legacy_workbench.render_screening_section(
@@ -261,5 +284,8 @@ def render_screening_page():
         )
         render_strategy_preview_section(screening_result)
     else:
-        st.header('\u81ea\u52a8\u7814\u7a76\u5bf9\u8c61\u7b5b\u9009')
-        st.info('\u8bf7\u9009\u62e9\u80a1\u7968\u6c60\u548c\u8fd0\u884c\u6a21\u5f0f\u540e\uff0c\u70b9\u51fb\u751f\u6210\u7814\u7a76\u5019\u9009\u6c60\u3002\u5f53\u524d\u7ed3\u679c\u4ec5\u4f9b\u5b66\u4e60\u548c\u7814\u7a76\uff0c\u4e0d\u6784\u6210\u6295\u8d44\u5efa\u8bae\u3002')
+        st.header("Automatic research-object screening")
+        st.info(
+            "Choose a stock pool and run mode, then generate a research candidate pool. "
+            "Current results are only for learning and research and are not investment advice."
+        )
