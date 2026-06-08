@@ -2,6 +2,17 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v3.0.0
+
+- Added A-Share Universe Engine in `universe/a_share_universe.py`.
+- Added `build_a_share_universe()` with AkShare as the preferred source and safe empty DataFrame fallback when the source is unavailable.
+- Added universe fields for ticker, name, market, list date, days since listing, ST flag, suspended flag, row status, universe status, total count, filtered count, and universe summary.
+- Added default filters for ST, delisted securities, suspended securities, and listings with fewer than 250 days.
+- Added a read-only A-Share Universe panel to the screening page showing total count, filtered count, filter rules, and Universe Summary.
+- Added tests for empty data, single stock, ST filtering, suspended filtering, new-stock filtering, field completeness, and module import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, event modules, memory modules, default sorting, default filters, stock pools, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, or external services.
+
 ## v2.2.0
 
 - Added Research Journal Layer in `memory/research_journal.py`.

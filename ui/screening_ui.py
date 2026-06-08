@@ -10,6 +10,7 @@ import streamlit as st
 from config.stock_pools import A_SHARE_SCREENING_POOLS, DEFAULT_A_SHARE_POOL_TYPE
 import legacy_app as legacy_workbench
 from strategy.preview import build_strategy_preview
+from universe.a_share_universe import build_a_share_universe
 
 
 STRATEGY_PREVIEW_COLUMNS = [
@@ -146,6 +147,28 @@ def build_screening_strategy_preview(result_df, sort_by_strategy=False):
     return build_strategy_preview(result_df, sort_by_strategy=sort_by_strategy)
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_a_share_universe():
+    return build_a_share_universe()
+
+
+def render_a_share_universe_section():
+    universe = load_a_share_universe()
+    total_count = universe.attrs.get("universe_total_count", 0)
+    filtered_count = universe.attrs.get("universe_filtered_count", 0)
+    summary = universe.attrs.get("universe_summary", "")
+    status = universe.attrs.get("universe_status", "Incomplete")
+
+    st.subheader("A-Share Universe")
+    metric_cols = st.columns(3)
+    metric_cols[0].metric("总股票数", total_count)
+    metric_cols[1].metric("过滤后数量", filtered_count)
+    metric_cols[2].metric("Universe Status", status)
+    st.caption("过滤规则：剔除ST、剔除退市、剔除停牌、剔除上市不足250交易日。")
+    st.info(summary or "Universe Summary 暂无可展示数据。")
+    return universe
+
+
 def render_strategy_preview_section(result_df):
     with st.expander("策略评分预览（研究辅助，不构成投资建议）", expanded=False):
         st.caption("以下策略评分仅用于研究优先级观察，不构成投资建议；默认不改变原筛选排序。")
@@ -198,6 +221,9 @@ def render_screening_page():
             st.success('\u7f13\u5b58\u5df2\u6e05\u9664\uff0c\u8bf7\u91cd\u65b0\u8fd0\u884c\u7b5b\u9009\u3002')
         except Exception as exc:
             st.warning(f"缓存清除失败，请稍后重试：{exc}")
+
+    if screening_market == 'A\u80a1':
+        render_a_share_universe_section()
 
     if run_screening_button:
         screening_result = legacy_workbench.render_screening_section(

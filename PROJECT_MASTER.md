@@ -20,9 +20,9 @@
 
 ## Version State
 
-- CURRENT_VERSION = v2.2.0
-- CURRENT_STAGE = Research Journal Layer
-- NEXT_TARGET = v2.3.0
+- CURRENT_VERSION = v3.0.0
+- CURRENT_STAGE = A-Share Universe Engine
+- NEXT_TARGET = v3.1.0
 
 Version evidence from current files:
 
@@ -31,7 +31,7 @@ Version evidence from current files:
 - `README.md`: Current version: V2.0.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V2.2.0 adds the Research Journal Layer. The new journal layer converts a read-only Research Snapshot plus Research Timeline into a structured research journal for human review and future Agent reading. This version does not persist history, add databases, add vector stores, fetch news, call APIs, change data sources, alter sorting, or change scoring. The recommended v2.3 main line is Memory Retrieval.
+V3.0.0 adds the A-Share Universe Engine. The new universe layer builds a filtered all-A-share research universe from AkShare when available, and safely returns an empty DataFrame when the source is unavailable. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, scoring changes, default sorting changes, or event/memory module changes. The recommended v3.1 main line is Fundamental Screening.
 
 ## Current Architecture
 
@@ -48,6 +48,9 @@ Generated from the current project root scan on 2026-06-03.
 |   |-- research_journal.py
 |   |-- research_memory.py
 |   `-- research_timeline.py
+|-- universe/
+|   |-- __init__.py
+|   `-- a_share_universe.py
 |-- README.md
 |-- requirements.txt
 |-- streamlit-err.log
@@ -112,6 +115,7 @@ Generated from the current project root scan on 2026-06-03.
 |   |-- test_fundamental_data.py
 |   |-- test_market_data.py
 |   |-- test_module_imports.py
+|   |-- test_a_share_universe.py
 |   |-- test_research_journal.py
 |   |-- test_research_timeline.py
 |   |-- test_screening_contract.py
@@ -166,6 +170,7 @@ Generated from the current `strategy/` directory.
 | Research memory | `memory/research_memory.py` | active | Read-only Research Snapshot Schema for grouped memory payloads |
 | Research timeline | `memory/research_timeline.py` | active | Read-only Research Timeline Layer for organizing same-object snapshots by time |
 | Research journal | `memory/research_journal.py` | active | Read-only Research Journal Layer for human-readable and Agent-ready research notes |
+| A-share universe | `universe/a_share_universe.py` | active | All-A-share universe builder for future screening, scoring, and backtest entry points |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -510,6 +515,25 @@ Research Timeline Fields are schema-only, read-only, and research-only. V2.1.0 d
 | `journal_warnings` | `memory.research_journal` | Missing Snapshot, missing Timeline, incomplete status, missing ticker, and coverage warnings |
 
 Research Journal Fields are schema-only, read-only, and research-only. V2.2.0 does not save historical records, add a database, add a vector store, fetch news, call APIs, add data sources, change default screening output, change default sorting, change stock pools, change `strategy_score`, change `research_priority_score`, change `priority_stability_score`, change `architecture_audit_score`, change `event_confidence_score`, change `event_confluence_score`, or modify `core/scoring.py`.
+
+### A-Share Universe Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `ticker` | `universe.a_share_universe` | Normalized A-share security identifier |
+| `name` | `universe.a_share_universe` | Security display name |
+| `market` | `universe.a_share_universe` | Market label, defaulting to A股 |
+| `list_date` | `universe.a_share_universe` | Listing date when available |
+| `days_since_listing` | `universe.a_share_universe` | Days since listing, used for new-stock filtering |
+| `is_st` | `universe.a_share_universe` | Whether the security is marked as ST |
+| `is_suspended` | `universe.a_share_universe` | Whether the security is suspended |
+| `status` | `universe.a_share_universe` | Row-level universe status after filtering |
+| `universe_status` | `universe.a_share_universe` | Universe build status: Available or Incomplete |
+| `universe_total_count` | `universe.a_share_universe` | Total source securities before filtering |
+| `universe_filtered_count` | `universe.a_share_universe` | Securities remaining after default filters |
+| `universe_summary` | `universe.a_share_universe` | Human-readable summary of total count and filter exclusions |
+
+A-Share Universe Fields are research-universe fields for future screening and validation. V3.0.0 uses AkShare as the preferred source when available and safely returns an empty DataFrame if the source fails. It does not add API keys, databases, vector stores, news sources, external services, real trading connections, default sorting changes, stock-pool scoring changes, `strategy_score` changes, `research_priority_score` changes, `priority_stability_score` changes, event-module changes, memory-module changes, or `core/scoring.py` changes.
 
 ## Current Development Principles
 

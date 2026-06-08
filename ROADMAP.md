@@ -198,23 +198,39 @@ Boundary:
 - No score or sorting changes by memory persistence.
 - No database or vector-store dependency in v2.0.0.
 
-## v3.x - Machine Learning Research Layer
+## v3.x - Quantitative Research Foundation
 
-Goal: use machine learning to assist research prioritization and diagnostics after backtest validation exists.
+Current: v3.0.0.
 
-- Feature registry from current strategy fields.
-- Dataset builder with leakage checks.
-- Train/test split and time-aware validation.
-- Baseline models: logistic/regression/tree-based models where appropriate.
-- Feature importance and explainability reports.
-- Model confidence and data coverage labels.
-- Model drift monitoring.
+Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
+
+- v3.0.0: A-Share Universe Engine completed.
+- Next target: v3.1.0 Fundamental Screening.
+- A-share universe builder.
+- Fundamental screening entry point.
+- Technical screening entry point.
+- Composite score preparation.
+- Backtest engine entry point.
+- Future feature registry from current strategy fields.
+- Future dataset builder with leakage checks.
+- Future train/test split and time-aware validation.
+
+Completed v3.0.0 scope:
+
+- Added `universe/a_share_universe.py`.
+- Added `build_a_share_universe()` with AkShare as the preferred source and safe empty DataFrame fallback.
+- Added fields for ticker, name, market, list date, days since listing, ST flag, suspended flag, row status, universe status, total count, filtered count, and universe summary.
+- Added default filters for ST, delisted securities, suspended securities, and listings with fewer than 250 days.
+- Added read-only A-Share Universe panel to the screening page with total count, filtered count, filter rules, and Universe Summary.
+- Added tests for empty data, single stock, ST filtering, suspended filtering, new-stock filtering, field completeness, and module import.
+- Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, event modules, memory modules, default sorting, default filters, stock pools, data sources outside the new universe builder, or trading logic.
 
 Boundary:
 
 - Models must not generate black-box operational conclusions.
 - Model outputs remain research signals for further review.
 - Human-readable diagnostics are required.
+- No universe output is an investment recommendation or trading instruction.
 
 ## v4.x - Deep Learning Research Layer
 
