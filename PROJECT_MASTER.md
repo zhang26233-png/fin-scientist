@@ -20,9 +20,9 @@
 
 ## Version State
 
-- CURRENT_VERSION = v3.0.0
-- CURRENT_STAGE = A-Share Universe Engine
-- NEXT_TARGET = v3.1.0
+- CURRENT_VERSION = v3.1.0
+- CURRENT_STAGE = Fundamental Screening Package
+- NEXT_TARGET = v3.2.0
 
 Version evidence from current files:
 
@@ -31,7 +31,7 @@ Version evidence from current files:
 - `README.md`: Current version: V2.0.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V3.0.0 adds the A-Share Universe Engine. The new universe layer builds a filtered all-A-share research universe from AkShare when available, and safely returns an empty DataFrame when the source is unavailable. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, scoring changes, default sorting changes, or event/memory module changes. The recommended v3.1 main line is Fundamental Screening.
+V3.1.0 adds the Fundamental Screening Package on top of the A-Share Universe Engine. The new screening layer appends read-only profitability, growth, valuation, financial-risk, and cashflow-quality fields when caller-provided fundamental data is available, and safely marks rows as incomplete when data is missing. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, scoring changes, default sorting changes, stock-pool changes, or event/memory module changes. The recommended v3.2 main line is Technical Screening.
 
 ## Current Architecture
 
@@ -51,6 +51,9 @@ Generated from the current project root scan on 2026-06-03.
 |-- universe/
 |   |-- __init__.py
 |   `-- a_share_universe.py
+|-- screening/
+|   |-- __init__.py
+|   `-- fundamental_screening.py
 |-- README.md
 |-- requirements.txt
 |-- streamlit-err.log
@@ -171,6 +174,7 @@ Generated from the current `strategy/` directory.
 | Research timeline | `memory/research_timeline.py` | active | Read-only Research Timeline Layer for organizing same-object snapshots by time |
 | Research journal | `memory/research_journal.py` | active | Read-only Research Journal Layer for human-readable and Agent-ready research notes |
 | A-share universe | `universe/a_share_universe.py` | active | All-A-share universe builder for future screening, scoring, and backtest entry points |
+| Fundamental screening | `screening/fundamental_screening.py` | active | Read-only fundamental screening fields for Universe rows with safe incomplete fallback |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -534,6 +538,27 @@ Research Journal Fields are schema-only, read-only, and research-only. V2.2.0 do
 | `universe_summary` | `universe.a_share_universe` | Human-readable summary of total count and filter exclusions |
 
 A-Share Universe Fields are research-universe fields for future screening and validation. V3.0.0 uses AkShare as the preferred source when available and safely returns an empty DataFrame if the source fails. It does not add API keys, databases, vector stores, news sources, external services, real trading connections, default sorting changes, stock-pool scoring changes, `strategy_score` changes, `research_priority_score` changes, `priority_stability_score` changes, event-module changes, memory-module changes, or `core/scoring.py` changes.
+
+### Fundamental Screening Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `fundamental_available` | `screening.fundamental_screening` | Whether usable caller-provided fundamental data exists for the Universe row |
+| `roe` | `screening.fundamental_screening` | Return on equity |
+| `revenue_growth` | `screening.fundamental_screening` | Revenue growth rate |
+| `profit_growth` | `screening.fundamental_screening` | Profit growth rate |
+| `gross_margin` | `screening.fundamental_screening` | Gross margin |
+| `debt_ratio` | `screening.fundamental_screening` | Asset-liability ratio |
+| `operating_cashflow` | `screening.fundamental_screening` | Operating cashflow |
+| `pe` | `screening.fundamental_screening` | Price-to-earnings ratio |
+| `pb` | `screening.fundamental_screening` | Price-to-book ratio |
+| `fundamental_score` | `screening.fundamental_screening` | Read-only fundamental research score |
+| `fundamental_level` | `screening.fundamental_screening` | Fundamental level: High, Medium, Low, or Unavailable |
+| `fundamental_screening_status` | `screening.fundamental_screening` | Screening status: Pass, Watch, Exclude, or Incomplete |
+| `fundamental_reasons` | `screening.fundamental_screening` | Neutral reasons for pass/watch status |
+| `fundamental_warnings` | `screening.fundamental_screening` | Missing, abnormal, or unavailable data warnings |
+
+Fundamental Screening Fields are read-only research fields for early fundamental review. V3.1.0 does not change default sorting, default screening workflow, stock-pool construction, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, event modules, memory modules, trading logic, or `core/scoring.py`.
 
 ## Current Development Principles
 

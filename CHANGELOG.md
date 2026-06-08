@@ -2,6 +2,17 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v3.1.0
+
+- Added Fundamental Screening Package in `screening/fundamental_screening.py`.
+- Added `build_fundamental_screening()` for read-only fundamental screening on A-share Universe rows.
+- Added fundamental fields for availability, ROE, revenue growth, profit growth, gross margin, debt ratio, operating cashflow, PE, PB, fundamental score, level, screening status, reasons, and warnings.
+- Covers profitability, growth, valuation, financial risk, and cashflow quality with safe missing-data handling.
+- Added a read-only Fundamental Screening panel to the screening page.
+- Added tests for empty Universe, missing fundamental data, normal field generation, High/Pass output, weak output, missing-field warnings, input immutability, row-order preservation, old score preservation, and module import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, event modules, memory modules, default sorting, default filters, stock pools, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external services, machine learning, backtesting changes, or automated trading interfaces.
+
 ## v3.0.0
 
 - Added A-Share Universe Engine in `universe/a_share_universe.py`.

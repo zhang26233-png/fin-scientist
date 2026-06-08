@@ -200,12 +200,13 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v3.0.0.
+Current: v3.1.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
 - v3.0.0: A-Share Universe Engine completed.
-- Next target: v3.1.0 Fundamental Screening.
+- v3.1.0: Fundamental Screening completed.
+- Next target: v3.2.0 Technical Screening.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -224,6 +225,16 @@ Completed v3.0.0 scope:
 - Added read-only A-Share Universe panel to the screening page with total count, filtered count, filter rules, and Universe Summary.
 - Added tests for empty data, single stock, ST filtering, suspended filtering, new-stock filtering, field completeness, and module import.
 - Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, event modules, memory modules, default sorting, default filters, stock pools, data sources outside the new universe builder, or trading logic.
+
+Completed v3.1.0 scope:
+
+- Added `screening/fundamental_screening.py`.
+- Added `build_fundamental_screening()` for read-only fundamental screening on A-share Universe rows.
+- Added fundamental fields for availability, ROE, revenue growth, profit growth, gross margin, debt ratio, operating cashflow, PE, PB, score, level, status, reasons, and warnings.
+- Covers profitability, growth, valuation, financial risk, and cashflow quality with safe missing-data handling.
+- Added a read-only Fundamental Screening panel to the screening page without changing default sorting.
+- Added tests for empty Universe, missing fundamental data, normal generation, High/Pass output, weak output, warnings, immutability, order preservation, old score preservation, and module import.
+- Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, event modules, memory modules, default sorting, default filters, stock pools, data sources, or trading logic.
 
 Boundary:
 

@@ -9,6 +9,7 @@ import streamlit as st
 
 from config.stock_pools import A_SHARE_SCREENING_POOLS, DEFAULT_A_SHARE_POOL_TYPE
 import legacy_app as legacy_workbench
+from screening.fundamental_screening import build_fundamental_screening
 from strategy.preview import build_strategy_preview
 from universe.a_share_universe import build_a_share_universe
 
@@ -142,6 +143,16 @@ STRATEGY_PREVIEW_COLUMNS = [
     "warnings",
 ]
 
+FUNDAMENTAL_SCREENING_COLUMNS = [
+    "ticker",
+    "name",
+    "fundamental_score",
+    "fundamental_level",
+    "fundamental_screening_status",
+    "fundamental_reasons",
+    "fundamental_warnings",
+]
+
 
 def build_screening_strategy_preview(result_df, sort_by_strategy=False):
     return build_strategy_preview(result_df, sort_by_strategy=sort_by_strategy)
@@ -167,6 +178,18 @@ def render_a_share_universe_section():
     st.caption("过滤规则：剔除ST、剔除退市、剔除停牌、剔除上市不足250交易日。")
     st.info(summary or "Universe Summary 暂无可展示数据。")
     return universe
+
+
+def render_fundamental_screening_section(universe):
+    with st.expander("Fundamental Screening（只读研究展示，不构成投资建议）", expanded=False):
+        st.caption("基本面初筛仅用于研究对象初筛观察，不改变默认排序，不构成投资建议。")
+        screening = build_fundamental_screening(universe)
+        display_columns = [column for column in FUNDAMENTAL_SCREENING_COLUMNS if column in screening.columns]
+        if screening.empty:
+            st.info("当前 Universe 为空，暂无可展示的基本面初筛结果。")
+            return screening
+        st.dataframe(screening[display_columns], hide_index=True, use_container_width=True)
+        return screening
 
 
 def render_strategy_preview_section(result_df):
@@ -223,7 +246,8 @@ def render_screening_page():
             st.warning(f"缓存清除失败，请稍后重试：{exc}")
 
     if screening_market == 'A\u80a1':
-        render_a_share_universe_section()
+        universe = render_a_share_universe_section()
+        render_fundamental_screening_section(universe)
 
     if run_screening_button:
         screening_result = legacy_workbench.render_screening_section(
