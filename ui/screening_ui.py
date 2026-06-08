@@ -4,6 +4,7 @@ import streamlit as st
 
 from config.stock_pools import A_SHARE_SCREENING_POOLS, DEFAULT_A_SHARE_POOL_TYPE
 import legacy_app as legacy_workbench
+from screening.candidate_pool import build_candidate_pool
 from screening.composite_score_engine import build_composite_quant_score
 from screening.fundamental_screening import build_fundamental_screening
 from screening.technical_screening import build_technical_screening
@@ -174,6 +175,18 @@ COMPOSITE_SCORE_COLUMNS = [
     "composite_warnings",
 ]
 
+CANDIDATE_POOL_COLUMNS = [
+    "ticker",
+    "name",
+    "candidate_pool",
+    "candidate_rank",
+    "candidate_level",
+    "candidate_status",
+    "candidate_reasons",
+    "candidate_risk_flags",
+    "candidate_warnings",
+]
+
 
 def build_screening_strategy_preview(result_df, sort_by_strategy=False):
     return build_strategy_preview(result_df, sort_by_strategy=sort_by_strategy)
@@ -237,6 +250,18 @@ def render_composite_quant_score_section(universe, fundamental_screening, techni
         return composite
 
 
+def render_candidate_pool_section(composite):
+    with st.expander("Candidate Pool (read-only research, not investment advice)", expanded=False):
+        st.caption("Candidate Pool groups composite results for research review without changing row order.")
+        candidate_pool = build_candidate_pool(composite)
+        display_columns = [column for column in CANDIDATE_POOL_COLUMNS if column in candidate_pool.columns]
+        if candidate_pool.empty:
+            st.info("Current composite result is empty. No candidate pool rows are available.")
+            return candidate_pool
+        st.dataframe(candidate_pool[display_columns], hide_index=True, use_container_width=True)
+        return candidate_pool
+
+
 def render_strategy_preview_section(result_df):
     with st.expander("Strategy preview (research support, not investment advice)", expanded=False):
         st.caption("Strategy preview is only for research-priority review. Default ordering is unchanged.")
@@ -298,7 +323,8 @@ def render_screening_page():
         universe = render_a_share_universe_section()
         fundamental_screening = render_fundamental_screening_section(universe)
         technical_screening = render_technical_screening_section(universe)
-        render_composite_quant_score_section(universe, fundamental_screening, technical_screening)
+        composite = render_composite_quant_score_section(universe, fundamental_screening, technical_screening)
+        render_candidate_pool_section(composite)
 
     if run_screening_button:
         screening_result = legacy_workbench.render_screening_section(

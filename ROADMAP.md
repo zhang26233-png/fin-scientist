@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v3.3.0.
+Current: v3.4.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -208,7 +208,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v3.1.0: Fundamental Screening completed.
 - v3.2.0: Technical Screening completed.
 - v3.3.0: Composite Quant Score Engine completed.
-- Next target: v3.4.0 Candidate Pool Engine.
+- v3.4.0: Candidate Pool Engine completed.
+- Next target: v3.5.0 Backtest Foundation Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -258,6 +259,17 @@ Completed v3.3.0 scope:
 - Added a read-only Composite Quant Score panel to the screening page without changing default sorting.
 - Added tests for empty Universe, missing Fundamental input, missing Technical input, normal generation, High/Pass output, Medium/Watch output, Low/Watch output, Exclude output, readable score breakdown, warnings, immutability, order preservation, `fundamental_score` preservation, `technical_score` preservation, and module import.
 - Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, `technical_score`, Universe modules, Fundamental modules, Technical modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, backtest logic, machine-learning logic, or trading logic.
+
+Completed v3.4.0 scope:
+
+- Added `screening/candidate_pool.py`.
+- Added `build_candidate_pool()` for read-only candidate-pool grouping from Composite Quant Score outputs.
+- Added candidate fields for pool group, rank, level, status, reasons, risk flags, and warnings.
+- Uses Core, Watch, Exclude, and Unavailable groups based on `composite_level`, `composite_screening_status`, and `composite_available`.
+- Generates `candidate_rank` only inside Core/Watch based on `composite_score` descending while preserving input row order.
+- Added a read-only Candidate Pool panel to the screening page without changing default sorting.
+- Added tests for empty input, missing `composite_score`, Core grouping, Watch grouping, Exclude grouping, missing-field warnings, rank generation, rank order preservation, input immutability, `composite_score` preservation, `fundamental_score` preservation, `technical_score` preservation, and module import.
+- Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, `technical_score`, `composite_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, backtest logic, machine-learning logic, or trading logic.
 
 Boundary:
 

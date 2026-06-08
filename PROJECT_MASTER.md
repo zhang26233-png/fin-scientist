@@ -20,9 +20,9 @@
 
 ## Version State
 
-- CURRENT_VERSION = v3.3.0
-- CURRENT_STAGE = Composite Quant Score Engine
-- NEXT_TARGET = v3.4.0
+- CURRENT_VERSION = v3.4.0
+- CURRENT_STAGE = Candidate Pool Engine
+- NEXT_TARGET = v3.5.0
 
 Version evidence from current files:
 
@@ -31,7 +31,7 @@ Version evidence from current files:
 - `README.md`: Current version: V2.0.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V3.3.0 adds the Composite Quant Score Engine on top of the A-Share Universe Engine, Fundamental Screening Package, and Technical Screening Engine. The new screening layer combines read-only `fundamental_score` and `technical_score` with default 50%/50% weights, and safely marks rows as incomplete when either side is unavailable. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, target prices, backtest results, machine-learning predictions, default sorting changes, stock-pool changes, universe-module changes, fundamental-module changes, technical-module changes, or event/memory module changes. The recommended v3.4 main line is Candidate Pool Engine.
+V3.4.0 adds the Candidate Pool Engine on top of the A-Share Universe Engine, Fundamental Screening Package, Technical Screening Engine, and Composite Quant Score Engine. The new screening layer converts composite results into read-only Core, Watch, Exclude, or Unavailable candidate-pool groups, with ranking inside Core/Watch only and without changing row order. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, target prices, backtest results, machine-learning predictions, default sorting changes, stock-pool changes, universe-module changes, fundamental-module changes, technical-module changes, composite-module changes, or event/memory module changes. The recommended v3.5 main line is Backtest Foundation Engine.
 
 ## Current Architecture
 
@@ -53,6 +53,7 @@ Generated from the current project root scan on 2026-06-03.
 |   `-- a_share_universe.py
 |-- screening/
 |   |-- __init__.py
+|   |-- candidate_pool.py
 |   |-- composite_score_engine.py
 |   |-- fundamental_screening.py
 |   `-- technical_screening.py
@@ -179,6 +180,7 @@ Generated from the current `strategy/` directory.
 | Fundamental screening | `screening/fundamental_screening.py` | active | Read-only fundamental screening fields for Universe rows with safe incomplete fallback |
 | Technical screening | `screening/technical_screening.py` | active | Read-only technical screening fields for Universe rows with safe incomplete fallback |
 | Composite quant score | `screening/composite_score_engine.py` | active | Read-only 50/50 composite score from fundamental and technical screening outputs |
+| Candidate pool | `screening/candidate_pool.py` | active | Read-only candidate-pool grouping and rank fields from composite score outputs |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -599,6 +601,20 @@ Technical Screening Fields are read-only research fields for early technical rev
 | `score_breakdown` | `screening.composite_score_engine` | Human-readable score decomposition such as Fundamental, Technical, and Composite values |
 
 Composite Quant Score Fields are read-only research fields for standardizing the next candidate-pool input. V3.3.0 does not create buy signals, sell signals, target prices, position suggestions, backtest results, machine-learning predictions, or automated trading workflows. It does not change default sorting, default screening workflow, stock-pool construction, Universe modules, Fundamental modules, Technical modules, Event modules, Memory modules, trading logic, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`.
+
+### Candidate Pool Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `candidate_pool` | `screening.candidate_pool` | Candidate group: Core, Watch, Exclude, or Unavailable |
+| `candidate_rank` | `screening.candidate_pool` | Read-only rank inside Core/Watch based on `composite_score` descending without changing row order |
+| `candidate_level` | `screening.candidate_pool` | Candidate level: A, B, C, or Unavailable |
+| `candidate_status` | `screening.candidate_pool` | Candidate status: Selected, Watch, Excluded, or Incomplete |
+| `candidate_reasons` | `screening.candidate_pool` | Neutral reasons for Core, Watch, or Exclude grouping |
+| `candidate_risk_flags` | `screening.candidate_pool` | Risk labels such as Low Score, Missing Data, Weak Technical, or Weak Fundamental |
+| `candidate_warnings` | `screening.candidate_pool` | Missing, abnormal, or unavailable input warnings |
+
+Candidate Pool Fields are read-only research fields for organizing composite-score outputs before future backtest validation. V3.4.0 does not create buy points, sell points, target prices, position suggestions, backtest results, machine-learning predictions, or automated trading workflows. It does not change default sorting, default screening workflow, stock-pool construction, Universe modules, Fundamental modules, Technical modules, Composite modules, Event modules, Memory modules, trading logic, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`.
 
 ## Current Development Principles
 

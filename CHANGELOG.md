@@ -2,6 +2,18 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v3.4.0
+
+- Added Candidate Pool Engine in `screening/candidate_pool.py`.
+- Added `build_candidate_pool()` for read-only candidate-pool grouping from Composite Quant Score outputs.
+- Added candidate fields for pool group, candidate rank, candidate level, candidate status, reasons, risk flags, and warnings.
+- Uses Core, Watch, Exclude, and Unavailable groups based on `composite_level`, `composite_screening_status`, and `composite_available`.
+- Generates `candidate_rank` only inside Core/Watch based on `composite_score` descending while preserving input row order.
+- Added a read-only Candidate Pool panel to the screening page.
+- Added tests for empty input, missing `composite_score`, Core grouping, Watch grouping, Exclude grouping, missing-field warnings, candidate rank generation, rank order preservation, input immutability, `composite_score` preservation, `fundamental_score` preservation, `technical_score` preservation, and module import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, `fundamental_score`, `technical_score`, `composite_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Event modules, Memory modules, default sorting, default filters, stock pools, backtest logic, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external services, machine learning, backtesting changes, target prices, operational trade points, position suggestions, or automated trading interfaces.
+
 ## v3.3.0
 
 - Added Composite Quant Score Engine in `screening/composite_score_engine.py`.
