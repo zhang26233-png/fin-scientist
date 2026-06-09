@@ -3,6 +3,7 @@
 import streamlit as st
 
 from backtest.backtest_engine import build_backtest_dataset
+from backtest.backtest_evaluation import build_backtest_evaluation
 from backtest.return_analysis import build_return_analysis
 from config.stock_pools import A_SHARE_SCREENING_POOLS, DEFAULT_A_SHARE_POOL_TYPE
 import legacy_app as legacy_workbench
@@ -215,6 +216,20 @@ RETURN_ANALYSIS_COLUMNS = [
     "return_analysis_warnings",
 ]
 
+BACKTEST_EVALUATION_COLUMNS = [
+    "ticker",
+    "name",
+    "risk_score",
+    "risk_level",
+    "return_risk_ratio",
+    "drawdown_risk_level",
+    "volatility_risk_level",
+    "performance_label",
+    "performance_summary",
+    "backtest_quality_label",
+    "backtest_evaluation_warnings",
+]
+
 
 def build_screening_strategy_preview(result_df, sort_by_strategy=False):
     return build_strategy_preview(result_df, sort_by_strategy=sort_by_strategy)
@@ -314,6 +329,18 @@ def render_return_analysis_section(backtest_dataset):
         return return_analysis
 
 
+def render_backtest_evaluation_section(return_analysis):
+    with st.expander("Backtest Evaluation (read-only research, not investment advice)", expanded=False):
+        st.caption("Backtest Evaluation summarizes historical return, volatility, and drawdown for research review only.")
+        evaluation = build_backtest_evaluation(return_analysis)
+        display_columns = [column for column in BACKTEST_EVALUATION_COLUMNS if column in evaluation.columns]
+        if evaluation.empty:
+            st.info("Current return analysis dataset is empty. No backtest evaluation rows are available.")
+            return evaluation
+        st.dataframe(evaluation[display_columns], hide_index=True, use_container_width=True)
+        return evaluation
+
+
 def render_strategy_preview_section(result_df):
     with st.expander("Strategy preview (research support, not investment advice)", expanded=False):
         st.caption("Strategy preview is only for research-priority review. Default ordering is unchanged.")
@@ -378,7 +405,8 @@ def render_screening_page():
         composite = render_composite_quant_score_section(universe, fundamental_screening, technical_screening)
         candidate_pool = render_candidate_pool_section(composite)
         backtest_dataset = render_backtest_foundation_section(candidate_pool)
-        render_return_analysis_section(backtest_dataset)
+        return_analysis = render_return_analysis_section(backtest_dataset)
+        render_backtest_evaluation_section(return_analysis)
 
     if run_screening_button:
         screening_result = legacy_workbench.render_screening_section(

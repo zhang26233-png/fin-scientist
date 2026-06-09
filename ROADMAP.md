@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v3.6.0.
+Current: v3.7.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -211,7 +211,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v3.4.0: Candidate Pool Engine completed.
 - v3.5.0: Backtest Foundation Engine completed.
 - v3.6.0: Return Analysis Engine completed.
-- Next target: v3.7.0 Risk Analysis Engine.
+- v3.7.0: Backtest Evaluation Package completed.
+- Next target: v3.8.0 Strategy Rule Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -295,6 +296,17 @@ Completed v3.6.0 scope:
 - Added tests for empty input, missing price history, unavailable backtest foundation, single stock, multiple stocks, period return, annualized return, volatility, maximum drawdown, win rate, missing `close`, missing `date`, input immutability, row-order preservation, old score-field preservation, and module import.
 - Did not add databases, vector stores, news sources, APIs, external services, machine learning, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, or operational conclusions.
 - Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
+
+Completed v3.7.0 scope:
+
+- Added `backtest/backtest_evaluation.py`.
+- Added `build_backtest_evaluation()` for read-only backtest evaluation from Return Analysis rows.
+- Added evaluation fields for availability, status, risk score, risk level, return-risk ratio, drawdown risk level, volatility risk level, performance label, performance summary, backtest quality label, and warnings.
+- Evaluates only rows where `return_analysis_available` is true and required return-analysis fields are usable.
+- Added a read-only Backtest Evaluation panel to the screening page without changing default sorting.
+- Added tests for empty input, unavailable return analysis, single stock, multiple stocks, risk score, risk level, return-risk ratio, zero-drawdown warning, performance label, quality label, missing-field warnings, input immutability, row-order preservation, old score-field preservation, and module import.
+- Did not add databases, vector stores, news sources, APIs, external services, machine learning, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, scoring-weight changes, return promises, or operational conclusions.
+- Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest Foundation modules, Return Analysis modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
 
 Boundary:
 

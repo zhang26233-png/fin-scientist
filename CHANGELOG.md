@@ -2,6 +2,17 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v3.7.0
+
+- Added Backtest Evaluation Package in `backtest/backtest_evaluation.py`.
+- Added `build_backtest_evaluation()` for read-only evaluation from Return Analysis rows.
+- Added backtest-evaluation fields for availability, status, risk score, risk level, return-risk ratio, drawdown risk level, volatility risk level, performance label, performance summary, backtest quality label, and warnings.
+- Evaluates only rows where `return_analysis_available` is true and required return-analysis fields are usable.
+- Added a read-only Backtest Evaluation panel to the screening page.
+- Added tests for empty input, unavailable return analysis, single stock, multiple stocks, risk score, risk level, return-risk ratio, zero-drawdown warning, performance label, quality label, missing-field warnings, input immutability, row-order preservation, score-field preservation, and module import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest Foundation modules, Return Analysis modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, scoring weights, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external APIs, external services, machine learning, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, return promises, or operational conclusions.
+
 ## v3.6.0
 
 - Added Return Analysis Engine in `backtest/return_analysis.py`.

@@ -20,9 +20,9 @@
 
 ## Version State
 
-- CURRENT_VERSION = v3.6.0
-- CURRENT_STAGE = Return Analysis Engine
-- NEXT_TARGET = v3.7.0 Risk Analysis Engine
+- CURRENT_VERSION = v3.7.0
+- CURRENT_STAGE = Backtest Evaluation Package
+- NEXT_TARGET = v3.8.0 Strategy Rule Engine
 
 Version evidence from current files:
 
@@ -31,7 +31,7 @@ Version evidence from current files:
 - `README.md`: Current version: V2.0.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V3.6.0 adds the Return Analysis Engine on top of the Backtest Foundation Engine. The new return-analysis layer calculates read-only historical metrics only when validated price history is available, including period return, annualized return, volatility, maximum drawdown, and win rate. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, target prices, position suggestions, strategy optimization, parameter search, machine-learning predictions, default sorting changes, stock-pool changes, universe-module changes, fundamental-module changes, technical-module changes, composite-module changes, candidate-pool changes, or event/memory module changes. The recommended v3.7 main line is Risk Analysis Engine.
+V3.7.0 adds the Backtest Evaluation Package on top of the Backtest Foundation and Return Analysis layers. The new evaluation layer calculates read-only risk, return-risk, performance, and backtest-quality fields only from existing return-analysis outputs. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, scoring-weight changes, default sorting changes, stock-pool changes, universe-module changes, fundamental-module changes, technical-module changes, composite-module changes, candidate-pool changes, Backtest Foundation changes, Return Analysis changes, or event/memory module changes. The recommended v3.8 main line is Strategy Rule Engine.
 
 ## Current Architecture
 
@@ -54,6 +54,7 @@ Generated from the current project root scan on 2026-06-03.
 |-- backtest/
 |   |-- __init__.py
 |   |-- backtest_engine.py
+|   |-- backtest_evaluation.py
 |   `-- return_analysis.py
 |-- screening/
 |   |-- __init__.py
@@ -187,6 +188,7 @@ Generated from the current `strategy/` directory.
 | Candidate pool | `screening/candidate_pool.py` | active | Read-only candidate-pool grouping and rank fields from composite score outputs |
 | Backtest foundation | `backtest/backtest_engine.py` | active | Read-only price-history availability and coverage fields for future validation |
 | Return analysis | `backtest/return_analysis.py` | active | Read-only historical return metrics from validated price history |
+| Backtest evaluation | `backtest/backtest_evaluation.py` | active | Read-only risk, return-risk, performance, and quality evaluation from return-analysis fields |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -654,6 +656,24 @@ Backtest Foundation Fields are read-only data-availability fields for future val
 | `return_analysis_warnings` | `backtest.return_analysis` | Missing, abnormal, or unavailable price-history warnings |
 
 Return Analysis Fields are read-only historical metric fields for future risk analysis and report assembly. V3.6.0 only computes metrics when `backtest_available` is true and valid `date` plus `close` history has at least 60 rows. It does not create target prices, position suggestions, strategy optimization, parameter search, machine-learning predictions, automated trading workflows, or operational conclusions. It does not change default sorting, default screening workflow, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Event modules, Memory modules, trading logic, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`.
+
+### Backtest Evaluation Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `backtest_evaluation_available` | `backtest.backtest_evaluation` | Whether return-analysis fields are sufficient for read-only backtest evaluation |
+| `backtest_evaluation_status` | `backtest.backtest_evaluation` | Backtest evaluation status: Available or Incomplete |
+| `risk_score` | `backtest.backtest_evaluation` | Read-only risk score derived from max drawdown, volatility, and negative period-return context |
+| `risk_level` | `backtest.backtest_evaluation` | Risk level: High, Medium, Low, or Unavailable |
+| `return_risk_ratio` | `backtest.backtest_evaluation` | Historical period return divided by absolute maximum drawdown when available |
+| `drawdown_risk_level` | `backtest.backtest_evaluation` | Drawdown risk level derived from maximum drawdown magnitude |
+| `volatility_risk_level` | `backtest.backtest_evaluation` | Volatility risk level derived from annualized volatility |
+| `performance_label` | `backtest.backtest_evaluation` | Historical performance label: Strong, Normal, Weak, or Unavailable |
+| `performance_summary` | `backtest.backtest_evaluation` | Neutral summary of historical return, volatility, and drawdown context |
+| `backtest_quality_label` | `backtest.backtest_evaluation` | Backtest quality label: Good, Watch, Poor, or Unavailable |
+| `backtest_evaluation_warnings` | `backtest.backtest_evaluation` | Missing, abnormal, or unavailable evaluation warnings |
+
+Backtest Evaluation Fields are read-only historical evaluation fields for closing the backtest review loop before future strategy-rule work. V3.7.0 only evaluates rows where `return_analysis_available` is true and required return-analysis fields are usable. It does not create buy or sell advice, target prices, position suggestions, automated trading workflows, strategy optimization, parameter search, machine-learning predictions, return promises, or scoring-weight changes. It does not change default sorting, default screening workflow, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest Foundation modules, Return Analysis modules, Event modules, Memory modules, trading logic, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`.
 
 ## Current Development Principles
 
