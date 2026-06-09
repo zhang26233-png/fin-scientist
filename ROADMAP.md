@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v3.7.0.
+Current: v3.8.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -212,7 +212,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v3.5.0: Backtest Foundation Engine completed.
 - v3.6.0: Return Analysis Engine completed.
 - v3.7.0: Backtest Evaluation Package completed.
-- Next target: v3.8.0 Strategy Rule Engine.
+- v3.8.0: Stock Selection System Package completed.
+- Next target: v3.9.0 Strategy Rule Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -307,6 +308,19 @@ Completed v3.7.0 scope:
 - Added tests for empty input, unavailable return analysis, single stock, multiple stocks, risk score, risk level, return-risk ratio, zero-drawdown warning, performance label, quality label, missing-field warnings, input immutability, row-order preservation, old score-field preservation, and module import.
 - Did not add databases, vector stores, news sources, APIs, external services, machine learning, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, scoring-weight changes, return promises, or operational conclusions.
 - Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest Foundation modules, Return Analysis modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
+
+Completed v3.8.0 scope:
+
+- Added `selection/stock_selection.py`.
+- Added `selection/__init__.py`.
+- Added `build_stock_selection()` for read-only stock-selection research from Candidate Pool, Composite, Fundamental, Technical, and Backtest Evaluation fields already present in the input frame.
+- Added selection fields for availability, score, level, status, bucket, rank, reasons, risk notes, quality label, and warnings.
+- Uses transparent selection-layer weights: Composite Score 50%, Candidate Pool 20%, Backtest Evaluation 20%, and Risk Penalty 10%.
+- Generates `selection_rank` from selection score without changing row order.
+- Added a read-only Stock Selection System panel to the screening page without changing default sorting.
+- Added tests for empty input, missing composite score, Core/high-score Selected output, Watch/medium-score Watch output, Exclude output, high-risk downgrade, poor-backtest-quality downgrade, rank generation, rank order preservation, reasons, risk notes, warnings, input immutability, `composite_score` preservation, `candidate_rank` preservation, and module import.
+- Did not add databases, vector stores, news sources, APIs, external services, machine learning, buy/sell points, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, upstream scoring-weight changes, return promises, or operational conclusions.
+- Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
 
 Boundary:
 

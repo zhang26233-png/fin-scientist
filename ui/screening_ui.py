@@ -11,6 +11,7 @@ from screening.candidate_pool import build_candidate_pool
 from screening.composite_score_engine import build_composite_quant_score
 from screening.fundamental_screening import build_fundamental_screening
 from screening.technical_screening import build_technical_screening
+from selection.stock_selection import build_stock_selection
 from strategy.preview import build_strategy_preview
 from universe.a_share_universe import build_a_share_universe
 
@@ -230,6 +231,20 @@ BACKTEST_EVALUATION_COLUMNS = [
     "backtest_evaluation_warnings",
 ]
 
+STOCK_SELECTION_COLUMNS = [
+    "ticker",
+    "name",
+    "selection_score",
+    "selection_level",
+    "selection_status",
+    "selection_bucket",
+    "selection_rank",
+    "selection_reasons",
+    "selection_risk_notes",
+    "selection_quality_label",
+    "selection_warnings",
+]
+
 
 def build_screening_strategy_preview(result_df, sort_by_strategy=False):
     return build_strategy_preview(result_df, sort_by_strategy=sort_by_strategy)
@@ -341,6 +356,18 @@ def render_backtest_evaluation_section(return_analysis):
         return evaluation
 
 
+def render_stock_selection_section(backtest_evaluation):
+    with st.expander("Stock Selection System (read-only research, not investment advice)", expanded=False):
+        st.caption("Stock Selection System integrates existing research fields into a read-only selection layer without changing default sorting.")
+        selection = build_stock_selection(backtest_evaluation)
+        display_columns = [column for column in STOCK_SELECTION_COLUMNS if column in selection.columns]
+        if selection.empty:
+            st.info("Current backtest evaluation dataset is empty. No stock selection rows are available.")
+            return selection
+        st.dataframe(selection[display_columns], hide_index=True, use_container_width=True)
+        return selection
+
+
 def render_strategy_preview_section(result_df):
     with st.expander("Strategy preview (research support, not investment advice)", expanded=False):
         st.caption("Strategy preview is only for research-priority review. Default ordering is unchanged.")
@@ -406,7 +433,8 @@ def render_screening_page():
         candidate_pool = render_candidate_pool_section(composite)
         backtest_dataset = render_backtest_foundation_section(candidate_pool)
         return_analysis = render_return_analysis_section(backtest_dataset)
-        render_backtest_evaluation_section(return_analysis)
+        backtest_evaluation = render_backtest_evaluation_section(return_analysis)
+        render_stock_selection_section(backtest_evaluation)
 
     if run_screening_button:
         screening_result = legacy_workbench.render_screening_section(

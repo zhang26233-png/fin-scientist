@@ -20,9 +20,9 @@
 
 ## Version State
 
-- CURRENT_VERSION = v3.7.0
-- CURRENT_STAGE = Backtest Evaluation Package
-- NEXT_TARGET = v3.8.0 Strategy Rule Engine
+- CURRENT_VERSION = v3.8.0
+- CURRENT_STAGE = Stock Selection System Package
+- NEXT_TARGET = v3.9.0 Strategy Rule Engine
 
 Version evidence from current files:
 
@@ -31,7 +31,7 @@ Version evidence from current files:
 - `README.md`: Current version: V2.0.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V3.7.0 adds the Backtest Evaluation Package on top of the Backtest Foundation and Return Analysis layers. The new evaluation layer calculates read-only risk, return-risk, performance, and backtest-quality fields only from existing return-analysis outputs. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, scoring-weight changes, default sorting changes, stock-pool changes, universe-module changes, fundamental-module changes, technical-module changes, composite-module changes, candidate-pool changes, Backtest Foundation changes, Return Analysis changes, or event/memory module changes. The recommended v3.8 main line is Strategy Rule Engine.
+V3.8.0 adds the Stock Selection System Package on top of Universe, Fundamental Screening, Technical Screening, Composite Quant Score, Candidate Pool, Backtest Foundation, Return Analysis, and Backtest Evaluation. The new selection layer generates read-only research selection fields, including selection score, level, status, bucket, rank, reasons, risk notes, quality label, and warnings. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, scoring-weight changes to upstream modules, default sorting changes, stock-pool changes, universe-module changes, fundamental-module changes, technical-module changes, composite-module changes, candidate-pool changes, Backtest module changes, or event/memory module changes. The recommended v3.9 main line is Strategy Rule Engine.
 
 ## Current Architecture
 
@@ -62,6 +62,9 @@ Generated from the current project root scan on 2026-06-03.
 |   |-- composite_score_engine.py
 |   |-- fundamental_screening.py
 |   `-- technical_screening.py
+|-- selection/
+|   |-- __init__.py
+|   `-- stock_selection.py
 |-- README.md
 |-- requirements.txt
 |-- streamlit-err.log
@@ -189,6 +192,7 @@ Generated from the current `strategy/` directory.
 | Backtest foundation | `backtest/backtest_engine.py` | active | Read-only price-history availability and coverage fields for future validation |
 | Return analysis | `backtest/return_analysis.py` | active | Read-only historical return metrics from validated price history |
 | Backtest evaluation | `backtest/backtest_evaluation.py` | active | Read-only risk, return-risk, performance, and quality evaluation from return-analysis fields |
+| Stock selection | `selection/stock_selection.py` | active | Read-only selection score, bucket, rank, reasons, and risk notes from existing research fields |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -674,6 +678,23 @@ Return Analysis Fields are read-only historical metric fields for future risk an
 | `backtest_evaluation_warnings` | `backtest.backtest_evaluation` | Missing, abnormal, or unavailable evaluation warnings |
 
 Backtest Evaluation Fields are read-only historical evaluation fields for closing the backtest review loop before future strategy-rule work. V3.7.0 only evaluates rows where `return_analysis_available` is true and required return-analysis fields are usable. It does not create buy or sell advice, target prices, position suggestions, automated trading workflows, strategy optimization, parameter search, machine-learning predictions, return promises, or scoring-weight changes. It does not change default sorting, default screening workflow, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest Foundation modules, Return Analysis modules, Event modules, Memory modules, trading logic, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`.
+
+### Stock Selection Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `selection_available` | `selection.stock_selection` | Whether existing research fields are sufficient for read-only stock-selection research |
+| `selection_score` | `selection.stock_selection` | Read-only stock-selection score from composite score, candidate pool, backtest evaluation, and risk penalty |
+| `selection_level` | `selection.stock_selection` | Selection level: High, Medium, Low, or Unavailable |
+| `selection_status` | `selection.stock_selection` | Selection status: Selected, Watch, Excluded, or Incomplete |
+| `selection_bucket` | `selection.stock_selection` | Selection bucket: Core, Watch, Exclude, or Unavailable |
+| `selection_rank` | `selection.stock_selection` | Read-only rank based on selection score without changing row order |
+| `selection_reasons` | `selection.stock_selection` | Explainable reasons for the selection layer result |
+| `selection_risk_notes` | `selection.stock_selection` | Risk and quality notes for research review |
+| `selection_quality_label` | `selection.stock_selection` | Selection quality label: Strong, Normal, Weak, or Unavailable |
+| `selection_warnings` | `selection.stock_selection` | Missing, abnormal, or unavailable field warnings |
+
+Stock Selection Fields are read-only research fields for structuring candidate review. V3.8.0 integrates existing upstream fields with default selection-layer weights: Composite Score 50%, Candidate Pool 20%, Backtest Evaluation 20%, and Risk Penalty 10%. It does not modify upstream scoring weights or overwrite `composite_score`, `candidate_rank`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`. It does not create buy or sell advice, buy/sell points, target prices, position suggestions, automated trading workflows, strategy optimization, parameter search, machine-learning predictions, or return promises. It does not change default sorting, default screening workflow, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Event modules, Memory modules, stock pools, data sources, or trading logic.
 
 ## Current Development Principles
 

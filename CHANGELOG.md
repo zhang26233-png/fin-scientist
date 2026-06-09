@@ -2,6 +2,19 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v3.8.0
+
+- Added Stock Selection System Package in `selection/stock_selection.py`.
+- Added `selection/__init__.py`.
+- Added `build_stock_selection()` for read-only selection research from existing Candidate Pool, Composite, Fundamental, Technical, and Backtest Evaluation fields.
+- Added selection fields for availability, score, level, status, bucket, rank, reasons, risk notes, quality label, and warnings.
+- Uses transparent selection-layer weights: Composite Score 50%, Candidate Pool 20%, Backtest Evaluation 20%, and Risk Penalty 10%.
+- Generates `selection_rank` from selection score without changing row order.
+- Added a read-only Stock Selection System panel to the screening page.
+- Added tests for empty input, missing composite score, Core/high-score Selected output, Watch/medium-score Watch output, Exclude output, high-risk downgrade, poor-backtest-quality downgrade, rank generation, rank order preservation, reasons, risk notes, warnings, input immutability, `composite_score` preservation, `candidate_rank` preservation, and module import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, upstream scoring weights, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external APIs, external services, machine learning, buy/sell points, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, return promises, or operational conclusions.
+
 ## v3.7.0
 
 - Added Backtest Evaluation Package in `backtest/backtest_evaluation.py`.
