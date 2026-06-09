@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v3.8.0.
+Current: v3.9.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -213,7 +213,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v3.6.0: Return Analysis Engine completed.
 - v3.7.0: Backtest Evaluation Package completed.
 - v3.8.0: Stock Selection System Package completed.
-- Next target: v3.9.0 Strategy Rule Engine.
+- v3.9.0: Explainable Selection Engine completed.
+- Next target: v4.0.0 Research Report Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -321,6 +322,18 @@ Completed v3.8.0 scope:
 - Added tests for empty input, missing composite score, Core/high-score Selected output, Watch/medium-score Watch output, Exclude output, high-risk downgrade, poor-backtest-quality downgrade, rank generation, rank order preservation, reasons, risk notes, warnings, input immutability, `composite_score` preservation, `candidate_rank` preservation, and module import.
 - Did not add databases, vector stores, news sources, APIs, external services, machine learning, buy/sell points, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, upstream scoring-weight changes, return promises, or operational conclusions.
 - Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
+
+Completed v3.9.0 scope:
+
+- Added `selection/explain_engine.py`.
+- Added `build_explainable_selection()` for read-only explanation of Stock Selection rows.
+- Added explanation fields for availability, status, thesis, strengths, risks, factor breakdown, reason score, natural-language explanation, summary, and warnings.
+- Detects strengths from fundamental, technical, composite, and historical performance fields.
+- Detects risks from high risk level, large drawdown, high volatility, and weak historical performance.
+- Added a read-only Explainable Selection panel to the screening page without changing default sorting.
+- Added tests for Core, Watch, Exclude, missing data, unavailable selection, risk detection, factor breakdown, explanation generation, summary generation, row-order preservation, upstream score preservation, empty input, and module import.
+- Did not add databases, vector stores, news sources, APIs, external services, machine learning, buy/sell points, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, scoring changes, return promises, or operational conclusions.
+- Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Candidate Pool modules, Backtest modules, Return Analysis modules, Backtest Evaluation modules, Stock Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
 
 Boundary:
 

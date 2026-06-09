@@ -11,6 +11,7 @@ from screening.candidate_pool import build_candidate_pool
 from screening.composite_score_engine import build_composite_quant_score
 from screening.fundamental_screening import build_fundamental_screening
 from screening.technical_screening import build_technical_screening
+from selection.explain_engine import build_explainable_selection
 from selection.stock_selection import build_stock_selection
 from strategy.preview import build_strategy_preview
 from universe.a_share_universe import build_a_share_universe
@@ -245,6 +246,18 @@ STOCK_SELECTION_COLUMNS = [
     "selection_warnings",
 ]
 
+EXPLAINABLE_SELECTION_COLUMNS = [
+    "ticker",
+    "name",
+    "selection_rank",
+    "selection_bucket",
+    "selection_summary",
+    "selection_thesis",
+    "selection_strengths",
+    "selection_risks",
+    "selection_explanation",
+]
+
 
 def build_screening_strategy_preview(result_df, sort_by_strategy=False):
     return build_strategy_preview(result_df, sort_by_strategy=sort_by_strategy)
@@ -368,6 +381,18 @@ def render_stock_selection_section(backtest_evaluation):
         return selection
 
 
+def render_explainable_selection_section(stock_selection):
+    with st.expander("Explainable Selection (read-only research, not investment advice)", expanded=False):
+        st.caption("Explainable Selection summarizes why a row is in its selection bucket for research review only.")
+        explanation = build_explainable_selection(stock_selection)
+        display_columns = [column for column in EXPLAINABLE_SELECTION_COLUMNS if column in explanation.columns]
+        if explanation.empty:
+            st.info("Current stock selection dataset is empty. No explainable selection rows are available.")
+            return explanation
+        st.dataframe(explanation[display_columns], hide_index=True, use_container_width=True)
+        return explanation
+
+
 def render_strategy_preview_section(result_df):
     with st.expander("Strategy preview (research support, not investment advice)", expanded=False):
         st.caption("Strategy preview is only for research-priority review. Default ordering is unchanged.")
@@ -434,7 +459,8 @@ def render_screening_page():
         backtest_dataset = render_backtest_foundation_section(candidate_pool)
         return_analysis = render_return_analysis_section(backtest_dataset)
         backtest_evaluation = render_backtest_evaluation_section(return_analysis)
-        render_stock_selection_section(backtest_evaluation)
+        stock_selection = render_stock_selection_section(backtest_evaluation)
+        render_explainable_selection_section(stock_selection)
 
     if run_screening_button:
         screening_result = legacy_workbench.render_screening_section(

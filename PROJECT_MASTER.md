@@ -20,9 +20,9 @@
 
 ## Version State
 
-- CURRENT_VERSION = v3.8.0
-- CURRENT_STAGE = Stock Selection System Package
-- NEXT_TARGET = v3.9.0 Strategy Rule Engine
+- CURRENT_VERSION = v3.9.0
+- CURRENT_STAGE = Explainable Selection Engine
+- NEXT_TARGET = v4.0.0 Research Report Engine
 
 Version evidence from current files:
 
@@ -31,7 +31,7 @@ Version evidence from current files:
 - `README.md`: Current version: V2.0.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V3.8.0 adds the Stock Selection System Package on top of Universe, Fundamental Screening, Technical Screening, Composite Quant Score, Candidate Pool, Backtest Foundation, Return Analysis, and Backtest Evaluation. The new selection layer generates read-only research selection fields, including selection score, level, status, bucket, rank, reasons, risk notes, quality label, and warnings. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, scoring-weight changes to upstream modules, default sorting changes, stock-pool changes, universe-module changes, fundamental-module changes, technical-module changes, composite-module changes, candidate-pool changes, Backtest module changes, or event/memory module changes. The recommended v3.9 main line is Strategy Rule Engine.
+V3.9.0 adds the Explainable Selection Engine on top of the Stock Selection System. The new explanation layer generates read-only thesis, strengths, risks, factor breakdown, reason confidence, natural-language explanation, summary, and warnings from existing selection, scoring, and backtest-evaluation fields. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, scoring changes, default sorting changes, stock-pool changes, Candidate Pool changes, Backtest changes, Return Analysis changes, Backtest Evaluation changes, Stock Selection changes, or event/memory module changes. The recommended v4.0 main line is Research Report Engine.
 
 ## Current Architecture
 
@@ -64,6 +64,7 @@ Generated from the current project root scan on 2026-06-03.
 |   `-- technical_screening.py
 |-- selection/
 |   |-- __init__.py
+|   |-- explain_engine.py
 |   `-- stock_selection.py
 |-- README.md
 |-- requirements.txt
@@ -193,6 +194,7 @@ Generated from the current `strategy/` directory.
 | Return analysis | `backtest/return_analysis.py` | active | Read-only historical return metrics from validated price history |
 | Backtest evaluation | `backtest/backtest_evaluation.py` | active | Read-only risk, return-risk, performance, and quality evaluation from return-analysis fields |
 | Stock selection | `selection/stock_selection.py` | active | Read-only selection score, bucket, rank, reasons, and risk notes from existing research fields |
+| Explainable selection | `selection/explain_engine.py` | active | Read-only thesis, strengths, risks, factor breakdown, explanation, and summary for selection rows |
 | Backtest helpers | `strategy/backtest.py` | internal research | Caller-provided validation samples only |
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
@@ -695,6 +697,23 @@ Backtest Evaluation Fields are read-only historical evaluation fields for closin
 | `selection_warnings` | `selection.stock_selection` | Missing, abnormal, or unavailable field warnings |
 
 Stock Selection Fields are read-only research fields for structuring candidate review. V3.8.0 integrates existing upstream fields with default selection-layer weights: Composite Score 50%, Candidate Pool 20%, Backtest Evaluation 20%, and Risk Penalty 10%. It does not modify upstream scoring weights or overwrite `composite_score`, `candidate_rank`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`. It does not create buy or sell advice, buy/sell points, target prices, position suggestions, automated trading workflows, strategy optimization, parameter search, machine-learning predictions, or return promises. It does not change default sorting, default screening workflow, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Event modules, Memory modules, stock pools, data sources, or trading logic.
+
+### Explainable Selection Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `explain_available` | `selection.explain_engine` | Whether selection explanation can be generated from available fields |
+| `explain_status` | `selection.explain_engine` | Explanation status: Available or Incomplete |
+| `selection_thesis` | `selection.explain_engine` | Neutral research thesis such as Quality Growth, Momentum Trend, Watch Candidate, or Weak Candidate |
+| `selection_strengths` | `selection.explain_engine` | Strength list detected from fundamental, technical, composite, and historical performance fields |
+| `selection_risks` | `selection.explain_engine` | Risk list detected from risk level, drawdown, volatility, and weak historical performance |
+| `selection_factor_breakdown` | `selection.explain_engine` | Dictionary of available factor scores used for explanation context |
+| `selection_reason_score` | `selection.explain_engine` | Explanation confidence score from 0 to 100 based on field completeness and detected evidence |
+| `selection_explanation` | `selection.explain_engine` | Natural-language explanation of bucket, rank, score, thesis, strengths, and risks |
+| `selection_summary` | `selection.explain_engine` | Short one-line summary of the explanation |
+| `explain_warnings` | `selection.explain_engine` | Missing, abnormal, or unavailable explanation warnings |
+
+Explainable Selection Fields are read-only explanation fields for understanding selection-layer outputs. V3.9.0 does not modify `selection_score`, `selection_rank`, `selection_bucket`, `selection_status`, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`. It does not create buy or sell advice, buy/sell points, target prices, position suggestions, automated trading workflows, strategy optimization, parameter search, machine-learning predictions, return promises, external APIs, databases, vector stores, news sources, or data-source changes. It does not change default sorting, default screening workflow, Candidate Pool modules, Backtest modules, Return Analysis modules, Backtest Evaluation modules, Stock Selection modules, Event modules, Memory modules, stock pools, or trading logic.
 
 ## Current Development Principles
 

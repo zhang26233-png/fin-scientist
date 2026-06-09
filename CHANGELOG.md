@@ -2,6 +2,18 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v3.9.0
+
+- Added Explainable Selection Engine in `selection/explain_engine.py`.
+- Added `build_explainable_selection()` for read-only explanation of Stock Selection rows.
+- Added explanation fields for availability, status, thesis, strengths, risks, factor breakdown, reason score, natural-language explanation, summary, and warnings.
+- Detects strengths from `fundamental_score`, `technical_score`, `composite_score`, and `performance_label`.
+- Detects risks from `risk_level`, `max_drawdown`, `volatility`, and weak historical performance.
+- Added a read-only Explainable Selection panel to the screening page.
+- Added tests for Core, Watch, Exclude, missing data, unavailable selection, risk detection, factor breakdown, explanation generation, summary generation, row-order preservation, upstream score preservation, empty input, and module import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, architecture audit, event confidence, event confluence, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Candidate Pool modules, Backtest modules, Return Analysis modules, Backtest Evaluation modules, Stock Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, upstream scoring weights, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external APIs, external services, machine learning, buy/sell points, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, return promises, or operational conclusions.
+
 ## v3.8.0
 
 - Added Stock Selection System Package in `selection/stock_selection.py`.
