@@ -20,9 +20,9 @@
 
 ## Version State
 
-- CURRENT_VERSION = v3.9.0
-- CURRENT_STAGE = Explainable Selection Engine
-- NEXT_TARGET = v4.0.0 Research Report Engine
+- CURRENT_VERSION = v4.0.0
+- CURRENT_STAGE = Web UI Report Experience
+- NEXT_TARGET = v4.1.0 Research Report Engine
 
 Version evidence from current files:
 
@@ -31,7 +31,7 @@ Version evidence from current files:
 - `README.md`: Current version: V2.0.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V3.9.0 adds the Explainable Selection Engine on top of the Stock Selection System. The new explanation layer generates read-only thesis, strengths, risks, factor breakdown, reason confidence, natural-language explanation, summary, and warnings from existing selection, scoring, and backtest-evaluation fields. This version does not add API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, scoring changes, default sorting changes, stock-pool changes, Candidate Pool changes, Backtest changes, Return Analysis changes, Backtest Evaluation changes, Stock Selection changes, or event/memory module changes. The recommended v4.0 main line is Research Report Engine.
+V4.0.0 adds the Web UI Report Experience for the Streamlit research workbench. The new report UI organizes existing Universe, screening, candidate-pool, backtest, stock-selection, and explainable-selection outputs into read-only overview metrics, candidate tables, stock research cards, score breakdowns, backtest views, risk notes, and data-quality summaries. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v4.1 main line is Research Report Engine.
 
 ## Current Architecture
 
@@ -141,6 +141,7 @@ Generated from the current project root scan on 2026-06-03.
 |   `-- test_strategy_ui_integration.py
 `-- ui/
     |-- __init__.py
+    |-- report_ui.py
     |-- screening_ui.py
     `-- strategy_diagnostics_panel.py
 ```
@@ -199,6 +200,7 @@ Generated from the current `strategy/` directory.
 | Backtest diagnostics | `strategy/backtest_diagnostics.py` | internal research | Backtest summary schema and diagnostics |
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
 | Report | `strategy/report.py` | active | Strategy report assembly |
+| Web UI report experience | `ui/report_ui.py` | active | Read-only Streamlit report layout, metrics, cards, formatted tables, warning collection, and data-quality summaries |
 | Service | `strategy/service.py` | active | Strategy service output wrapper |
 | View model | `strategy/view_model.py` | active | UI-friendly strategy report model |
 
@@ -714,6 +716,20 @@ Stock Selection Fields are read-only research fields for structuring candidate r
 | `explain_warnings` | `selection.explain_engine` | Missing, abnormal, or unavailable explanation warnings |
 
 Explainable Selection Fields are read-only explanation fields for understanding selection-layer outputs. V3.9.0 does not modify `selection_score`, `selection_rank`, `selection_bucket`, `selection_status`, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, or `core/scoring.py`. It does not create buy or sell advice, buy/sell points, target prices, position suggestions, automated trading workflows, strategy optimization, parameter search, machine-learning predictions, return promises, external APIs, databases, vector stores, news sources, or data-source changes. It does not change default sorting, default screening workflow, Candidate Pool modules, Backtest modules, Return Analysis modules, Backtest Evaluation modules, Stock Selection modules, Event modules, Memory modules, stock pools, or trading logic.
+
+### Web UI Report Experience
+
+| Area | Source | Meaning |
+|---|---|---|
+| Top overview | `ui.report_ui` | Version, stage, research-object count, Core/Watch/Exclude counts, and explainable-result count |
+| Candidate overview | `ui.report_ui` | Candidate pool, selection bucket, rank, score, status, and quality label |
+| Stock research cards | `ui.report_ui` | Per-stock ticker, name, selection score, rank, bucket, thesis, summary, strengths, risks, and explanation |
+| Score breakdown | `ui.report_ui` | Fundamental, technical, composite, risk, selection score, and factor-breakdown display |
+| Backtest performance | `ui.report_ui` | Period return, annualized return, volatility, max drawdown, win rate, return-risk ratio, performance label, and quality label |
+| Risk notes | `ui.report_ui` | Selection risk notes plus backtest, return-analysis, and explanation warnings |
+| Data quality | `ui.report_ui` | Warning summary plus Incomplete and Unavailable status collection |
+
+Web UI Report Experience is a read-only Streamlit presentation layer. V4.0.0 does not add a new selection algorithm, does not modify scoring logic, does not modify `selection_score`, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, or `core/scoring.py`, and does not change default sorting or the default screening workflow. It only formats existing result fields into clearer report sections using metrics, tabs, dataframes, and card-style containers. It does not add APIs, databases, vector stores, news sources, external services, automated trading interfaces, machine-learning predictions, buy/sell advice, target prices, position suggestions, or return promises.
 
 ## Current Development Principles
 

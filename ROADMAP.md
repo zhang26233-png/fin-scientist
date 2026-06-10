@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v3.9.0.
+Current: v4.0.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -214,7 +214,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v3.7.0: Backtest Evaluation Package completed.
 - v3.8.0: Stock Selection System Package completed.
 - v3.9.0: Explainable Selection Engine completed.
-- Next target: v4.0.0 Research Report Engine.
+- v4.0.0: Web UI Report Experience completed.
+- Next target: v4.1.0 Research Report Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -334,6 +335,19 @@ Completed v3.9.0 scope:
 - Added tests for Core, Watch, Exclude, missing data, unavailable selection, risk detection, factor breakdown, explanation generation, summary generation, row-order preservation, upstream score preservation, empty input, and module import.
 - Did not add databases, vector stores, news sources, APIs, external services, machine learning, buy/sell points, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, scoring changes, return promises, or operational conclusions.
 - Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `architecture_audit_score`, `event_confidence_score`, `event_confluence_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Candidate Pool modules, Backtest modules, Return Analysis modules, Backtest Evaluation modules, Stock Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
+
+Completed v4.0.0 scope:
+
+- Added `ui/report_ui.py`.
+- Added a read-only Web UI Report Experience for existing research outputs.
+- Added report overview metrics for version, stage, research-object count, Core/Watch/Exclude counts, and explainable-result count.
+- Added candidate overview, stock research cards, score breakdown, backtest performance, risk notes, and data-quality report sections.
+- Added list and dict formatting helpers for Streamlit display.
+- Added warning aggregation across warning fields plus Incomplete and Unavailable statuses.
+- Integrated the report section into `ui/screening_ui.py` after Explainable Selection without changing default sorting.
+- Added tests for module import, empty DataFrame handling, missing selection/explain fields, list/dict formatting, warning aggregation, input immutability, and `app.py` import.
+- Did not add selection algorithms, scoring changes, APIs, databases, vector stores, news sources, external services, machine learning, buy/sell points, target prices, position suggestions, automated trading workflows, return promises, or operational conclusions.
+- Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
 
 Boundary:
 

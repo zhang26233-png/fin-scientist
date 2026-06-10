@@ -2,6 +2,17 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v4.0.0
+
+- Added Web UI Report Experience in `ui/report_ui.py`.
+- Added read-only report sections for top overview, candidate overview, stock research cards, score breakdown, backtest performance, risk notes, and data quality.
+- Added Streamlit metrics, tabs, dataframes, and card-style containers for clearer research-result presentation.
+- Added helpers for safe DataFrame copying, existing-field detection, list/dict formatting, display-table building, and warning/status aggregation.
+- Integrated the report section into `ui/screening_ui.py` after Explainable Selection without changing default sorting or upstream DataFrames.
+- Added tests for module import, empty DataFrame handling, missing selection fields, missing explanation fields, list formatting, dict formatting, warning aggregation, input immutability, and `app.py` import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, scoring weights, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external APIs, external services, machine learning, buy/sell points, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, return promises, or operational conclusions.
+
 ## v3.9.0
 
 - Added Explainable Selection Engine in `selection/explain_engine.py`.
