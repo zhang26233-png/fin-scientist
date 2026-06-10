@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v5.1.0
-- CURRENT_STAGE = Chart Center
-- NEXT_TARGET = v5.2.0 Research Report Export Engine
+- CURRENT_VERSION = v6.0.0
+- CURRENT_STAGE = Factor Research Lab
+- NEXT_TARGET = v6.1.0 Factor Backtest Report
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v5.1.0"`
-- `legacy_app.py`: `APP_VERSION = "v5.1.0"`
-- `README.md`: Current version: v5.1.0
+- `app.py`: `APP_VERSION = "v6.0.0"`
+- `legacy_app.py`: `APP_VERSION = "v6.0.0"`
+- `README.md`: Current version: v6.0.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V5.1.0 adds the Chart Center for the Research Workstation. The Chart Center converts existing read-only research fields into visual score profiles, return-risk scatter views, drawdown-risk views, score breakdown bars, candidate ranking bars, and quality distributions. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v5.2 main line is Research Report Export Engine.
+V6.0.0 adds Factor Research Lab as a read-only quantitative factor research foundation. It builds factor datasets, factor z-scores, Q1-Q5 factor groups, Pearson IC, Rank IC, group returns, factor effectiveness labels, and structured factor research reports from existing research result fields. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v6.1 main line is Factor Backtest Report.
 
 ## Current Architecture
 
@@ -66,6 +66,11 @@ Generated from the current project root scan on 2026-06-03.
 |   |-- __init__.py
 |   |-- explain_engine.py
 |   `-- stock_selection.py
+|-- factor/
+|   |-- __init__.py
+|   |-- factor_lab.py
+|   |-- factor_metrics.py
+|   `-- factor_report.py
 |-- README.md
 |-- requirements.txt
 |-- streamlit-err.log
@@ -126,6 +131,8 @@ Generated from the current project root scan on 2026-06-03.
 |   |-- test_data_fetch_boundaries.py
 |   |-- test_explanations.py
 |   |-- test_feature_flags.py
+|   |-- test_factor_lab.py
+|   |-- test_factor_metrics.py
 |   |-- test_forbidden_phrases.py
 |   |-- test_fundamental_data.py
 |   |-- test_market_data.py
@@ -221,6 +228,9 @@ Generated from the current `strategy/` directory.
 | Research Workstation theme | `ui/workstation_theme.py` | active | Bloomberg/GitHub dark CSS, sticky workstation header, section titles, badges, and tone mapping |
 | Chart Center | `ui/chart_center.py` | active | Read-only chart center for score profile, return-risk scatter, drawdown-risk view, score breakdown, ranking, and quality distribution |
 | Chart components | `ui/chart_components.py` | active | Safe numeric conversion, defensive chart DataFrame preparation, ranking data, scatter data, score profile data, and distribution data |
+| Factor Research Lab | `factor/factor_lab.py` | active | Read-only factor dataset builder, z-score normalization, factor grouping, factor warnings, and factor summaries |
+| Factor metrics | `factor/factor_metrics.py` | active | Pearson IC, Rank IC, group returns, and factor effectiveness labels |
+| Factor report | `factor/factor_report.py` | active | Structured neutral factor research report fields |
 | Service | `strategy/service.py` | active | Strategy service output wrapper |
 | View model | `strategy/view_model.py` | active | UI-friendly strategy report model |
 
@@ -808,6 +818,21 @@ Research Workstation is a read-only professional UI workspace. V5.0.0 does not a
 | Quality Distribution | `ui.chart_center` | Distribution charts for Core/Watch/Exclude and High/Medium/Low groups |
 
 Chart Center is a read-only visualization layer inside the Research Workstation. V5.1.0 does not add a new selection algorithm, does not modify scoring logic, does not modify `selection_score`, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, or `core/scoring.py`, and does not change default sorting or the default screening workflow. It only turns existing fields into charts using safe DataFrame copies and Streamlit-native chart fallbacks. It does not add APIs, databases, vector stores, news sources, external services, machine-learning predictions, target prices, position suggestions, return promises, or operational conclusions.
+
+### Factor Research Lab
+
+| Area | Source | Meaning |
+|---|---|---|
+| Factor dataset | `factor.factor_lab` | Long-format read-only factor dataset from existing scores and return-analysis fields |
+| Factor normalization | `factor.factor_lab` | Z-score normalization for available factor fields without mutating input DataFrames |
+| Factor grouping | `factor.factor_lab` | Q1-Q5 quantile groups for single-factor review while preserving input row order |
+| Factor IC | `factor.factor_metrics` | Pearson correlation between factor value and `future_return` or `period_return` |
+| Rank IC | `factor.factor_metrics` | Spearman correlation between factor value and `future_return` or `period_return` |
+| Group returns | `factor.factor_metrics` | Mean return by factor group for read-only factor inspection |
+| Factor report | `factor.factor_report` | Structured factor research report with summary, label, warnings, and group-return table |
+| Workstation view | `ui.workstation_ui` | Factor Research Lab section inside Research Workstation with factor overview, group returns, and research summary |
+
+Factor Research Lab is a read-only quantitative factor research foundation. V6.0.0 adds `factor_available`, `factor_name`, `factor_value`, `factor_zscore`, `factor_group`, `factor_ic`, `factor_rank_ic`, `factor_group_return`, `factor_effectiveness_label`, `factor_research_summary`, and `factor_warnings`. It uses existing `fundamental_score`, `technical_score`, `composite_score`, `selection_score`, `risk_score`, and `return_risk_ratio` fields as default factor candidates and uses `future_return` or `period_return` only when available for IC review. It does not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, default sorting, default screening workflow, upstream research modules, data sources, or trading logic.
 
 ## Current Development Principles
 

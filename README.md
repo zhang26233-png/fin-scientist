@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: v5.1.0
+Current version: v6.0.0
 
-v5.1.0 adds the Chart Center to the Research Workstation. Existing research results now include read-only score profiles, return-risk scatter views, drawdown-risk views, score breakdown bars, candidate ranking bars, and quality distribution charts without adding a database, vector store, external service, data source, scoring change, or sorting change.
+v6.0.0 adds the Factor Research Lab to the Research Workstation. Existing research results now include read-only factor definitions, z-score normalization, Q1-Q5 grouping, Pearson IC, Rank IC, group returns, effectiveness labels, warnings, and structured factor research summaries without adding a database, vector store, external service, data source, scoring change, or sorting change.
 
 Startup command remains:
 
@@ -24,13 +24,13 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v5.1.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview, Web UI Report Experience, Research Terminal UI, and Research Workstation UI rendering live in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
+`legacy_app.py` is not an unused backup. In v6.0.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview, Web UI Report Experience, Research Terminal UI, and Research Workstation UI rendering live in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
 
-v5.1.0 Chart Center:
+v6.0.0 Factor Research Lab:
 
-- Added `ui/chart_center.py` and `ui/chart_components.py`.
-- Added Chart Center inside Research Workstation.
-- Added score profile, return-risk scatter, drawdown-risk view, score breakdown bar, candidate ranking bar, and quality distribution charts.
+- Added `factor/factor_lab.py`, `factor/factor_metrics.py`, and `factor/factor_report.py`.
+- Added Factor Research Lab inside Research Workstation.
+- Added factor dataset generation, z-score normalization, Q1-Q5 grouping, IC, Rank IC, group returns, effectiveness labels, warnings, and factor research summaries.
 - Keeps all terminal output read-only and neutral for learning and research.
 - Does not modify scoring logic, default sorting, data sources, stock pools, or upstream research modules.
 
@@ -53,6 +53,15 @@ ui.workstation_ui
         +-- ui.chart_components
         |     safe_numeric / safe_chart_df / chart data builders
         |
+        +-- factor.factor_lab
+        |     factor dataset / zscore / Q1-Q5 grouping / warnings
+        |
+        +-- factor.factor_metrics
+        |     IC / Rank IC / group returns / effectiveness labels
+        |
+        +-- factor.factor_report
+        |     neutral factor research report fields
+        |
         +-- ui.workstation_components
         |     safe_get / metric cards / stock cards / score bars / risk cards / compare table
         |
@@ -63,7 +72,7 @@ ui.workstation_ui
               read-only research report preview
 ```
 
-FinScientist v5.1.0 是一个模块化 Streamlit 金融研究学习原型。当前 Research Workstation 已加入 Chart Center，用于把现有研究字段转换为评分画像、风险收益对比、回撤风险、候选排名和质量分布图表。
+FinScientist v6.0.0 是一个模块化 Streamlit 金融研究学习原型。当前 Research Workstation 已加入 Factor Research Lab，用于把现有研究字段整理为因子定义、标准化、分组、IC、Rank IC、分组收益和因子有效性标签，标志系统进入量化因子研究基础设施阶段。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -73,12 +82,12 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：v5.1.0
+当前版本：v6.0.0
 
-V5.1.0 Chart Center:
+V6.0.0 Factor Research Lab:
 
-- Added chart center and chart components.
-- Research Workstation now includes read-only visual chart review for scores, risk-return, drawdown, ranking, and quality distribution.
+- Added read-only factor lab, factor metrics, and factor report modules.
+- Research Workstation now includes factor overview, IC, Rank IC, group returns, effectiveness labels, and neutral factor research summaries.
 - All outputs remain read-only and do not change scoring, sorting, data sources, or upstream modules.
 
 V2.0.0 research memory foundation phase:

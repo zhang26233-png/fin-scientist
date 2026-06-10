@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v5.1.0.
+Current: v6.0.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -219,7 +219,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v4.2.0: Visual Research Terminal Redesign completed.
 - v5.0.0: Research Workstation completed.
 - v5.1.0: Chart Center completed.
-- Next target: v5.2.0 Research Report Export Engine.
+- v6.0.0: Factor Research Lab completed.
+- Next target: v6.1.0 Factor Backtest Report.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -415,6 +416,18 @@ Completed v5.1.0 scope:
 - Added tests for Chart Center imports, empty DataFrame handling, missing score fields, missing return fields, safe numeric conversion, chart DataFrame immutability, ranking data generation, scatter data generation, score profile handling, and `app.py` import.
 - Did not add selection algorithms, scoring changes, APIs, databases, vector stores, news sources, external services, machine learning, buy/sell points, target prices, position suggestions, automated trading workflows, return promises, or operational conclusions.
 - Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
+
+Completed v6.0.0 scope:
+
+- Added `factor/__init__.py`.
+- Added `factor/factor_lab.py` for read-only factor dataset building, factor z-score normalization, Q1-Q5 factor grouping, factor summaries, and warning collection.
+- Added `factor/factor_metrics.py` for Pearson IC, Rank IC, factor group returns, and factor effectiveness labels.
+- Added `factor/factor_report.py` for structured neutral factor research reports.
+- Added Factor Research Lab inside `ui/workstation_ui.py` with factor overview, group-return display, and research summary tabs.
+- Updated `app.py` and `legacy_app.py` version metadata to v6.0.0.
+- Added tests for empty input, missing factor fields, missing return fields, z-score calculation, factor grouping, IC calculation, Rank IC calculation, group returns, effectiveness labels, input immutability, module imports, and neutral report wording.
+- Did not add selection algorithms, scoring changes, APIs, databases, vector stores, news sources, external services, machine learning, buy/sell points, target prices, position suggestions, automated trading workflows, return promises, parameter search, default sorting changes, or operational conclusions.
+- Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default filters, stock pools, data sources, machine-learning logic, or trading logic.
 
 Boundary:
 

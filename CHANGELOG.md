@@ -2,6 +2,20 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.0.0
+
+- Added Factor Research Lab in `factor/factor_lab.py`.
+- Added factor metric helpers in `factor/factor_metrics.py`.
+- Added structured factor research reports in `factor/factor_report.py`.
+- Added `factor/__init__.py` public API exports.
+- Added read-only factor dataset generation for default factors: `fundamental_score`, `technical_score`, `composite_score`, `selection_score`, `risk_score`, and `return_risk_ratio`.
+- Added z-score normalization, Q1-Q5 factor grouping, Pearson IC, Rank IC, group returns, factor effectiveness labels, factor research summaries, and factor warnings.
+- Added Factor Research Lab into `ui/workstation_ui.py` with factor overview, group-return display, and neutral research summary tabs.
+- Updated `app.py`, `legacy_app.py`, README, PROJECT_MASTER, ROADMAP, and CHANGELOG for v6.0.0.
+- Added tests for factor module imports, empty DataFrame handling, missing factor fields, missing return fields, z-score calculation, factor grouping, IC calculation, Rank IC calculation, group returns, effectiveness labels, report output, neutral wording, and input immutability.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, scoring weights, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external APIs, external services, machine learning, buy/sell points, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, return promises, or operational conclusions.
+
 ## v5.1.0
 
 - Added Chart Center in `ui/chart_center.py`.

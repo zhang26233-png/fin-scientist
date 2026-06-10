@@ -8,8 +8,8 @@ from typing import Any
 import streamlit as st
 
 
-WORKSTATION_VERSION = "v5.1.0"
-WORKSTATION_STAGE = "Chart Center"
+WORKSTATION_VERSION = "v6.0.0"
+WORKSTATION_STAGE = "Factor Research Lab"
 
 
 def get_workstation_css() -> str:

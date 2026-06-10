@@ -8,6 +8,8 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
+from factor.factor_lab import DEFAULT_FACTOR_COLUMNS, build_factor_dataset
+from factor.factor_report import build_factor_research_report
 from ui.chart_center import render_chart_center
 from ui.report_builder import build_stock_research_report
 from ui.workstation_components import (
@@ -333,6 +335,76 @@ def render_workstation_chart_center(df: pd.DataFrame) -> dict[str, Any]:
     return render_chart_center(df)
 
 
+def build_factor_lab_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Build one-row-per-factor Factor Research Lab summary."""
+    dataset = build_factor_dataset(df)
+    columns = [
+        "factor_name",
+        "factor_available_count",
+        "factor_ic",
+        "factor_rank_ic",
+        "factor_effectiveness_label",
+        "factor_research_summary",
+    ]
+    if dataset.empty:
+        return pd.DataFrame(columns=columns)
+    rows = []
+    for factor_name, group in dataset.groupby("factor_name", sort=False):
+        first = group.iloc[0]
+        rows.append(
+            {
+                "factor_name": factor_name,
+                "factor_available_count": int(group["factor_available"].fillna(False).sum()),
+                "factor_ic": format_value(first.get("factor_ic")),
+                "factor_rank_ic": format_value(first.get("factor_rank_ic")),
+                "factor_effectiveness_label": format_value(first.get("factor_effectiveness_label")),
+                "factor_research_summary": format_value(first.get("factor_research_summary")),
+            }
+        )
+    return pd.DataFrame(rows, columns=columns)
+
+
+def render_factor_research_lab(df: pd.DataFrame) -> dict[str, Any]:
+    """Render a read-only Factor Research Lab area."""
+    source = safe_copy_frame(df)
+    render_workstation_section(
+        "Factor Research Lab",
+        "因子定义、标准化、分组、IC、Rank IC 与有效性标签的只读研究区。",
+    )
+    factor_dataset = build_factor_dataset(source)
+    summary = build_factor_lab_summary(source)
+    if source.empty:
+        st.warning("Factor Research Lab 当前没有可展示数据。")
+        return {"dataset": factor_dataset, "summary": summary, "report": {}}
+    available_factors = [factor for factor in DEFAULT_FACTOR_COLUMNS if factor in source.columns]
+    if not available_factors:
+        st.warning("当前数据缺少默认因子字段。")
+        return {"dataset": factor_dataset, "summary": summary, "report": {}}
+
+    tabs = st.tabs(["因子概览", "分组收益", "研究摘要"])
+    with tabs[0]:
+        st.dataframe(summary, hide_index=True, use_container_width=True)
+    selected_factor = available_factors[0]
+    if len(available_factors) > 1:
+        selected_factor = st.selectbox("选择因子", options=available_factors, index=0)
+    report = build_factor_research_report(source, selected_factor)
+    with tabs[1]:
+        group_returns = report.get("factor_group_returns", pd.DataFrame())
+        if isinstance(group_returns, pd.DataFrame) and not group_returns.empty:
+            st.bar_chart(group_returns.set_index("factor_group")["factor_group_return"])
+            st.dataframe(group_returns, hide_index=True, use_container_width=True)
+        else:
+            st.warning("当前因子缺少可用分组收益数据。")
+    with tabs[2]:
+        render_metric_card("Factor", selected_factor, "当前研究因子")
+        render_metric_card("Effectiveness", report.get("factor_effectiveness_label"), "基于 IC 的中性有效性标签")
+        st.write(report.get("factor_research_summary", ""))
+        warnings = report.get("factor_warnings", [])
+        if warnings:
+            st.warning("\n".join(f"- {item}" for item in warnings))
+    return {"dataset": factor_dataset, "summary": summary, "report": report}
+
+
 def render_research_pipeline(row: pd.Series | None) -> list[dict[str, str]]:
     """Render full research pipeline."""
     pipeline = build_pipeline_status(row)
@@ -387,6 +459,7 @@ def render_research_workstation(df: pd.DataFrame) -> dict[str, Any]:
 
     render_score_breakdown_center(selected_row)
     chart_payload = render_workstation_chart_center(source)
+    factor_payload = render_factor_research_lab(source)
     render_risk_center(selected_row)
     render_backtest_center(selected_row)
     compare = render_compare_workspace(source)
@@ -397,6 +470,7 @@ def render_research_workstation(df: pd.DataFrame) -> dict[str, Any]:
         "selected_row": selected_row,
         "compare": compare,
         "charts": chart_payload,
+        "factor_lab": factor_payload,
         "pipeline": pipeline,
         "report": report,
     }
@@ -413,12 +487,14 @@ __all__ = [
     "build_compare_workspace",
     "build_dashboard_metrics",
     "build_factor_breakdown",
+    "build_factor_lab_summary",
     "build_navigator_groups",
     "build_pipeline_status",
     "get_selected_row",
     "render_backtest_center",
     "render_compare_workspace",
     "render_dashboard_cards",
+    "render_factor_research_lab",
     "render_main_research_area",
     "render_research_navigator",
     "render_research_pipeline",
