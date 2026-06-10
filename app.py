@@ -9,7 +9,7 @@ import streamlit as st
 import legacy_app
 from ui.screening_ui import render_screening_page
 
-APP_VERSION = "v5.0.0"
+APP_VERSION = "v5.1.0"
 LEGACY_WORKBENCH_PAGE = "Research Workbench"
 SCREENING_PAGE = "Research Workstation"
 
@@ -24,7 +24,7 @@ def main():
     st.set_page_config(page_title="FinScientist", page_icon="\U0001f4c8", layout="wide")
     st.title("FinScientist")
     st.caption(
-        f"{APP_VERSION} Research Workstation; all outputs are for learning "
+        f"{APP_VERSION} Chart Center; all outputs are for learning "
         "and research only and do not constitute investment advice."
     )
 

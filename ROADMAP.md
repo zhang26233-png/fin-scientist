@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v5.0.0.
+Current: v5.1.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -218,7 +218,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v4.1.0: Research Terminal UI Package completed.
 - v4.2.0: Visual Research Terminal Redesign completed.
 - v5.0.0: Research Workstation completed.
-- Next target: v5.1.0 Chart Center.
+- v5.1.0: Chart Center completed.
+- Next target: v5.2.0 Research Report Export Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -395,6 +396,23 @@ Completed v5.0.0 scope:
 - Integrated Research Workstation into `ui/screening_ui.py` after the existing Research Terminal without changing default sorting.
 - Updated `app.py` and `legacy_app.py` version metadata to v5.0.0.
 - Added tests for Workstation import, safe field access, navigator grouping, dashboard metrics, missing explain fields, missing risk fields, compare generation, report preview generation, empty DataFrame rendering, input immutability, and `app.py` import.
+- Did not add selection algorithms, scoring changes, APIs, databases, vector stores, news sources, external services, machine learning, buy/sell points, target prices, position suggestions, automated trading workflows, return promises, or operational conclusions.
+- Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
+
+Completed v5.1.0 scope:
+
+- Added `ui/chart_center.py`.
+- Added `ui/chart_components.py`.
+- Added Chart Center inside Research Workstation for read-only visual research review.
+- Added Score Radar / Score Profile for `fundamental_score`, `technical_score`, `composite_score`, `selection_score`, and `risk_score`.
+- Added Return-Risk Scatter using `volatility` or `risk_score` against `period_return` or `annualized_return`.
+- Added Drawdown-Risk View for `max_drawdown`, `volatility`, and `risk_level`.
+- Added Score Breakdown Bar for single-object score decomposition.
+- Added Candidate Ranking Bar for Top N `selection_score` ranking without changing default sorting.
+- Added Quality Distribution for Core/Watch/Exclude and High/Medium/Low group review.
+- Integrated Chart Center into `ui/workstation_ui.py`.
+- Updated `app.py` and `legacy_app.py` version metadata to v5.1.0.
+- Added tests for Chart Center imports, empty DataFrame handling, missing score fields, missing return fields, safe numeric conversion, chart DataFrame immutability, ranking data generation, scatter data generation, score profile handling, and `app.py` import.
 - Did not add selection algorithms, scoring changes, APIs, databases, vector stores, news sources, external services, machine learning, buy/sell points, target prices, position suggestions, automated trading workflows, return promises, or operational conclusions.
 - Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
 

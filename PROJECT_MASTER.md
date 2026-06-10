@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v5.0.0
-- CURRENT_STAGE = Research Workstation
-- NEXT_TARGET = v5.1.0 Chart Center
+- CURRENT_VERSION = v5.1.0
+- CURRENT_STAGE = Chart Center
+- NEXT_TARGET = v5.2.0 Research Report Export Engine
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v5.0.0"`
-- `legacy_app.py`: `APP_VERSION = "v5.0.0"`
-- `README.md`: Current version: v5.0.0
+- `app.py`: `APP_VERSION = "v5.1.0"`
+- `legacy_app.py`: `APP_VERSION = "v5.1.0"`
+- `README.md`: Current version: v5.1.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V5.0.0 adds the Research Workstation UI for the Streamlit research workbench. The Workstation reorganizes existing research results into a professional three-column workspace with a left Research Navigator, central Research Area, right Thesis Panel, and full-width Risk & Score Analysis sections. It adds workstation-specific theme, components, navigator grouping, sticky research header, dashboard cards, explain-engine presentation, score breakdown center, risk center, backtest center, comparison workspace, research pipeline, and report preview. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v5.1 main line is Chart Center.
+V5.1.0 adds the Chart Center for the Research Workstation. The Chart Center converts existing read-only research fields into visual score profiles, return-risk scatter views, drawdown-risk views, score breakdown bars, candidate ranking bars, and quality distributions. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v5.2 main line is Research Report Export Engine.
 
 ## Current Architecture
 
@@ -141,6 +141,8 @@ Generated from the current project root scan on 2026-06-03.
 |   `-- test_strategy_ui_integration.py
 `-- ui/
     |-- __init__.py
+    |-- chart_center.py
+    |-- chart_components.py
     |-- report_ui.py
     |-- report_builder.py
     |-- screening_ui.py
@@ -217,6 +219,8 @@ Generated from the current `strategy/` directory.
 | Research Workstation UI | `ui/workstation_ui.py` | active | Three-column professional research workspace with navigator, research area, thesis panel, score/risk/backtest centers, compare workspace, pipeline, and report preview |
 | Research Workstation components | `ui/workstation_components.py` | active | Safe field access, missing-value handling, metric cards, stock cards, score bars, risk cards, badges, report blocks, and compare table rendering |
 | Research Workstation theme | `ui/workstation_theme.py` | active | Bloomberg/GitHub dark CSS, sticky workstation header, section titles, badges, and tone mapping |
+| Chart Center | `ui/chart_center.py` | active | Read-only chart center for score profile, return-risk scatter, drawdown-risk view, score breakdown, ranking, and quality distribution |
+| Chart components | `ui/chart_components.py` | active | Safe numeric conversion, defensive chart DataFrame preparation, ranking data, scatter data, score profile data, and distribution data |
 | Service | `strategy/service.py` | active | Strategy service output wrapper |
 | View model | `strategy/view_model.py` | active | UI-friendly strategy report model |
 
@@ -790,6 +794,20 @@ Visual Research Terminal Redesign is a read-only presentation-layer upgrade. V4.
 | Risk & Score Analysis | `ui.workstation_ui` | Full-width score breakdown center, risk center, backtest center, compare workspace, and research pipeline |
 
 Research Workstation is a read-only professional UI workspace. V5.0.0 does not add a new selection algorithm, does not modify scoring logic, does not modify `selection_score`, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, or `core/scoring.py`, and does not change default sorting or the default screening workflow. It only reorganizes existing results into a professional workstation layout with navigation, cards, badges, score bars, risk cards, comparison tables, pipeline status, and report preview. It does not add APIs, databases, vector stores, news sources, external services, machine-learning predictions, target prices, position suggestions, return promises, or operational conclusions.
+
+### Chart Center
+
+| Area | Source | Meaning |
+|---|---|---|
+| Chart data helpers | `ui.chart_components` | Safe numeric conversion, defensive chart DataFrame copies, score profile data, scatter data, drawdown-risk data, ranking data, and quality distribution data |
+| Score Profile | `ui.chart_center` | Single-object visualization for `fundamental_score`, `technical_score`, `composite_score`, `selection_score`, and `risk_score` |
+| Return-Risk Scatter | `ui.chart_center` | Candidate-pool scatter view using `volatility` or `risk_score` against `period_return` or `annualized_return` |
+| Drawdown-Risk View | `ui.chart_center` | Candidate-pool risk view for `max_drawdown`, `volatility`, and `risk_level` |
+| Score Breakdown Bar | `ui.chart_center` | Single-object bar chart for score decomposition |
+| Candidate Ranking Bar | `ui.chart_center` | Top N `selection_score` ranking view without changing default sorting |
+| Quality Distribution | `ui.chart_center` | Distribution charts for Core/Watch/Exclude and High/Medium/Low groups |
+
+Chart Center is a read-only visualization layer inside the Research Workstation. V5.1.0 does not add a new selection algorithm, does not modify scoring logic, does not modify `selection_score`, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, or `core/scoring.py`, and does not change default sorting or the default screening workflow. It only turns existing fields into charts using safe DataFrame copies and Streamlit-native chart fallbacks. It does not add APIs, databases, vector stores, news sources, external services, machine-learning predictions, target prices, position suggestions, return promises, or operational conclusions.
 
 ## Current Development Principles
 

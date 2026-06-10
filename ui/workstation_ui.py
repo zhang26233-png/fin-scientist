@@ -8,6 +8,7 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
+from ui.chart_center import render_chart_center
 from ui.report_builder import build_stock_research_report
 from ui.workstation_components import (
     MISSING,
@@ -326,6 +327,12 @@ def render_compare_workspace(df: pd.DataFrame) -> pd.DataFrame:
     return table
 
 
+def render_workstation_chart_center(df: pd.DataFrame) -> dict[str, Any]:
+    """Render Chart Center inside the Research Workstation."""
+    render_workstation_section("Chart Center", "单股图表、候选池图表、风险收益对比、排名图和质量分布图。")
+    return render_chart_center(df)
+
+
 def render_research_pipeline(row: pd.Series | None) -> list[dict[str, str]]:
     """Render full research pipeline."""
     pipeline = build_pipeline_status(row)
@@ -379,6 +386,7 @@ def render_research_workstation(df: pd.DataFrame) -> dict[str, Any]:
         report = render_thesis_panel(selected_row)
 
     render_score_breakdown_center(selected_row)
+    chart_payload = render_workstation_chart_center(source)
     render_risk_center(selected_row)
     render_backtest_center(selected_row)
     compare = render_compare_workspace(source)
@@ -388,6 +396,7 @@ def render_research_workstation(df: pd.DataFrame) -> dict[str, Any]:
         "metrics": metrics,
         "selected_row": selected_row,
         "compare": compare,
+        "charts": chart_payload,
         "pipeline": pipeline,
         "report": report,
     }
@@ -417,5 +426,6 @@ __all__ = [
     "render_risk_center",
     "render_score_breakdown_center",
     "render_thesis_panel",
+    "render_workstation_chart_center",
     "select_initial_ticker",
 ]

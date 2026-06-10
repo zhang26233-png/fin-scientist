@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: v5.0.0
+Current version: v5.1.0
 
-v5.0.0 adds the Research Workstation. The current research results are now organized as a professional workstation with a sticky research header, left navigator, central research area, right thesis panel, and full-width risk, score, backtest, compare, and pipeline sections without adding a database, vector store, external service, data source, scoring change, or sorting change.
+v5.1.0 adds the Chart Center to the Research Workstation. Existing research results now include read-only score profiles, return-risk scatter views, drawdown-risk views, score breakdown bars, candidate ranking bars, and quality distribution charts without adding a database, vector store, external service, data source, scoring change, or sorting change.
 
 Startup command remains:
 
@@ -24,13 +24,13 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v5.0.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview, Web UI Report Experience, Research Terminal UI, and Research Workstation UI rendering live in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
+`legacy_app.py` is not an unused backup. In v5.1.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview, Web UI Report Experience, Research Terminal UI, and Research Workstation UI rendering live in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
 
-v5.0.0 Research Workstation:
+v5.1.0 Chart Center:
 
-- Added `ui/workstation_ui.py`, `ui/workstation_components.py`, and `ui/workstation_theme.py`.
-- Upgraded current research results into a professional workstation layout.
-- Added Research Navigator, Research Header, Dashboard Cards, Main Research Area, Thesis Panel, Score Breakdown Center, Risk Center, Backtest Center, Compare Workspace, Research Pipeline, and Research Report Preview.
+- Added `ui/chart_center.py` and `ui/chart_components.py`.
+- Added Chart Center inside Research Workstation.
+- Added score profile, return-risk scatter, drawdown-risk view, score breakdown bar, candidate ranking bar, and quality distribution charts.
 - Keeps all terminal output read-only and neutral for learning and research.
 - Does not modify scoring logic, default sorting, data sources, stock pools, or upstream research modules.
 
@@ -47,6 +47,12 @@ ui.workstation_ui
   |-- Thesis Panel
   `-- Risk & Score Analysis
         |
+        +-- ui.chart_center
+        |     score profile / return-risk scatter / drawdown-risk / ranking / distribution
+        |
+        +-- ui.chart_components
+        |     safe_numeric / safe_chart_df / chart data builders
+        |
         +-- ui.workstation_components
         |     safe_get / metric cards / stock cards / score bars / risk cards / compare table
         |
@@ -57,7 +63,7 @@ ui.workstation_ui
               read-only research report preview
 ```
 
-FinScientist v5.0.0 是一个模块化 Streamlit 金融研究学习原型。当前 Research Workstation 将研究结果组织为左侧导航、中间研究区、右侧报告预览和底部风险评分分析区，用于更清晰地观察研究对象、评分拆解、风险分组、数据质量和报告预览。
+FinScientist v5.1.0 是一个模块化 Streamlit 金融研究学习原型。当前 Research Workstation 已加入 Chart Center，用于把现有研究字段转换为评分画像、风险收益对比、回撤风险、候选排名和质量分布图表。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -67,12 +73,12 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：v5.0.0
+当前版本：v5.1.0
 
-V5.0.0 Research Workstation:
+V5.1.0 Chart Center:
 
-- Added workstation theme, workstation components, and Research Workstation UI.
-- Research results now appear in a professional workstation layout with navigator, research area, thesis panel, score/risk/backtest centers, compare workspace, and pipeline.
+- Added chart center and chart components.
+- Research Workstation now includes read-only visual chart review for scores, risk-return, drawdown, ranking, and quality distribution.
 - All outputs remain read-only and do not change scoring, sorting, data sources, or upstream modules.
 
 V2.0.0 research memory foundation phase:

@@ -23,7 +23,7 @@ try:
 except Exception:
     bs = None
 
-APP_VERSION = "v5.0.0"
+APP_VERSION = "v5.1.0"
 LEGACY_COMPATIBILITY_SURFACE = (
     "render_legacy_workbench",
     "render_legacy_app",

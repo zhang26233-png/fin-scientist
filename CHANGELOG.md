@@ -2,6 +2,22 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v5.1.0
+
+- Added Chart Center in `ui/chart_center.py`.
+- Added chart data helpers in `ui/chart_components.py`.
+- Added Score Radar / Score Profile for single-object score review.
+- Added Return-Risk Scatter for candidate-pool risk-return comparison.
+- Added Drawdown-Risk View for drawdown, volatility, and risk-level review.
+- Added Score Breakdown Bar for single-object score decomposition.
+- Added Candidate Ranking Bar for Top N `selection_score` ranking without changing default sorting.
+- Added Quality Distribution for Core/Watch/Exclude and High/Medium/Low group review.
+- Integrated Chart Center into `ui/workstation_ui.py`.
+- Updated `app.py`, `legacy_app.py`, README, PROJECT_MASTER, ROADMAP, and CHANGELOG for v5.1.0.
+- Added tests for chart module imports, empty DataFrame handling, missing fields, safe numeric conversion, chart DataFrame immutability, ranking data, scatter data, score profile data, and `app.py` import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, scoring weights, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external APIs, external services, machine learning, buy/sell points, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, return promises, or operational conclusions.
+
 ## v5.0.0
 
 - Added Research Workstation in `ui/workstation_ui.py`.
