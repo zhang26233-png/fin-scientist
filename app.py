@@ -7,11 +7,16 @@ behind the compatibility layer.
 import streamlit as st
 
 import legacy_app
+from ui.product_ui import (
+    LEGACY_PAGE,
+    SCREENING_PIPELINE_PAGE,
+    get_navigation_pages,
+    render_product_page,
+)
 from ui.screening_ui import render_screening_page
 
-APP_VERSION = "v6.0.0"
-LEGACY_WORKBENCH_PAGE = "Research Workbench"
-SCREENING_PAGE = "Research Workstation"
+APP_VERSION = "v6.1.0"
+APP_STAGE = "Web Product Integration"
 
 # Re-export core functions used by the existing tests and notebooks.
 calculate_indicators = legacy_app.calculate_indicators
@@ -22,22 +27,18 @@ check_price_data_quality = legacy_app.check_price_data_quality
 
 def main():
     st.set_page_config(page_title="FinScientist", page_icon="\U0001f4c8", layout="wide")
-    st.title("FinScientist")
-    st.caption(
-        f"{APP_VERSION} Factor Research Lab; all outputs are for learning "
-        "and research only and do not constitute investment advice."
-    )
+    with st.sidebar:
+        st.title("Fin-Scientist")
+        st.caption(f"{APP_VERSION} | {APP_STAGE}")
+        page = st.radio("平台导航", options=get_navigation_pages(), index=0)
+        st.caption("所有页面仅用于学习和研究，不构成投资建议。")
 
-    page = st.sidebar.radio(
-        "Page navigation",
-        options=[LEGACY_WORKBENCH_PAGE, SCREENING_PAGE],
-        index=0,
-    )
-
-    if page == SCREENING_PAGE:
+    if page == SCREENING_PIPELINE_PAGE:
         render_screening_page()
-    else:
+    elif page == LEGACY_PAGE:
         legacy_app.render_legacy_workbench()
+    else:
+        render_product_page(page)
 
 
 if __name__ == "__main__":

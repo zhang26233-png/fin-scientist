@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: v6.0.0
+Current version: v6.1.0
 
-v6.0.0 adds the Factor Research Lab to the Research Workstation. Existing research results now include read-only factor definitions, z-score normalization, Q1-Q5 grouping, Pearson IC, Rank IC, group returns, effectiveness labels, warnings, and structured factor research summaries without adding a database, vector store, external service, data source, scoring change, or sorting change.
+v6.1.0 adds Web Product Integration. The Streamlit app now opens as a product-level quant research platform with left-side navigation for Dashboard, A-share Universe, selection results, Research Workstation, backtest analysis, Chart Center, Factor Research Lab, report preview, system/data-quality status, the screening pipeline, and the legacy workbench.
 
 Startup command remains:
 
@@ -19,20 +19,46 @@ config/    Stock pools, stock names, sector labels, built-in fundamental samples
 data/      Market data and fundamental data access boundaries
 core/      Metrics, scoring, explanations, and sector-strength helpers
 strategy/  Independent strategy comparison, scoring, view-model, service, reports, diagnostics, factors, filters, risk labels, and presets
-ui/        Streamlit page entrypoints, screening page rendering, report UI, Research Terminal UI, and Research Workstation UI
+ui/        Streamlit page entrypoints, product navigation, screening page rendering, report UI, Research Terminal UI, and Research Workstation UI
 app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v6.0.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview, Web UI Report Experience, Research Terminal UI, and Research Workstation UI rendering live in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
+`legacy_app.py` is not an unused backup. In v6.1.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`.
 
-v6.0.0 Factor Research Lab:
+v6.1.0 Web Product Integration:
 
-- Added `factor/factor_lab.py`, `factor/factor_metrics.py`, and `factor/factor_report.py`.
-- Added Factor Research Lab inside Research Workstation.
-- Added factor dataset generation, z-score normalization, Q1-Q5 grouping, IC, Rank IC, group returns, effectiveness labels, warnings, and factor research summaries.
+- Added `ui/product_ui.py`.
+- Refactored `app.py` into a left-navigation product shell.
+- Added visible pages for Dashboard, Universe, selection results, Research Workstation, backtest analysis, Chart Center, Factor Research Lab, report preview, and system/data-quality status.
+- Empty or incomplete data still renders page structure and explanatory notices.
 - Keeps all terminal output read-only and neutral for learning and research.
 - Does not modify scoring logic, default sorting, data sources, stock pools, or upstream research modules.
+
+Web product architecture:
+
+```text
+streamlit run app.py
+        |
+        v
+app.py
+  |-- ui.product_ui
+  |     |-- Dashboard
+  |     |-- A-share Universe
+  |     |-- Selection Results
+  |     |-- Research Workstation
+  |     |-- Backtest Analysis
+  |     |-- Chart Center
+  |     |-- Factor Research Lab
+  |     |-- Research Report Preview
+  |     `-- System Status / Data Quality
+  |
+  |-- ui.screening_ui
+  |     `-- full screening pipeline and session-state product data
+  |
+  `-- legacy_app
+        legacy research workbench
+```
 
 Research Workstation architecture:
 
@@ -72,7 +98,7 @@ ui.workstation_ui
               read-only research report preview
 ```
 
-FinScientist v6.0.0 是一个模块化 Streamlit 金融研究学习原型。当前 Research Workstation 已加入 Factor Research Lab，用于把现有研究字段整理为因子定义、标准化、分组、IC、Rank IC、分组收益和因子有效性标签，标志系统进入量化因子研究基础设施阶段。
+FinScientist v6.1.0 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已整合为个人量化研究工作台，左侧导航可进入 Dashboard、全A股票池、选股结果、个股研究工作台、回测分析、图表中心、因子研究实验室、研究报告预览和系统状态页面。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -82,12 +108,13 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：v6.0.0
+当前版本：v6.1.0
 
-V6.0.0 Factor Research Lab:
+V6.1.0 Web Product Integration:
 
-- Added read-only factor lab, factor metrics, and factor report modules.
-- Research Workstation now includes factor overview, IC, Rank IC, group returns, effectiveness labels, and neutral factor research summaries.
+- Added product-level Streamlit navigation.
+- Dashboard, Universe, selection, workstation, backtest, chart, factor, report, and system status pages are now first-class web pages.
+- Screening pipeline outputs are stored in session state for reuse across product pages.
 - All outputs remain read-only and do not change scoring, sorting, data sources, or upstream modules.
 
 V2.0.0 research memory foundation phase:

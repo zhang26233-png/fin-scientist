@@ -17,6 +17,7 @@ from strategy.preview import build_strategy_preview
 from ui.report_ui import render_report_experience
 from ui.terminal_ui import render_research_terminal
 from ui.workstation_ui import render_research_workstation
+from ui.product_ui import set_product_state
 from universe.a_share_universe import build_a_share_universe
 
 
@@ -479,6 +480,18 @@ def render_screening_page():
         backtest_evaluation = render_backtest_evaluation_section(return_analysis)
         stock_selection = render_stock_selection_section(backtest_evaluation)
         explainable_selection = render_explainable_selection_section(stock_selection)
+        set_product_state(
+            universe=universe,
+            fundamental=fundamental_screening,
+            technical=technical_screening,
+            composite=composite,
+            candidate_pool=candidate_pool,
+            backtest_foundation=backtest_dataset,
+            return_analysis=return_analysis,
+            backtest_evaluation=backtest_evaluation,
+            stock_selection=stock_selection,
+            explainable_selection=explainable_selection,
+        )
         render_web_report_section(explainable_selection)
         render_research_terminal_section(explainable_selection)
         render_research_workstation_section(explainable_selection)
@@ -493,6 +506,7 @@ def render_screening_page():
             screening_max_process_count,
             screening_run_mode,
         )
+        set_product_state(explainable_selection=screening_result, stock_selection=screening_result)
         render_strategy_preview_section(screening_result)
     else:
         st.header("Automatic research-object screening")

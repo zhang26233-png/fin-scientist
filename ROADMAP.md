@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v6.0.0.
+Current: v6.1.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -220,7 +220,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v5.0.0: Research Workstation completed.
 - v5.1.0: Chart Center completed.
 - v6.0.0: Factor Research Lab completed.
-- Next target: v6.1.0 Factor Backtest Report.
+- v6.1.0: Web Product Integration completed.
+- Next target: v6.2.0 Interactive Data Workspace.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -428,6 +429,19 @@ Completed v6.0.0 scope:
 - Added tests for empty input, missing factor fields, missing return fields, z-score calculation, factor grouping, IC calculation, Rank IC calculation, group returns, effectiveness labels, input immutability, module imports, and neutral report wording.
 - Did not add selection algorithms, scoring changes, APIs, databases, vector stores, news sources, external services, machine learning, buy/sell points, target prices, position suggestions, automated trading workflows, return promises, parameter search, default sorting changes, or operational conclusions.
 - Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default filters, stock pools, data sources, machine-learning logic, or trading logic.
+
+Completed v6.1.0 scope:
+
+- Added `ui/product_ui.py` as the product-level Streamlit integration layer.
+- Refactored `app.py` to use left-side product navigation for Dashboard, A-share Universe, selection results, Research Workstation, backtest analysis, Chart Center, Factor Research Lab, research report preview, system/data-quality status, the screening pipeline, and the legacy workbench.
+- Updated `ui/screening_ui.py` to store Universe, Fundamental, Technical, Composite, Candidate Pool, Backtest Foundation, Return Analysis, Backtest Evaluation, Stock Selection, and Explainable Selection DataFrames in session state for reuse by product pages.
+- Added card-based Dashboard metrics for total objects, Core/Watch/Exclude, average scores, factor count, backtest count, and incomplete-data count.
+- Added product pages for A-share Universe filtering, selection groups, backtest metrics, chart views, factor overview/IC/group returns, report preview, and system status.
+- Added empty DataFrame and missing-field handling so every product page keeps a visible framework and explanatory notice.
+- Updated version metadata to v6.1.0 and synchronized README, PROJECT_MASTER, ROADMAP, and CHANGELOG.
+- Added tests for app import, page renderer imports, empty DataFrame rendering, missing selection/factor/backtest fields, navigation configuration, warning/missing-field summaries, and restricted report wording.
+- Did not add selection algorithms, scoring changes, APIs, databases, vector stores, news sources, external services, machine learning, buy/sell points, target prices, position suggestions, automated trading workflows, return promises, parameter search, default sorting changes, or operational conclusions.
+- Did not modify `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default filters, stock pools, data sources, machine-learning logic, or trading logic.
 
 Boundary:
 

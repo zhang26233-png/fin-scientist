@@ -2,6 +2,19 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.1.0
+
+- Added Web Product Integration in `ui/product_ui.py`.
+- Refactored `app.py` into product-level left navigation for Dashboard, A-share Universe, selection results, Research Workstation, backtest analysis, Chart Center, Factor Research Lab, research report preview, system/data-quality status, screening pipeline, and legacy workbench.
+- Updated `ui/screening_ui.py` to store completed pipeline DataFrames in session state for reuse by the product pages.
+- Added card-based Dashboard metrics for total objects, Core/Watch/Exclude counts, average `selection_score`, average `composite_score`, average `risk_score`, factor count, backtest count, and incomplete-data count.
+- Added product pages for Universe filtering, selection result groups, backtest analysis, chart views, factor research tables, report preview, and system status.
+- Added empty DataFrame and missing-field safe rendering so product pages show structure and explanations even when data has not been generated.
+- Updated `app.py`, `legacy_app.py`, `ui/workstation_theme.py`, README, PROJECT_MASTER, ROADMAP, and CHANGELOG for v6.1.0.
+- Added tests for product UI imports, navigation generation, empty DataFrame rendering, missing selection/factor/backtest fields, warning and missing-field summaries, report text boundaries, and `app.py` import.
+- Kept `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, scoring weights, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external APIs, external services, machine learning, buy/sell points, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, return promises, or operational conclusions.
+
 ## v6.0.0
 
 - Added Factor Research Lab in `factor/factor_lab.py`.

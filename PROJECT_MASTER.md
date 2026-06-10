@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.0.0
-- CURRENT_STAGE = Factor Research Lab
-- NEXT_TARGET = v6.1.0 Factor Backtest Report
+- CURRENT_VERSION = v6.1.0
+- CURRENT_STAGE = Web Product Integration
+- NEXT_TARGET = v6.2.0 Interactive Data Workspace
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.0.0"`
-- `legacy_app.py`: `APP_VERSION = "v6.0.0"`
-- `README.md`: Current version: v6.0.0
+- `app.py`: `APP_VERSION = "v6.1.0"`
+- `legacy_app.py`: `APP_VERSION = "v6.1.0"`
+- `README.md`: Current version: v6.1.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V6.0.0 adds Factor Research Lab as a read-only quantitative factor research foundation. It builds factor datasets, factor z-scores, Q1-Q5 factor groups, Pearson IC, Rank IC, group returns, factor effectiveness labels, and structured factor research reports from existing research result fields. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v6.1 main line is Factor Backtest Report.
+V6.1.0 adds Web Product Integration for the Streamlit application. It creates a product-level left navigation and visible pages for Dashboard, A-share Universe, selection results, Research Workstation, backtest analysis, Chart Center, Factor Research Lab, research report preview, and system/data-quality status. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v6.2 main line is Interactive Data Workspace.
 
 ## Current Architecture
 
@@ -152,6 +152,7 @@ Generated from the current project root scan on 2026-06-03.
     |-- chart_components.py
     |-- report_ui.py
     |-- report_builder.py
+    |-- product_ui.py
     |-- screening_ui.py
     |-- strategy_diagnostics_panel.py
     |-- terminal_components.py
@@ -228,6 +229,7 @@ Generated from the current `strategy/` directory.
 | Research Workstation theme | `ui/workstation_theme.py` | active | Bloomberg/GitHub dark CSS, sticky workstation header, section titles, badges, and tone mapping |
 | Chart Center | `ui/chart_center.py` | active | Read-only chart center for score profile, return-risk scatter, drawdown-risk view, score breakdown, ranking, and quality distribution |
 | Chart components | `ui/chart_components.py` | active | Safe numeric conversion, defensive chart DataFrame preparation, ranking data, scatter data, score profile data, and distribution data |
+| Web Product Integration | `ui/product_ui.py` | active | Product-level navigation, dashboard, module pages, data-quality status, Chart Center page, Factor Lab page, and empty-state-safe Streamlit rendering |
 | Factor Research Lab | `factor/factor_lab.py` | active | Read-only factor dataset builder, z-score normalization, factor grouping, factor warnings, and factor summaries |
 | Factor metrics | `factor/factor_metrics.py` | active | Pearson IC, Rank IC, group returns, and factor effectiveness labels |
 | Factor report | `factor/factor_report.py` | active | Structured neutral factor research report fields |
@@ -833,6 +835,23 @@ Chart Center is a read-only visualization layer inside the Research Workstation.
 | Workstation view | `ui.workstation_ui` | Factor Research Lab section inside Research Workstation with factor overview, group returns, and research summary |
 
 Factor Research Lab is a read-only quantitative factor research foundation. V6.0.0 adds `factor_available`, `factor_name`, `factor_value`, `factor_zscore`, `factor_group`, `factor_ic`, `factor_rank_ic`, `factor_group_return`, `factor_effectiveness_label`, `factor_research_summary`, and `factor_warnings`. It uses existing `fundamental_score`, `technical_score`, `composite_score`, `selection_score`, `risk_score`, and `return_risk_ratio` fields as default factor candidates and uses `future_return` or `period_return` only when available for IC review. It does not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, default sorting, default screening workflow, upstream research modules, data sources, or trading logic.
+
+### Web Product Integration
+
+| Area | Source | Meaning |
+|---|---|---|
+| Product navigation | `app.py` and `ui.product_ui` | Left-side Streamlit navigation across the integrated research platform |
+| Dashboard page | `ui.product_ui` | Card-based total count, Core/Watch/Exclude, average score, factor count, backtest count, and incomplete-data count |
+| Universe page | `ui.product_ui` | A-share Universe table with market, ST, suspended, and status filters |
+| Selection page | `ui.product_ui` | Selection result table plus Top Core, Top Watch, risk, and missing-data groups |
+| Workstation page | `ui.product_ui` and `ui.workstation_ui` | Existing Research Workstation visible from product navigation |
+| Backtest page | `ui.product_ui` | Historical return, volatility, drawdown, win rate, return-risk ratio, performance label, and quality label |
+| Chart Center page | `ui.product_ui` and `ui.chart_center` | Ranking, return-risk scatter, risk view, candidate distribution, and score breakdown |
+| Factor Lab page | `ui.product_ui` and `factor.*` | Factor overview, IC, Rank IC, Q1-Q5 group returns, effectiveness label, and research summary |
+| Report page | `ui.product_ui` and `ui.report_builder` | Read-only single-object research report preview |
+| System status page | `ui.product_ui` | Version, stage, module registry, missing fields, warning summary, test status, and data-source notes |
+
+Web Product Integration is a read-only Streamlit product layer. V6.1.0 makes completed modules visible through a unified product navigation and stores screening pipeline outputs in session state for reuse by the product pages. Empty DataFrames and missing fields render page structure and explanatory notices instead of blank pages. It does not modify `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, default sorting, default screening workflow, upstream research modules, data sources, or trading logic.
 
 ## Current Development Principles
 
