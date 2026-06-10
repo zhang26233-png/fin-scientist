@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: v4.2.0
+Current version: v5.0.0
 
-v4.2.0 adds the Visual Research Terminal Redesign. The Research Terminal is now card-based, dashboard-oriented, and report-style, with a unified visual theme, terminal header, dashboard cards, Top Picks cards, score bars, risk badges, grouped risk center, clearer comparison table, and formatted research report preview without adding a database, vector store, external service, data source, scoring change, or sorting change.
+v5.0.0 adds the Research Workstation. The current research results are now organized as a professional workstation with a sticky research header, left navigator, central research area, right thesis panel, and full-width risk, score, backtest, compare, and pipeline sections without adding a database, vector store, external service, data source, scoring change, or sorting change.
 
 Startup command remains:
 
@@ -19,22 +19,45 @@ config/    Stock pools, stock names, sector labels, built-in fundamental samples
 data/      Market data and fundamental data access boundaries
 core/      Metrics, scoring, explanations, and sector-strength helpers
 strategy/  Independent strategy comparison, scoring, view-model, service, reports, diagnostics, factors, filters, risk labels, and presets
-ui/        Streamlit page entrypoints, screening page rendering, report UI, and Research Terminal UI
+ui/        Streamlit page entrypoints, screening page rendering, report UI, Research Terminal UI, and Research Workstation UI
 app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v4.2.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview, Web UI Report Experience, and Research Terminal UI rendering live in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
+`legacy_app.py` is not an unused backup. In v5.0.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview, Web UI Report Experience, Research Terminal UI, and Research Workstation UI rendering live in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
 
-v4.2.0 Visual Research Terminal Redesign:
+v5.0.0 Research Workstation:
 
-- Added `ui/visual_theme.py` and `ui/visual_components.py`.
-- Upgraded Research Terminal into card-based, dashboard-oriented, and report-style views.
-- Added terminal header, metric cards, stock cards, score bars, badges, warning boxes, report blocks, and clearer comparison tables.
+- Added `ui/workstation_ui.py`, `ui/workstation_components.py`, and `ui/workstation_theme.py`.
+- Upgraded current research results into a professional workstation layout.
+- Added Research Navigator, Research Header, Dashboard Cards, Main Research Area, Thesis Panel, Score Breakdown Center, Risk Center, Backtest Center, Compare Workspace, Research Pipeline, and Research Report Preview.
 - Keeps all terminal output read-only and neutral for learning and research.
 - Does not modify scoring logic, default sorting, data sources, stock pools, or upstream research modules.
 
-FinScientist v4.2.0 是一个模块化 Streamlit 金融研究学习原型。当前 Research Terminal 已升级为卡片化、仪表盘化、报告化展示，用于更清晰地观察研究对象、评分拆解、风险分组、数据质量和报告预览。
+Research Workstation architecture:
+
+```text
+Explainable Selection DataFrame
+        |
+        v
+ui.workstation_ui
+  |-- Research Header
+  |-- Research Navigator
+  |-- Main Research Area
+  |-- Thesis Panel
+  `-- Risk & Score Analysis
+        |
+        +-- ui.workstation_components
+        |     safe_get / metric cards / stock cards / score bars / risk cards / compare table
+        |
+        +-- ui.workstation_theme
+        |     Bloomberg-style dark CSS / badges / sticky header
+        |
+        `-- ui.report_builder
+              read-only research report preview
+```
+
+FinScientist v5.0.0 是一个模块化 Streamlit 金融研究学习原型。当前 Research Workstation 将研究结果组织为左侧导航、中间研究区、右侧报告预览和底部风险评分分析区，用于更清晰地观察研究对象、评分拆解、风险分组、数据质量和报告预览。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -44,12 +67,12 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：v4.2.0
+当前版本：v5.0.0
 
-V4.2.0 Visual Research Terminal Redesign:
+V5.0.0 Research Workstation:
 
-- Added visual theme, metric cards, stock cards, score bars, risk badges, warning boxes, report blocks, and clearer comparison tables.
-- Research Terminal is now card-based, dashboard-oriented, and report-style.
+- Added workstation theme, workstation components, and Research Workstation UI.
+- Research results now appear in a professional workstation layout with navigator, research area, thesis panel, score/risk/backtest centers, compare workspace, and pipeline.
 - All outputs remain read-only and do not change scoring, sorting, data sources, or upstream modules.
 
 V2.0.0 research memory foundation phase:

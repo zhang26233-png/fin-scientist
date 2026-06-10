@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v4.2.0
-- CURRENT_STAGE = Visual Research Terminal Redesign
-- NEXT_TARGET = v4.3.0 Chart Center
+- CURRENT_VERSION = v5.0.0
+- CURRENT_STAGE = Research Workstation
+- NEXT_TARGET = v5.1.0 Chart Center
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v4.2.0"`
-- `legacy_app.py`: `APP_VERSION = "v4.2.0"`
-- `README.md`: Current version: v4.2.0
+- `app.py`: `APP_VERSION = "v5.0.0"`
+- `legacy_app.py`: `APP_VERSION = "v5.0.0"`
+- `README.md`: Current version: v5.0.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V4.2.0 adds the Visual Research Terminal Redesign for the Streamlit research workbench. The redesigned terminal upgrades the existing Research Terminal into a card-based, dashboard-oriented, report-style interface with a unified visual theme, terminal header, metric cards, visual stock cards, score bars, risk badges, grouped risk center, clearer comparison table, and formatted report preview. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v4.3 main line is Chart Center.
+V5.0.0 adds the Research Workstation UI for the Streamlit research workbench. The Workstation reorganizes existing research results into a professional three-column workspace with a left Research Navigator, central Research Area, right Thesis Panel, and full-width Risk & Score Analysis sections. It adds workstation-specific theme, components, navigator grouping, sticky research header, dashboard cards, explain-engine presentation, score breakdown center, risk center, backtest center, comparison workspace, research pipeline, and report preview. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v5.1 main line is Chart Center.
 
 ## Current Architecture
 
@@ -148,7 +148,10 @@ Generated from the current project root scan on 2026-06-03.
     |-- terminal_components.py
     |-- terminal_ui.py
     |-- visual_components.py
-    `-- visual_theme.py
+    |-- visual_theme.py
+    |-- workstation_components.py
+    |-- workstation_theme.py
+    `-- workstation_ui.py
 ```
 
 Ignored runtime/cache directories present in the scan:
@@ -211,6 +214,9 @@ Generated from the current `strategy/` directory.
 | Research report builder | `ui/report_builder.py` | active | Read-only single-stock research report preview text from existing row fields |
 | Visual terminal theme | `ui/visual_theme.py` | active | Shared CSS, terminal header, section titles, score badges, risk badges, and status badges |
 | Visual terminal components | `ui/visual_components.py` | active | Metric cards, stock cards, score bars, warning boxes, report blocks, quality badges, risk badges, and comparison table rendering |
+| Research Workstation UI | `ui/workstation_ui.py` | active | Three-column professional research workspace with navigator, research area, thesis panel, score/risk/backtest centers, compare workspace, pipeline, and report preview |
+| Research Workstation components | `ui/workstation_components.py` | active | Safe field access, missing-value handling, metric cards, stock cards, score bars, risk cards, badges, report blocks, and compare table rendering |
+| Research Workstation theme | `ui/workstation_theme.py` | active | Bloomberg/GitHub dark CSS, sticky workstation header, section titles, badges, and tone mapping |
 | Service | `strategy/service.py` | active | Strategy service output wrapper |
 | View model | `strategy/view_model.py` | active | UI-friendly strategy report model |
 
@@ -770,6 +776,20 @@ Research Terminal UI Package is a read-only Streamlit terminal experience layer.
 | Report preview redesign | `ui.report_builder` and `ui.visual_components` | Numbered research report structure rendered as a report block plus optional pure-text preview |
 
 Visual Research Terminal Redesign is a read-only presentation-layer upgrade. V4.2.0 does not add a new selection algorithm, does not modify scoring logic, does not modify `selection_score`, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, or `core/scoring.py`, and does not change default sorting or the default screening workflow. It only changes visual layout, CSS, card rendering, badges, progress bars, risk grouping presentation, comparison formatting, and report preview layout. It does not add APIs, databases, vector stores, news sources, external services, machine-learning predictions, target prices, position suggestions, return promises, or operational conclusions.
+
+### Research Workstation
+
+| Area | Source | Meaning |
+|---|---|---|
+| Workstation theme | `ui.workstation_theme` | Bloomberg/GitHub dark CSS, sticky header, version/stage metadata, section titles, and badge tone mapping |
+| Workstation components | `ui.workstation_components` | Safe field access, defensive DataFrame copying, metric cards, stock cards, score bars, risk cards, badges, report blocks, and comparison table rendering |
+| Research Navigator | `ui.workstation_ui` | Left-side CORE/WATCH/EXCLUDED grouping from `selection_bucket`, with button-based object switching instead of dropdown navigation |
+| Research Header | `ui.workstation_ui` | Sticky header with current object, update time, candidate count, CORE count, WATCH count, and average score |
+| Research Area | `ui.workstation_ui` | Central object overview with score, rank, bucket, quality, status, thesis, strengths, risks, and factor breakdown panels |
+| Thesis Panel | `ui.workstation_ui` | Right-side read-only research report preview from `ui.report_builder` |
+| Risk & Score Analysis | `ui.workstation_ui` | Full-width score breakdown center, risk center, backtest center, compare workspace, and research pipeline |
+
+Research Workstation is a read-only professional UI workspace. V5.0.0 does not add a new selection algorithm, does not modify scoring logic, does not modify `selection_score`, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, or `core/scoring.py`, and does not change default sorting or the default screening workflow. It only reorganizes existing results into a professional workstation layout with navigation, cards, badges, score bars, risk cards, comparison tables, pipeline status, and report preview. It does not add APIs, databases, vector stores, news sources, external services, machine-learning predictions, target prices, position suggestions, return promises, or operational conclusions.
 
 ## Current Development Principles
 

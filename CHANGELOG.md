@@ -2,6 +2,23 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v5.0.0
+
+- Added Research Workstation in `ui/workstation_ui.py`.
+- Added workstation component library in `ui/workstation_components.py`.
+- Added workstation dark theme in `ui/workstation_theme.py`.
+- Added sticky Research Header with current object, update time, candidate count, CORE count, WATCH count, average score, version, stage, and research-only boundary.
+- Added left Research Navigator that groups objects into CORE, WATCH, and EXCLUDED from `selection_bucket` and uses buttons for object switching.
+- Added central Main Research Area for object identity, selection score, rank, bucket, quality label, status badge, risk badge, thesis, strengths, risks, and five-part factor breakdown.
+- Added right Thesis Panel with read-only Research Report Preview from `ui/report_builder.py`.
+- Added Dashboard Cards for Average Score, Core Candidates, Average Return, and Average Risk Score.
+- Added Score Breakdown Center, Risk Center, Backtest Center, Compare Workspace, and Research Pipeline.
+- Integrated Research Workstation into `ui/screening_ui.py` after the existing Research Terminal without changing default sorting or upstream DataFrames.
+- Updated `app.py`, `legacy_app.py`, README, PROJECT_MASTER, ROADMAP, and CHANGELOG for v5.0.0.
+- Added tests for workstation imports, CSS output, safe field access, navigator grouping, dashboard metrics, missing explain fields, missing risk fields, compare generation, report preview generation, empty DataFrame rendering, input immutability, and `app.py` import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, scoring weights, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external APIs, external services, machine learning, buy/sell points, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, return promises, or operational conclusions.
+
 ## v4.2.0
 
 - Added Visual Research Terminal Redesign.

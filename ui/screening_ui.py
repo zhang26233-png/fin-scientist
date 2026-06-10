@@ -16,6 +16,7 @@ from selection.stock_selection import build_stock_selection
 from strategy.preview import build_strategy_preview
 from ui.report_ui import render_report_experience
 from ui.terminal_ui import render_research_terminal
+from ui.workstation_ui import render_research_workstation
 from universe.a_share_universe import build_a_share_universe
 
 
@@ -405,6 +406,11 @@ def render_research_terminal_section(explainable_selection):
         return render_research_terminal(explainable_selection)
 
 
+def render_research_workstation_section(explainable_selection):
+    with st.expander("Research Workstation (read-only research, not investment advice)", expanded=True):
+        return render_research_workstation(explainable_selection)
+
+
 def render_strategy_preview_section(result_df):
     with st.expander("Strategy preview (research support, not investment advice)", expanded=False):
         st.caption("Strategy preview is only for research-priority review. Default ordering is unchanged.")
@@ -475,6 +481,7 @@ def render_screening_page():
         explainable_selection = render_explainable_selection_section(stock_selection)
         render_web_report_section(explainable_selection)
         render_research_terminal_section(explainable_selection)
+        render_research_workstation_section(explainable_selection)
 
     if run_screening_button:
         screening_result = legacy_workbench.render_screening_section(
