@@ -1,4 +1,4 @@
-"""Research Terminal UI package for read-only stock research review."""
+"""Visual Research Terminal UI for read-only stock research review."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from ui.report_builder import build_stock_research_report
 from ui.terminal_components import (
     BACKTEST_FIELDS,
     COMPARE_FIELDS,
+    SCORE_FIELDS,
     build_compare_frame,
     build_dashboard_summary,
     build_risk_center_tables,
@@ -18,23 +19,50 @@ from ui.terminal_components import (
     format_terminal_value,
     get_identity,
     render_key_value_table,
-    render_metric_grid,
-    render_score_progress,
     safe_copy_frame,
+)
+from ui.visual_components import (
+    render_compare_table,
+    render_metric_card,
+    render_report_block,
+    render_score_bar,
+    render_stock_card,
+    render_warning_box,
+)
+from ui.visual_theme import (
+    get_risk_badge,
+    get_score_badge,
+    get_status_badge,
+    get_terminal_css,
+    render_section_title,
+    render_terminal_header,
 )
 
 
-TERMINAL_VERSION = "v4.1.0"
-TERMINAL_STAGE = "Research Terminal UI Package"
+TERMINAL_VERSION = "v4.2.0"
+TERMINAL_STAGE = "Visual Research Terminal Redesign"
 
 
 def render_dashboard(df: pd.DataFrame) -> dict[str, object]:
-    """Render Research Dashboard and return the summary payload."""
+    """Render dashboard cards and return the summary payload."""
     source = safe_copy_frame(df)
     summary = build_dashboard_summary(source)
-    st.subheader("Research Dashboard")
-    st.caption("研究终端仅展示现有研究字段，不构成投资建议。")
-    render_metric_grid(summary)
+    render_section_title("Dashboard Cards", "用卡片方式观察研究对象结构、平均分和数据完整性。")
+    cards = [
+        ("研究对象总数", summary["research_count"], "当前结果集中可观察的对象数量。"),
+        ("Core 数量", summary["core_count"], "进入 Core 分组的研究对象。"),
+        ("Watch 数量", summary["watch_count"], "需要继续观察的研究对象。"),
+        ("Exclude 数量", summary["exclude_count"], "当前不进入重点观察的对象。"),
+        ("平均 selection_score", format_terminal_value(summary["avg_selection_score"]), "只读选择层平均分。"),
+        ("平均 composite_score", format_terminal_value(summary["avg_composite_score"]), "基本面与技术面综合分均值。"),
+        ("高风险数量", summary["high_risk_count"], "risk_level 为 High 的对象数量。"),
+        ("数据不完整数量", summary["incomplete_data_count"], "存在 Incomplete 或 Unavailable 状态的对象。"),
+    ]
+    for row_start in range(0, len(cards), 4):
+        columns = st.columns(4)
+        for column, (title, value, help_text) in zip(columns, cards[row_start : row_start + 4]):
+            with column:
+                render_metric_card(title, value, help_text)
     return summary
 
 
@@ -54,49 +82,47 @@ def _top_pick_frame(df: pd.DataFrame) -> pd.DataFrame:
 def render_top_picks(df: pd.DataFrame) -> pd.DataFrame:
     """Render Top Core / Watch stock cards."""
     picks = _top_pick_frame(df)
-    st.subheader("Top Picks")
+    render_section_title("Top Picks Cards", "展示 Core 和 Watch 中靠前的研究对象，不改变原始结果顺序。")
     if picks.empty:
         st.info("当前没有可展示的 Core / Watch 研究对象。")
         return picks
 
     for _, row in picks.iterrows():
-        ticker, name = get_identity(row)
-        title = " ".join(part for part in [ticker, name] if part).strip() or "研究对象"
-        with st.container(border=True):
-            st.markdown(f"### {title}")
-            metric_cols = st.columns(4)
-            metric_cols[0].metric("selection_rank", format_terminal_value(row.get("selection_rank")))
-            metric_cols[1].metric("selection_score", format_terminal_value(row.get("selection_score")))
-            metric_cols[2].metric("selection_bucket", format_terminal_value(row.get("selection_bucket")))
-            metric_cols[3].metric("selection_thesis", format_terminal_value(row.get("selection_thesis")))
-            st.caption(format_terminal_value(row.get("selection_summary")) or "暂无可展示摘要。")
-            cols = st.columns(2)
-            cols[0].markdown("**✓ 优势**")
-            cols[0].markdown(format_list_field(row.get("selection_strengths")) or "暂无可展示优势。")
-            cols[1].markdown("**⚠ 风险提示**")
-            cols[1].markdown(format_list_field(row.get("selection_risks")) or "暂无可展示风险。")
+        render_stock_card(row, format_terminal_value)
     return picks
 
 
 def render_score_breakdown(row: pd.Series) -> None:
-    """Render score metrics, progress bars, and factor breakdown."""
-    st.subheader("Score Breakdown")
-    render_score_progress(row)
+    """Render score metrics, badges, and progress bars."""
+    render_section_title("Score Breakdown", "评分只用于展示，不改变任何上游评分值。")
+    for field in SCORE_FIELDS:
+        value = row.get(field)
+        numeric = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+        if pd.isna(numeric):
+            badge = get_score_badge("Unavailable")
+        elif numeric >= 75:
+            badge = get_score_badge("High")
+        elif numeric >= 50:
+            badge = get_score_badge("Medium")
+        else:
+            badge = get_score_badge("Low")
+        render_score_bar(field, value, badge)
+
     if "selection_factor_breakdown" in row.index:
         st.markdown("**因子拆解**")
-        st.markdown(format_terminal_value(row.get("selection_factor_breakdown")) or "暂无可展示因子拆解。")
+        st.markdown(format_terminal_value(row.get("selection_factor_breakdown")) or "—")
 
 
 def render_backtest_panel(row: pd.Series) -> None:
     """Render historical metrics from existing backtest fields."""
-    st.subheader("Backtest Panel")
+    render_section_title("Backtest Panel", "展示已有历史表现字段，仅用于研究回顾。")
     render_key_value_table(row, BACKTEST_FIELDS)
 
 
 def render_stock_detail(df: pd.DataFrame, selected_ticker: str | None) -> pd.Series | None:
     """Render the single-stock detail panel."""
     source = safe_copy_frame(df)
-    st.subheader("Stock Detail Panel")
+    render_section_title("Stock Detail Panel", "选择单只股票查看摘要、评分、解释、历史表现、风险和数据质量。")
     if source.empty:
         st.info("当前没有可查看的研究对象。")
         return None
@@ -107,50 +133,74 @@ def render_stock_detail(df: pd.DataFrame, selected_ticker: str | None) -> pd.Ser
         row = matched.iloc[0].copy(deep=True) if not matched.empty else source.iloc[0].copy(deep=True)
 
     ticker, name = get_identity(row)
-    st.markdown(f"### {' '.join(part for part in [ticker, name] if part).strip() or '研究对象'}")
-    tabs = st.tabs(["基本信息", "评分拆解", "解释层结果", "回测表现", "风险提示", "数据质量提示"])
+    title = " ".join(part for part in [ticker, name] if part and part != "—").strip() or "研究对象"
+    status_cols = st.columns([2, 1, 1, 1])
+    status_cols[0].markdown(f"### {title}")
+    status_cols[1].markdown(get_status_badge(row.get("selection_bucket")), unsafe_allow_html=True)
+    status_cols[2].markdown(get_risk_badge(row.get("risk_level")), unsafe_allow_html=True)
+    status_cols[3].markdown(get_status_badge(row.get("selection_status")), unsafe_allow_html=True)
+
+    tabs = st.tabs(["基本信息", "核心摘要", "评分拆解", "解释层结果", "回测表现", "风险提示", "数据质量"])
     with tabs[0]:
-        render_key_value_table(row, ["ticker", "name", "selection_bucket", "selection_rank", "selection_status", "selection_quality_label"])
+        render_key_value_table(
+            row,
+            ["ticker", "name", "selection_bucket", "selection_rank", "selection_status", "selection_quality_label"],
+        )
     with tabs[1]:
-        render_score_breakdown(row)
+        st.markdown(format_terminal_value(row.get("selection_summary")))
+        st.markdown(get_status_badge(row.get("selection_thesis")), unsafe_allow_html=True)
     with tabs[2]:
-        render_key_value_table(row, ["selection_thesis", "selection_summary", "selection_strengths", "selection_risks", "selection_explanation"])
+        render_score_breakdown(row)
     with tabs[3]:
-        render_backtest_panel(row)
+        render_key_value_table(
+            row,
+            ["selection_thesis", "selection_summary", "selection_strengths", "selection_risks", "selection_explanation"],
+        )
     with tabs[4]:
-        st.markdown(format_list_field(row.get("selection_risks")) or format_list_field(row.get("selection_risk_notes")) or "暂无可展示风险提示。")
+        render_backtest_panel(row)
     with tabs[5]:
+        risks = format_list_field(row.get("selection_risks")) or format_list_field(row.get("selection_risk_notes"))
+        render_warning_box(risks or "暂无可展示风险提示。")
+    with tabs[6]:
         warnings = collect_warning_fields(row)
-        st.markdown(format_list_field(warnings) or "当前未汇总到明显的数据质量提示。")
+        render_warning_box(warnings)
     return row
 
 
+def _format_risk_table(table: pd.DataFrame) -> pd.DataFrame:
+    display = table.copy(deep=True)
+    for column in display.columns:
+        display[column] = display[column].map(lambda value, field=column: format_terminal_value(value, field))
+    return display.replace("", "—").fillna("—")
+
+
 def render_risk_center(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    """Render risk center grouped views."""
+    """Render visual risk center grouped views."""
     tables = build_risk_center_tables(df)
-    st.subheader("Risk Center")
-    labels = [
-        ("High Risk 股票", "high_risk"),
-        ("High Drawdown 股票", "high_drawdown"),
-        ("High Volatility 股票", "high_volatility"),
-        ("Missing Data 股票", "missing_data"),
-        ("Unavailable 股票", "unavailable"),
+    render_section_title("Risk Center", "按风险、回撤、波动、缺失数据和不可用状态进行分组查看。")
+    groups = [
+        ("High Risk", "high_risk", "risk_level 为 High 的对象。"),
+        ("High Drawdown", "high_drawdown", "max_drawdown 小于 -20% 的对象。"),
+        ("High Volatility", "high_volatility", "volatility 高于 40% 的对象。"),
+        ("Missing Data", "missing_data", "存在 Incomplete 状态的对象。"),
+        ("Unavailable", "unavailable", "存在 Unavailable 状态的对象。"),
     ]
-    tabs = st.tabs([label for label, _ in labels])
-    for tab, (label, key) in zip(tabs, labels):
+    tabs = st.tabs([label for label, _, _ in groups])
+    for tab, (label, key, caption) in zip(tabs, groups):
         with tab:
             table = tables[key]
+            render_metric_card(label, len(table), caption)
             if table.empty:
-                st.info(f"当前没有 {label}。")
+                st.info(f"当前没有 {label} 对象。")
             else:
-                st.dataframe(table, hide_index=True, use_container_width=True)
+                st.dataframe(_format_risk_table(table), hide_index=True, use_container_width=True)
     return tables
 
 
 def render_compare_panel(df: pd.DataFrame) -> pd.DataFrame:
     """Render 2-5 stock comparison panel."""
     source = safe_copy_frame(df)
-    st.subheader("Compare Panel")
+    render_section_title("Compare Panel", "选择 2-5 个研究对象进行横向对比。")
     if source.empty or "ticker" not in source.columns:
         st.info("当前没有可对比的研究对象。")
         return build_compare_frame(source)
@@ -161,42 +211,45 @@ def render_compare_panel(df: pd.DataFrame) -> pd.DataFrame:
     if len(selected) < 2:
         st.info("请选择至少 2 个研究对象。")
     table = build_compare_frame(source, selected)
-    if table.empty:
-        st.info("当前没有可展示的对比字段。")
-    else:
-        st.dataframe(table[existing_columns(table, COMPARE_FIELDS)], hide_index=True, use_container_width=True)
+    render_compare_table(table[existing_columns(table, COMPARE_FIELDS)])
     return table
 
 
 def render_report_preview(row: pd.Series | None) -> str:
     """Render read-only single-stock research report preview."""
-    st.subheader("Research Report Preview")
+    render_section_title("Research Report Preview", "报告仅基于已有字段生成，只读展示，不包含操作性结论。")
     if row is None:
         st.info("当前没有可生成报告预览的研究对象。")
         return ""
     report = build_stock_research_report(row)
-    st.text_area("只读研究报告预览", value=report, height=420, disabled=True)
+    render_report_block(report)
+    with st.expander("纯文本报告", expanded=False):
+        st.text_area("只读研究报告预览", value=report, height=360, disabled=True)
     return report
 
 
 def render_research_terminal(df: pd.DataFrame) -> dict[str, object]:
-    """Render the complete Research Terminal page from existing result fields."""
+    """Render the complete visual Research Terminal from existing result fields."""
     source = safe_copy_frame(df)
-    st.header("Research Terminal")
-    st.caption(f"{TERMINAL_VERSION} {TERMINAL_STAGE}；仅供学习和研究，不构成投资建议。")
+    st.markdown(get_terminal_css(), unsafe_allow_html=True)
+    render_terminal_header(
+        TERMINAL_VERSION,
+        TERMINAL_STAGE,
+        "卡片化、仪表盘化、报告化的个人股票研究终端；所有展示均来自现有只读研究字段。",
+    )
 
     dashboard = render_dashboard(source)
-    tabs = st.tabs(["Top Picks", "Stock Detail", "Risk Center", "Compare", "Report Preview"])
+    tabs = st.tabs(["Top Picks", "个股详情", "风险中心", "多股对比", "报告预览"])
 
-    with tabs[0]:
-        top_picks = render_top_picks(source)
-
+    selected_row = None
     selected_ticker = None
     if not source.empty and "ticker" in source.columns:
         tickers = [str(value) for value in source["ticker"].dropna().tolist()]
         if tickers:
             selected_ticker = st.selectbox("选择研究对象", options=tickers, index=0)
 
+    with tabs[0]:
+        top_picks = render_top_picks(source)
     with tabs[1]:
         selected_row = render_stock_detail(source, selected_ticker)
     with tabs[2]:

@@ -2,6 +2,24 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v4.2.0
+
+- Added Visual Research Terminal Redesign.
+- Added shared visual theme helpers in `ui/visual_theme.py`.
+- Added visual Streamlit components in `ui/visual_components.py`.
+- Redesigned Research Terminal header into a terminal-style landing header with version, stage, and research-only boundary text.
+- Redesigned Dashboard metrics into card-based sections with labels, values, and short explanations.
+- Redesigned Top Picks into visual stock cards with ticker, name, rank, score, bucket, thesis, summary, strengths, risks, and data-quality notes.
+- Redesigned Score Breakdown with metrics, progress bars, and score badges without changing score values.
+- Redesigned Stock Detail Panel with clearer tabs for basic information, summary, score breakdown, explanation, backtest, risk, and data quality.
+- Redesigned Risk Center with grouped tabs, visual count cards, and formatted risk tables.
+- Redesigned Compare Panel with clearer fields, `selection_thesis` support, and missing-value display.
+- Redesigned Research Report Preview as a report-style block with numbered sections and optional pure-text preview.
+- Updated `ui/terminal_components.py`, `ui/report_builder.py`, `ui/terminal_ui.py`, `app.py`, `legacy_app.py`, README, PROJECT_MASTER, ROADMAP, and CHANGELOG for v4.2.0.
+- Added tests for visual theme import, visual component import, CSS output, badge handling, list formatting, dict formatting, warning aggregation, empty DataFrame handling, missing fields, restricted report wording, input immutability, and `app.py` import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, scoring weights, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external APIs, external services, machine learning, buy/sell points, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, return promises, or operational conclusions.
+
 ## v4.1.0
 
 - Added Research Terminal UI Package in `ui/terminal_ui.py`.

@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v4.1.0
-- CURRENT_STAGE = Research Terminal UI Package
-- NEXT_TARGET = v4.2.0 Research Report Export Engine
+- CURRENT_VERSION = v4.2.0
+- CURRENT_STAGE = Visual Research Terminal Redesign
+- NEXT_TARGET = v4.3.0 Chart Center
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v4.1.0"`
-- `legacy_app.py`: `APP_VERSION = "v4.1.0"`
-- `README.md`: Current version: v4.1.0
+- `app.py`: `APP_VERSION = "v4.2.0"`
+- `legacy_app.py`: `APP_VERSION = "v4.2.0"`
+- `README.md`: Current version: v4.2.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V4.1.0 adds the Research Terminal UI Package for the Streamlit research workbench. The terminal organizes existing Universe, screening, candidate-pool, backtest, stock-selection, and explainable-selection outputs into dashboard metrics, Top Core/Watch cards, a single-stock detail panel, score breakdowns, historical-performance review, risk-center groups, multi-stock comparison, and read-only research report previews. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v4.2 main line is Research Report Export Engine.
+V4.2.0 adds the Visual Research Terminal Redesign for the Streamlit research workbench. The redesigned terminal upgrades the existing Research Terminal into a card-based, dashboard-oriented, report-style interface with a unified visual theme, terminal header, metric cards, visual stock cards, score bars, risk badges, grouped risk center, clearer comparison table, and formatted report preview. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v4.3 main line is Chart Center.
 
 ## Current Architecture
 
@@ -146,7 +146,9 @@ Generated from the current project root scan on 2026-06-03.
     |-- screening_ui.py
     |-- strategy_diagnostics_panel.py
     |-- terminal_components.py
-    `-- terminal_ui.py
+    |-- terminal_ui.py
+    |-- visual_components.py
+    `-- visual_theme.py
 ```
 
 Ignored runtime/cache directories present in the scan:
@@ -207,6 +209,8 @@ Generated from the current `strategy/` directory.
 | Research Terminal UI | `ui/terminal_ui.py` | active | Read-only terminal layout for dashboard, top picks, stock detail, score breakdown, backtest, risk center, compare panel, and report preview |
 | Research Terminal components | `ui/terminal_components.py` | active | Safe DataFrame copying, field formatting, dashboard summary, warning collection, risk grouping, comparison table helpers, and Streamlit component helpers |
 | Research report builder | `ui/report_builder.py` | active | Read-only single-stock research report preview text from existing row fields |
+| Visual terminal theme | `ui/visual_theme.py` | active | Shared CSS, terminal header, section titles, score badges, risk badges, and status badges |
+| Visual terminal components | `ui/visual_components.py` | active | Metric cards, stock cards, score bars, warning boxes, report blocks, quality badges, risk badges, and comparison table rendering |
 | Service | `strategy/service.py` | active | Strategy service output wrapper |
 | View model | `strategy/view_model.py` | active | UI-friendly strategy report model |
 
@@ -751,6 +755,21 @@ Web UI Report Experience is a read-only Streamlit presentation layer. V4.0.0 doe
 | Research Report Preview | `ui.report_builder` | Read-only single-stock research report preview with summary, core logic, scores, history, risks, data quality, and follow-up questions |
 
 Research Terminal UI Package is a read-only Streamlit terminal experience layer. V4.1.0 does not add a new selection algorithm, does not modify scoring logic, does not modify `selection_score`, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, or `core/scoring.py`, and does not change default sorting or the default screening workflow. It only reorganizes existing result fields into dashboard, card, detail, risk, comparison, and report-preview sections. It does not add APIs, databases, vector stores, news sources, external services, machine-learning predictions, target prices, position suggestions, return promises, or operational conclusions.
+
+### Visual Research Terminal Redesign
+
+| Area | Source | Meaning |
+|---|---|---|
+| Unified theme | `ui.visual_theme` | Shared CSS, terminal-style header, section titles, and badge helpers for score, risk, and status states |
+| Visual components | `ui.visual_components` | Metric cards, stock cards, score bars, risk badges, quality badges, warning boxes, report blocks, and comparison table rendering |
+| Terminal header | `ui.terminal_ui` | Fin-Scientist, Research Intelligence Terminal, current version, current stage, and research-only system note |
+| Dashboard cards | `ui.terminal_ui` | Card-based metrics for total objects, Core/Watch/Exclude, average scores, high-risk count, and incomplete-data count |
+| Top Picks cards | `ui.visual_components` | Card-based Core/Watch review with ticker, name, rank, score, bucket, thesis, summary, strengths, risks, and data-quality notes |
+| Score visualization | `ui.visual_components` | Progress bars, metric values, and badges for fundamental, technical, composite, risk, and selection scores |
+| Risk center redesign | `ui.terminal_ui` | Grouped risk tabs with visual count cards and formatted tables for High Risk, High Drawdown, High Volatility, Missing Data, and Unavailable |
+| Report preview redesign | `ui.report_builder` and `ui.visual_components` | Numbered research report structure rendered as a report block plus optional pure-text preview |
+
+Visual Research Terminal Redesign is a read-only presentation-layer upgrade. V4.2.0 does not add a new selection algorithm, does not modify scoring logic, does not modify `selection_score`, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, or `core/scoring.py`, and does not change default sorting or the default screening workflow. It only changes visual layout, CSS, card rendering, badges, progress bars, risk grouping presentation, comparison formatting, and report preview layout. It does not add APIs, databases, vector stores, news sources, external services, machine-learning predictions, target prices, position suggestions, return promises, or operational conclusions.
 
 ## Current Development Principles
 

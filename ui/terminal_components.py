@@ -1,4 +1,4 @@
-"""Reusable Streamlit components for the Research Terminal UI."""
+"""Reusable Streamlit components and data helpers for the Research Terminal."""
 
 from __future__ import annotations
 
@@ -8,6 +8,8 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
+
+MISSING_DISPLAY = "—"
 
 SCORE_FIELDS = [
     "fundamental_score",
@@ -41,6 +43,7 @@ COMPARE_FIELDS = [
     "volatility",
     "risk_level",
     "performance_label",
+    "selection_thesis",
 ]
 
 PERCENT_FIELDS = {
@@ -123,18 +126,19 @@ def format_dict_field(value: Any) -> str:
 def format_terminal_value(value: Any, field_name: str = "") -> str:
     """Format values with field-aware percentage and numeric handling."""
     if is_missing(value):
-        return ""
+        return MISSING_DISPLAY
     if isinstance(value, dict):
-        return format_dict_field(value)
+        return format_dict_field(value) or MISSING_DISPLAY
     if isinstance(value, (list, tuple, set)):
-        return format_list_field(value)
+        return format_list_field(value) or MISSING_DISPLAY
     if isinstance(value, bool):
         return "Yes" if value else "No"
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         if field_name in PERCENT_FIELDS:
             return f"{value * 100:.2f}%"
         return f"{value:.2f}"
-    return str(value)
+    text = str(value)
+    return text if text else MISSING_DISPLAY
 
 
 def existing_columns(frame: pd.DataFrame, columns: list[str]) -> list[str]:
@@ -184,15 +188,19 @@ def build_dashboard_summary(frame: pd.DataFrame) -> dict[str, Any]:
     if bucket is None:
         bucket = pd.Series([""] * len(source), index=source.index)
 
-    status_values = []
+    status_masks = []
     for field in WARNING_STATUS_FIELDS:
         if field in source.columns:
-            status_values.append(source[field].isin(["Incomplete", "Unavailable"]))
-    incomplete_mask = status_values[0] if status_values else pd.Series([False] * len(source), index=source.index)
-    for mask in status_values[1:]:
+            status_masks.append(source[field].isin(["Incomplete", "Unavailable"]))
+    incomplete_mask = pd.Series([False] * len(source), index=source.index)
+    for mask in status_masks:
         incomplete_mask = incomplete_mask | mask
 
-    risk_mask = source["risk_level"].eq("High") if "risk_level" in source.columns else pd.Series([False] * len(source), index=source.index)
+    risk_mask = (
+        source["risk_level"].eq("High")
+        if "risk_level" in source.columns
+        else pd.Series([False] * len(source), index=source.index)
+    )
 
     return {
         "research_count": int(len(source)),
@@ -214,17 +222,20 @@ def build_compare_frame(frame: pd.DataFrame, tickers: list[str] | None = None) -
         return pd.DataFrame(columns=columns)
     filtered = source
     if tickers and "ticker" in source.columns:
-        filtered = source[source["ticker"].isin(tickers)]
+        filtered = source[source["ticker"].astype(str).isin([str(ticker) for ticker in tickers])]
     display = filtered[columns].copy(deep=True)
     for column in display.columns:
         display[column] = display[column].map(lambda value, field=column: format_terminal_value(value, field))
-    return display
+    return display.replace("", MISSING_DISPLAY).fillna(MISSING_DISPLAY)
 
 
 def build_risk_center_tables(frame: pd.DataFrame) -> dict[str, pd.DataFrame]:
     """Build risk center groups from existing fields only."""
     source = safe_copy_frame(frame)
-    base_columns = existing_columns(source, ["ticker", "name", "risk_level", "max_drawdown", "volatility", "selection_status", "explain_status"])
+    base_columns = existing_columns(
+        source,
+        ["ticker", "name", "risk_level", "max_drawdown", "volatility", "selection_status", "explain_status"],
+    )
     empty = pd.DataFrame(columns=base_columns)
     if source.empty:
         return {
@@ -236,8 +247,16 @@ def build_risk_center_tables(frame: pd.DataFrame) -> dict[str, pd.DataFrame]:
         }
 
     high_risk = source[source["risk_level"].eq("High")] if "risk_level" in source.columns else source.iloc[0:0]
-    high_drawdown = source[pd.to_numeric(source.get("max_drawdown"), errors="coerce").lt(-0.2)] if "max_drawdown" in source.columns else source.iloc[0:0]
-    high_volatility = source[pd.to_numeric(source.get("volatility"), errors="coerce").gt(0.4)] if "volatility" in source.columns else source.iloc[0:0]
+    high_drawdown = (
+        source[pd.to_numeric(source.get("max_drawdown"), errors="coerce").lt(-0.2)]
+        if "max_drawdown" in source.columns
+        else source.iloc[0:0]
+    )
+    high_volatility = (
+        source[pd.to_numeric(source.get("volatility"), errors="coerce").gt(0.4)]
+        if "volatility" in source.columns
+        else source.iloc[0:0]
+    )
 
     missing_mask = pd.Series([False] * len(source), index=source.index)
     unavailable_mask = pd.Series([False] * len(source), index=source.index)
@@ -256,9 +275,9 @@ def build_risk_center_tables(frame: pd.DataFrame) -> dict[str, pd.DataFrame]:
 
 
 def render_metric_grid(summary: dict[str, Any]) -> None:
-    """Render the Research Dashboard metric grid."""
+    """Render the Research Dashboard metric grid with native Streamlit metrics."""
     first = st.columns(4)
-    first[0].metric("研究对象数量", summary["research_count"])
+    first[0].metric("研究对象总数", summary["research_count"])
     first[1].metric("Core 数量", summary["core_count"])
     first[2].metric("Watch 数量", summary["watch_count"])
     first[3].metric("Exclude 数量", summary["exclude_count"])
@@ -266,20 +285,19 @@ def render_metric_grid(summary: dict[str, Any]) -> None:
     second = st.columns(4)
     second[0].metric("平均 selection_score", format_terminal_value(summary["avg_selection_score"]))
     second[1].metric("平均 composite_score", format_terminal_value(summary["avg_composite_score"]))
-    second[2].metric("高风险标的数量", summary["high_risk_count"])
-    second[3].metric("数据不完整标的数量", summary["incomplete_data_count"])
+    second[2].metric("高风险数量", summary["high_risk_count"])
+    second[3].metric("数据不完整数量", summary["incomplete_data_count"])
 
 
 def render_score_progress(row: pd.Series) -> None:
     """Render score fields with metrics and progress bars."""
     for field in SCORE_FIELDS:
         value = row.get(field)
-        label = field
         if is_missing(value):
-            st.caption(f"{label}: 暂无可展示数据")
+            st.caption(f"{field}: 暂无可展示数据")
             continue
         metric_cols = st.columns([1, 3])
-        metric_cols[0].metric(label, format_terminal_value(value, field))
+        metric_cols[0].metric(field, format_terminal_value(value, field))
         numeric = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
         if not pd.isna(numeric):
             metric_cols[1].progress(max(0.0, min(float(numeric) / 100.0, 1.0)))
@@ -300,6 +318,7 @@ def render_key_value_table(row: pd.Series, fields: list[str]) -> None:
 __all__ = [
     "BACKTEST_FIELDS",
     "COMPARE_FIELDS",
+    "MISSING_DISPLAY",
     "SCORE_FIELDS",
     "WARNING_STATUS_FIELDS",
     "build_compare_frame",
@@ -311,6 +330,7 @@ __all__ = [
     "format_list_field",
     "format_terminal_value",
     "get_identity",
+    "is_missing",
     "render_key_value_table",
     "render_metric_grid",
     "render_score_progress",
