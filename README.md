@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: V2.0.0
+Current version: v4.1.0
 
-V2.0.0 adds the Research Memory Foundation. The project now defines a read-only Research Snapshot schema for organizing preview results into grouped memory sections without adding a database, vector store, external service, data source, scoring change, or sorting change.
+v4.1.0 adds the Research Terminal UI Package. The project now provides a read-only terminal-style Streamlit experience for dashboard metrics, Top Picks cards, single-stock detail review, score breakdown, backtest review, risk center, multi-stock comparison, and neutral research report preview without adding a database, vector store, external service, data source, scoring change, or sorting change.
 
 Startup command remains:
 
@@ -19,14 +19,21 @@ config/    Stock pools, stock names, sector labels, built-in fundamental samples
 data/      Market data and fundamental data access boundaries
 core/      Metrics, scoring, explanations, and sector-strength helpers
 strategy/  Independent strategy comparison, scoring, view-model, service, reports, diagnostics, factors, filters, risk labels, and presets
-ui/        Streamlit page entrypoints and screening page rendering
+ui/        Streamlit page entrypoints, screening page rendering, report UI, and Research Terminal UI
 app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In V2.0.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview rendering lives in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
+`legacy_app.py` is not an unused backup. In v4.1.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Strategy preview, Web UI Report Experience, and Research Terminal UI rendering live in `ui/screening_ui.py`; `legacy_app.py` does not import strategy modules in this release.
 
-FinScientist V2.0.0 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票分析、技术指标、基本面字段、板块观察、新闻/事件分析、多对象对比、临时观察列表、简单策略回测、数据源可靠性与数据质量报告，以及自动研究对象筛选模块。
+v4.1.0 Research Terminal UI Package:
+
+- Added `ui/terminal_ui.py`, `ui/terminal_components.py`, and `ui/report_builder.py`.
+- Added Research Dashboard, Top Picks, Stock Detail Panel, Score Breakdown, Backtest Panel, Risk Center, Compare Panel, and Research Report Preview.
+- Keeps all terminal output read-only and neutral for learning and research.
+- Does not modify scoring logic, default sorting, data sources, stock pools, or upstream research modules.
+
+FinScientist v4.1.0 是一个模块化 Streamlit 金融研究学习原型。后续项目方向以 A股研究为主，兼容港股和美股。当前提供单股票分析、技术指标、基本面字段、板块观察、新闻/事件分析、多对象对比、临时观察列表、简单策略回测、数据源可靠性与数据质量报告、自动研究对象筛选模块，以及 Research Terminal UI。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -36,7 +43,12 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：V2.0.0
+当前版本：v4.1.0
+
+V4.1.0 Research Terminal UI Package:
+
+- Added terminal-style dashboard, detail, risk, compare, and report-preview views for existing research outputs.
+- All outputs remain read-only and do not change scoring, sorting, data sources, or upstream modules.
 
 V2.0.0 research memory foundation phase:
 

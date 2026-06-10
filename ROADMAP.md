@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v4.0.0.
+Current: v4.1.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -215,7 +215,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v3.8.0: Stock Selection System Package completed.
 - v3.9.0: Explainable Selection Engine completed.
 - v4.0.0: Web UI Report Experience completed.
-- Next target: v4.1.0 Research Report Engine.
+- v4.1.0: Research Terminal UI Package completed.
+- Next target: v4.2.0 Research Report Export Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -346,6 +347,23 @@ Completed v4.0.0 scope:
 - Added warning aggregation across warning fields plus Incomplete and Unavailable statuses.
 - Integrated the report section into `ui/screening_ui.py` after Explainable Selection without changing default sorting.
 - Added tests for module import, empty DataFrame handling, missing selection/explain fields, list/dict formatting, warning aggregation, input immutability, and `app.py` import.
+- Did not add selection algorithms, scoring changes, APIs, databases, vector stores, news sources, external services, machine learning, buy/sell points, target prices, position suggestions, automated trading workflows, return promises, or operational conclusions.
+- Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
+
+Completed v4.1.0 scope:
+
+- Added `ui/terminal_ui.py`.
+- Added `ui/terminal_components.py`.
+- Added `ui/report_builder.py`.
+- Added Research Terminal UI Package for read-only terminal-style review of existing research outputs.
+- Added Research Dashboard metrics for total research objects, Core/Watch/Exclude counts, average `selection_score`, average `composite_score`, high-risk objects, and incomplete-data objects.
+- Added Top Picks cards for Core/Watch objects with ticker, name, rank, score, bucket, thesis, summary, strengths, and risks.
+- Added Stock Detail Panel with basic information, score breakdown, explanation fields, backtest panel, risk notes, and data-quality notes.
+- Added Risk Center groups for High Risk, High Drawdown, High Volatility, Missing Data, and Unavailable objects.
+- Added Compare Panel for 2-5 objects across selection, composite, fundamental, technical, return, drawdown, volatility, risk, and performance fields.
+- Added Research Report Preview for a single object using neutral research-only text.
+- Integrated the terminal section into `ui/screening_ui.py` after Web UI Report Experience without changing default sorting.
+- Added tests for module import, empty DataFrame handling, missing selection fields, missing explain fields, list formatting, dict formatting, warning aggregation, report text generation, restricted report wording checks, input immutability, and `app.py` import.
 - Did not add selection algorithms, scoring changes, APIs, databases, vector stores, news sources, external services, machine learning, buy/sell points, target prices, position suggestions, automated trading workflows, return promises, or operational conclusions.
 - Did not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, or trading logic.
 

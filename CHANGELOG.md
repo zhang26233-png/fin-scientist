@@ -2,6 +2,20 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v4.1.0
+
+- Added Research Terminal UI Package in `ui/terminal_ui.py`.
+- Added reusable terminal helpers in `ui/terminal_components.py`.
+- Added read-only single-stock report preview builder in `ui/report_builder.py`.
+- Added Research Dashboard metrics for research-object count, Core/Watch/Exclude counts, average `selection_score`, average `composite_score`, high-risk count, and incomplete-data count.
+- Added Top Picks cards, Stock Detail Panel, Score Breakdown, Backtest Panel, Risk Center, Compare Panel, and Research Report Preview.
+- Added safe handling for empty DataFrames, missing fields, list formatting, dict formatting, warning aggregation, numeric formatting, and percentage formatting.
+- Integrated Research Terminal UI into `ui/screening_ui.py` after the Web UI Report Experience without changing default sorting or upstream DataFrames.
+- Updated `app.py` version metadata and synchronized README, PROJECT_MASTER, ROADMAP, and CHANGELOG for v4.1.0.
+- Added tests for module import, empty DataFrame handling, missing selection fields, missing explanation fields, list formatting, dict formatting, warning aggregation, report preview text, restricted report wording, input immutability, and `app.py` import.
+- Kept `core/scoring.py`, `strategy_score`, research priority, priority stability, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default sorting, default filters, stock pools, data sources, machine-learning logic, scoring weights, and trading logic unchanged.
+- Did not add API keys, databases, vector stores, news sources, external APIs, external services, machine learning, buy/sell points, target prices, position suggestions, strategy optimization, parameter search, automated trading workflows, return promises, or operational conclusions.
+
 ## v4.0.0
 
 - Added Web UI Report Experience in `ui/report_ui.py`.

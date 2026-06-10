@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v4.0.0
-- CURRENT_STAGE = Web UI Report Experience
-- NEXT_TARGET = v4.1.0 Research Report Engine
+- CURRENT_VERSION = v4.1.0
+- CURRENT_STAGE = Research Terminal UI Package
+- NEXT_TARGET = v4.2.0 Research Report Export Engine
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "V2.0.0"`
-- `legacy_app.py`: `APP_VERSION = "V2.0.0"`
-- `README.md`: Current version: V2.0.0
+- `app.py`: `APP_VERSION = "v4.1.0"`
+- `legacy_app.py`: `APP_VERSION = "v4.1.0"`
+- `README.md`: Current version: v4.1.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V4.0.0 adds the Web UI Report Experience for the Streamlit research workbench. The new report UI organizes existing Universe, screening, candidate-pool, backtest, stock-selection, and explainable-selection outputs into read-only overview metrics, candidate tables, stock research cards, score breakdowns, backtest views, risk notes, and data-quality summaries. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v4.1 main line is Research Report Engine.
+V4.1.0 adds the Research Terminal UI Package for the Streamlit research workbench. The terminal organizes existing Universe, screening, candidate-pool, backtest, stock-selection, and explainable-selection outputs into dashboard metrics, Top Core/Watch cards, a single-stock detail panel, score breakdowns, historical-performance review, risk-center groups, multi-stock comparison, and read-only research report previews. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v4.2 main line is Research Report Export Engine.
 
 ## Current Architecture
 
@@ -142,8 +142,11 @@ Generated from the current project root scan on 2026-06-03.
 `-- ui/
     |-- __init__.py
     |-- report_ui.py
+    |-- report_builder.py
     |-- screening_ui.py
-    `-- strategy_diagnostics_panel.py
+    |-- strategy_diagnostics_panel.py
+    |-- terminal_components.py
+    `-- terminal_ui.py
 ```
 
 Ignored runtime/cache directories present in the scan:
@@ -201,6 +204,9 @@ Generated from the current `strategy/` directory.
 | Export | `strategy/export.py` | internal research | JSON-like snapshot payloads |
 | Report | `strategy/report.py` | active | Strategy report assembly |
 | Web UI report experience | `ui/report_ui.py` | active | Read-only Streamlit report layout, metrics, cards, formatted tables, warning collection, and data-quality summaries |
+| Research Terminal UI | `ui/terminal_ui.py` | active | Read-only terminal layout for dashboard, top picks, stock detail, score breakdown, backtest, risk center, compare panel, and report preview |
+| Research Terminal components | `ui/terminal_components.py` | active | Safe DataFrame copying, field formatting, dashboard summary, warning collection, risk grouping, comparison table helpers, and Streamlit component helpers |
+| Research report builder | `ui/report_builder.py` | active | Read-only single-stock research report preview text from existing row fields |
 | Service | `strategy/service.py` | active | Strategy service output wrapper |
 | View model | `strategy/view_model.py` | active | UI-friendly strategy report model |
 
@@ -730,6 +736,21 @@ Explainable Selection Fields are read-only explanation fields for understanding 
 | Data quality | `ui.report_ui` | Warning summary plus Incomplete and Unavailable status collection |
 
 Web UI Report Experience is a read-only Streamlit presentation layer. V4.0.0 does not add a new selection algorithm, does not modify scoring logic, does not modify `selection_score`, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, or `core/scoring.py`, and does not change default sorting or the default screening workflow. It only formats existing result fields into clearer report sections using metrics, tabs, dataframes, and card-style containers. It does not add APIs, databases, vector stores, news sources, external services, automated trading interfaces, machine-learning predictions, buy/sell advice, target prices, position suggestions, or return promises.
+
+### Research Terminal UI Package
+
+| Area | Source | Meaning |
+|---|---|---|
+| Research Dashboard | `ui.terminal_ui` | Total research-object count, Core/Watch/Exclude counts, average selection/composite scores, high-risk count, and incomplete-data count |
+| Top Picks | `ui.terminal_ui` | Top Core/Watch cards with ticker, name, rank, score, bucket, thesis, summary, strengths, and risks |
+| Stock Detail Panel | `ui.terminal_ui` | Single-stock detail tabs for basic information, score breakdown, explanation fields, backtest view, risk notes, and data-quality notes |
+| Score Breakdown | `ui.terminal_components` | Fundamental, technical, composite, risk, and selection score display with metrics and progress bars |
+| Backtest Panel | `ui.terminal_ui` | Period return, annualized return, volatility, max drawdown, win rate, return-risk ratio, performance label, and quality label |
+| Risk Center | `ui.terminal_components` | High Risk, High Drawdown, High Volatility, Missing Data, and Unavailable grouped views |
+| Compare Panel | `ui.terminal_components` | 2-5 object comparison across selection, composite, fundamental, technical, return, drawdown, volatility, risk, and performance fields |
+| Research Report Preview | `ui.report_builder` | Read-only single-stock research report preview with summary, core logic, scores, history, risks, data quality, and follow-up questions |
+
+Research Terminal UI Package is a read-only Streamlit terminal experience layer. V4.1.0 does not add a new selection algorithm, does not modify scoring logic, does not modify `selection_score`, `candidate_rank`, `composite_score`, `fundamental_score`, `technical_score`, `strategy_score`, `research_priority_score`, `priority_stability_score`, or `core/scoring.py`, and does not change default sorting or the default screening workflow. It only reorganizes existing result fields into dashboard, card, detail, risk, comparison, and report-preview sections. It does not add APIs, databases, vector stores, news sources, external services, machine-learning predictions, target prices, position suggestions, return promises, or operational conclusions.
 
 ## Current Development Principles
 
