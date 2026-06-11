@@ -2,6 +2,20 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.2.0
+
+- Added Live Pipeline Runner in `pipeline/live_runner.py`.
+- Added `pipeline/__init__.py` public exports for `run_live_pipeline()`.
+- Added a Streamlit sidebar button, "运行完整选股模型", that runs the existing A-share research pipeline and writes the result to `st.session_state["research_df"]`.
+- Synchronized product page state from the live runner so Dashboard, A-share Universe, selection results, Research Workstation, backtest analysis, Chart Center, Factor Research Lab, report preview, and system/data-quality status all read the same generated research result.
+- Added built-in Demo fallback data with 20 A-share sample names when live data sources are unavailable or the Universe is empty.
+- Demo output includes Universe, Fundamental, Technical, Composite, Candidate Pool, Backtest Foundation, Return Analysis, Backtest Evaluation, Stock Selection, Explainable Selection, and Factor Lab display fields.
+- Added `tests/test_live_pipeline_runner.py` for import, DataFrame output, demo fallback, required selection/explain/factor fields, input immutability, and app import.
+- Hardened factor quantile grouping against repeated factor values so Factor Lab does not crash on demo or sparse score distributions.
+- Updated `app.py`, `legacy_app.py`, `ui/product_ui.py`, `ui/screening_ui.py`, `ui/workstation_theme.py`, README, PROJECT_MASTER, ROADMAP, and CHANGELOG for v6.2.0.
+- Kept `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, upstream scoring weights, default sorting, trading logic, and real account integration unchanged.
+- Did not add automated trading, buy/sell/hold advice, target prices, position suggestions, return promises, black-box operational conclusions, databases, vector stores, API keys, or real trading connections.
+
 ## v6.1.0
 
 - Added Web Product Integration in `ui/product_ui.py`.

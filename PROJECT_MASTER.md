@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.1.0
-- CURRENT_STAGE = Web Product Integration
-- NEXT_TARGET = v6.2.0 Interactive Data Workspace
+- CURRENT_VERSION = v6.2.0
+- CURRENT_STAGE = Live Pipeline Runner
+- NEXT_TARGET = v6.3.0 Real A-Share Data Integration
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.1.0"`
-- `legacy_app.py`: `APP_VERSION = "v6.1.0"`
-- `README.md`: Current version: v6.1.0
+- `app.py`: `APP_VERSION = "v6.2.0"`
+- `legacy_app.py`: `APP_VERSION = "v6.2.0"`
+- `README.md`: Current version: v6.2.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V6.1.0 adds Web Product Integration for the Streamlit application. It creates a product-level left navigation and visible pages for Dashboard, A-share Universe, selection results, Research Workstation, backtest analysis, Chart Center, Factor Research Lab, research report preview, and system/data-quality status. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, Candidate Pool changes, Backtest changes, Stock Selection changes, Explainable Selection changes, or event/memory module changes. The recommended v6.2 main line is Interactive Data Workspace.
+V6.2.0 adds Live Pipeline Runner for the Streamlit application. The web app can now run the existing A-share Universe, Fundamental, Technical, Composite, Candidate Pool, Backtest Foundation, Return Analysis, Backtest Evaluation, Stock Selection, Explainable Selection, and Factor Lab flow from a single button and store the complete result in `st.session_state["research_df"]` for all product pages. If live data is unavailable or empty, the runner falls back to a built-in 20-stock demo research DataFrame with complete display fields and a clear Demo notice. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, or changes to `core/scoring.py`.
 
 ## Current Architecture
 

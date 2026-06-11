@@ -21,8 +21,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.1.0"
-PRODUCT_STAGE = "Web Product Integration"
+PRODUCT_VERSION = "v6.2.0"
+PRODUCT_STAGE = "Live Pipeline Runner"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -121,6 +121,20 @@ def _state_frame(state: dict[str, Any] | None, key: str) -> pd.DataFrame:
 def get_product_state() -> dict[str, pd.DataFrame]:
     """Read product data frames from session state with safe empty fallbacks."""
     state = st.session_state.get("fin_scientist_product_state", {})
+    research_df = safe_copy_frame(st.session_state.get("research_df"))
+    if not research_df.empty:
+        return {
+            "universe": research_df,
+            "fundamental": research_df,
+            "technical": research_df,
+            "composite": research_df,
+            "candidate_pool": research_df,
+            "backtest_foundation": research_df,
+            "return_analysis": research_df,
+            "backtest_evaluation": research_df,
+            "stock_selection": research_df,
+            "explainable_selection": research_df,
+        }
     return {
         "universe": _state_frame(state, "universe"),
         "fundamental": _state_frame(state, "fundamental"),
@@ -146,6 +160,9 @@ def set_product_state(**frames: Any) -> None:
 
 def primary_research_frame(state: dict[str, pd.DataFrame] | None = None) -> pd.DataFrame:
     """Choose the richest available research frame without mutating inputs."""
+    session_research = safe_copy_frame(st.session_state.get("research_df"))
+    if not session_research.empty:
+        return session_research
     data = state or get_product_state()
     for key in ["explainable_selection", "stock_selection", "backtest_evaluation", "return_analysis", "candidate_pool", "universe"]:
         frame = safe_copy_frame(data.get(key))
@@ -448,6 +465,8 @@ def render_report_preview_page(df: Any) -> str:
 def render_system_status_page(df: Any) -> dict[str, Any]:
     """Render system status and data-quality page."""
     source = safe_copy_frame(df)
+    data_source = source.attrs.get("data_source", "Unavailable") if hasattr(source, "attrs") else "Unavailable"
+    is_demo = bool(source.attrs.get("is_demo", False)) if hasattr(source, "attrs") else False
     _render_page_header("系统状态 / 数据质量", "版本、模块、缺失字段、warnings 和数据源说明")
     modules = list(REQUIRED_FIELD_GROUPS.keys())
     columns = st.columns(4)
@@ -475,17 +494,22 @@ def render_system_status_page(df: Any) -> dict[str, Any]:
         st.info("当前页面数据没有汇总到 warning 字段。")
     st.subheader("数据源状态说明")
     st.info("当前产品页读取已生成的本地研究结果。免费行情或基础数据源可能延迟、缺失或字段变化。")
-    return {"missing_fields": missing, "warnings": warnings, "modules": modules}
+    if is_demo:
+        st.warning(source.attrs.get("data_notice", "当前为 Demo 数据，用于展示系统结构；接入真实行情后可替换为真实结果。"))
+    st.info(f"当前数据来源：{data_source}；是否 Demo：{is_demo}；样本数量：{len(source)}。所有结果仅供学习和研究，不构成投资建议。")
+    return {"missing_fields": missing, "warnings": warnings, "modules": modules, "data_source": data_source, "is_demo": is_demo}
 
 
 def render_product_page(page: str, state: dict[str, pd.DataFrame] | None = None) -> Any:
     """Render a product page by navigation name."""
     data = state or get_product_state()
     research = primary_research_frame(data)
+    if not research.empty and bool(research.attrs.get("is_demo", False)):
+        st.warning(research.attrs.get("data_notice", "当前为 Demo 数据，用于展示系统结构；接入真实行情后可替换为真实结果。"))
     if page == DASHBOARD_PAGE:
         return render_dashboard_page(research)
     if page == UNIVERSE_PAGE:
-        return render_universe_page(data.get("universe", pd.DataFrame()))
+        return render_universe_page(research)
     if page == SELECTION_PAGE:
         return render_selection_page(research)
     if page == WORKSTATION_PAGE:

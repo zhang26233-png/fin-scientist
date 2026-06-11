@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v6.1.0.
+Current: v6.2.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -221,7 +221,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v5.1.0: Chart Center completed.
 - v6.0.0: Factor Research Lab completed.
 - v6.1.0: Web Product Integration completed.
-- Next target: v6.2.0 Interactive Data Workspace.
+- v6.2.0: Live Pipeline Runner completed.
+- Next target: v6.3.0 Real A-Share Data Integration.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -442,6 +443,18 @@ Completed v6.1.0 scope:
 - Added tests for app import, page renderer imports, empty DataFrame rendering, missing selection/factor/backtest fields, navigation configuration, warning/missing-field summaries, and restricted report wording.
 - Did not add selection algorithms, scoring changes, APIs, databases, vector stores, news sources, external services, machine learning, buy/sell points, target prices, position suggestions, automated trading workflows, return promises, parameter search, default sorting changes, or operational conclusions.
 - Did not modify `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, Universe modules, Fundamental modules, Technical modules, Composite modules, Candidate Pool modules, Backtest modules, Stock Selection modules, Explainable Selection modules, Event modules, Memory modules, default filters, stock pools, data sources, machine-learning logic, or trading logic.
+
+Completed v6.2.0 scope:
+
+- Added `pipeline/live_runner.py` and `pipeline/__init__.py`.
+- Added `run_live_pipeline()` as the web execution entry point for the existing A-share research pipeline.
+- Added a Streamlit sidebar button named "运行完整选股模型" that runs the pipeline, stores results in `st.session_state["research_df"]`, and synchronizes product page state.
+- Product pages now prioritize the unified `research_df`, so Dashboard, Universe, selection, workstation, backtest, chart, factor, report, and system status pages render the generated result instead of an empty shell.
+- Added built-in Demo fallback data for at least 20 A-share sample names when live data is unavailable or empty.
+- Demo output includes selection, explainable selection, backtest, return, risk, and factor fields for visible web review.
+- Added tests for live runner import, DataFrame output, demo fallback, required fields, input immutability, and app import.
+- Kept outputs read-only and research-only, with Demo and "not investment advice" boundaries preserved.
+- Did not modify `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, default sorting, trading logic, or any real trading/account integration.
 
 Boundary:
 

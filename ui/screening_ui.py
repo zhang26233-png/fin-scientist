@@ -480,6 +480,7 @@ def render_screening_page():
         backtest_evaluation = render_backtest_evaluation_section(return_analysis)
         stock_selection = render_stock_selection_section(backtest_evaluation)
         explainable_selection = render_explainable_selection_section(stock_selection)
+        st.session_state["research_df"] = explainable_selection.copy(deep=True)
         set_product_state(
             universe=universe,
             fundamental=fundamental_screening,
@@ -506,6 +507,7 @@ def render_screening_page():
             screening_max_process_count,
             screening_run_mode,
         )
+        st.session_state["research_df"] = screening_result.copy(deep=True)
         set_product_state(explainable_selection=screening_result, stock_selection=screening_result)
         render_strategy_preview_section(screening_result)
     else:

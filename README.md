@@ -2,15 +2,17 @@
 
 ## Current Version
 
-Current version: v6.1.0
+Current version: v6.2.0
 
-v6.1.0 adds Web Product Integration. The Streamlit app now opens as a product-level quant research platform with left-side navigation for Dashboard, A-share Universe, selection results, Research Workstation, backtest analysis, Chart Center, Factor Research Lab, report preview, system/data-quality status, the screening pipeline, and the legacy workbench.
+v6.2.0 adds Live Pipeline Runner. The Streamlit app can now execute the existing A-share research pipeline from the web UI, store the complete result in `st.session_state["research_df"]`, and show the result across Dashboard, A-share Universe, selection results, Research Workstation, backtest analysis, Chart Center, Factor Research Lab, report preview, and system/data-quality status.
 
 Startup command remains:
 
 ```bash
 streamlit run app.py
 ```
+
+After the app opens, click "运行完整选股模型" in the sidebar to generate research results. If live data is unavailable or the Universe is empty, the app automatically uses built-in Demo data and shows: "当前为 Demo 数据，用于展示系统结构；接入真实行情后可替换为真实结果。"
 
 ### Project Structure
 
@@ -24,16 +26,16 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v6.1.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`.
+`legacy_app.py` is not an unused backup. In v6.2.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`.
 
-v6.1.0 Web Product Integration:
+v6.2.0 Live Pipeline Runner:
 
-- Added `ui/product_ui.py`.
-- Refactored `app.py` into a left-navigation product shell.
-- Added visible pages for Dashboard, Universe, selection results, Research Workstation, backtest analysis, Chart Center, Factor Research Lab, report preview, and system/data-quality status.
-- Empty or incomplete data still renders page structure and explanatory notices.
-- Keeps all terminal output read-only and neutral for learning and research.
-- Does not modify scoring logic, default sorting, data sources, stock pools, or upstream research modules.
+- Added `pipeline/live_runner.py`.
+- Added one-click web execution for Universe, Fundamental, Technical, Composite, Candidate Pool, Backtest Foundation, Return Analysis, Backtest Evaluation, Stock Selection, Explainable Selection, and Factor Lab.
+- All product pages prioritize the unified `research_df` result.
+- Built-in Demo fallback keeps pages non-empty when data sources fail.
+- Keeps all output read-only and neutral for learning and research.
+- Does not modify scoring logic, default sorting, trading logic, stock pools, or `core/scoring.py`.
 
 Web product architecture:
 
@@ -98,7 +100,7 @@ ui.workstation_ui
               read-only research report preview
 ```
 
-FinScientist v6.1.0 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已整合为个人量化研究工作台，左侧导航可进入 Dashboard、全A股票池、选股结果、个股研究工作台、回测分析、图表中心、因子研究实验室、研究报告预览和系统状态页面。
+FinScientist v6.2.0 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整选股模型”执行已有研究流水线，并将结果展示到 Dashboard、全A股票池、选股结果、个股研究工作台、回测分析、图表中心、因子研究实验室、研究报告预览和系统状态页面。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -108,14 +110,14 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：v6.1.0
+当前版本：v6.2.0
 
-V6.1.0 Web Product Integration:
+V6.2.0 Live Pipeline Runner:
 
-- Added product-level Streamlit navigation.
-- Dashboard, Universe, selection, workstation, backtest, chart, factor, report, and system status pages are now first-class web pages.
-- Screening pipeline outputs are stored in session state for reuse across product pages.
-- All outputs remain read-only and do not change scoring, sorting, data sources, or upstream modules.
+- Added one-click web execution for the full existing research pipeline.
+- `st.session_state["research_df"]` stores the generated result for reuse across product pages.
+- Demo fallback generates at least 20 A-share sample rows when live data is unavailable.
+- All outputs remain read-only and do not change scoring, sorting, trading logic, or upstream score fields.
 
 V2.0.0 research memory foundation phase:
 

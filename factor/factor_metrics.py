@@ -84,12 +84,20 @@ def calculate_group_returns(
         result["factor_group"] = "Q1"
     else:
         labels = [f"Q{index}" for index in range(1, group_count + 1)]
-        result["factor_group"] = pd.qcut(
-            result["factor_value"],
-            q=group_count,
-            labels=labels,
-            duplicates="drop",
-        ).astype(str)
+        try:
+            result["factor_group"] = pd.qcut(
+                result["factor_value"],
+                q=group_count,
+                labels=labels,
+                duplicates="drop",
+            ).astype(str)
+        except ValueError:
+            result["factor_group"] = pd.qcut(
+                result["factor_value"].rank(method="first"),
+                q=group_count,
+                labels=labels,
+                duplicates="drop",
+            ).astype(str)
     grouped = (
         result.groupby("factor_group", sort=True, observed=False)["return_value"]
         .mean()

@@ -136,7 +136,11 @@ def build_factor_groups(df: Any, factor_name: str, n_groups: int = 5) -> pd.Data
             source.loc[valid.index, "factor_group"] = "Q1"
         else:
             labels = [f"Q{index}" for index in range(1, group_count + 1)]
-            groups = pd.qcut(valid, q=group_count, labels=labels, duplicates="drop").astype(str)
+            try:
+                groups = pd.qcut(valid, q=group_count, labels=labels, duplicates="drop").astype(str)
+            except ValueError:
+                ranked = valid.rank(method="first")
+                groups = pd.qcut(ranked, q=group_count, labels=labels, duplicates="drop").astype(str)
             source.loc[groups.index, "factor_group"] = groups
         for position, row_index in enumerate(source.index):
             if pd.isna(numeric.loc[row_index]):
