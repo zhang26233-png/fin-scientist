@@ -21,7 +21,7 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.3.1"
+PRODUCT_VERSION = "v6.3.2"
 PRODUCT_STAGE = "Real A-Share Realtime Data Layer"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"

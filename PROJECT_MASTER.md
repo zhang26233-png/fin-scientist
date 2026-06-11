@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.3.1
+- CURRENT_VERSION = v6.3.2
 - CURRENT_STAGE = Real A-Share Realtime Data Layer
 - NEXT_TARGET = v6.4.0 Real Fundamental and Technical Data Integration
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.3.1"`
-- `legacy_app.py`: `APP_VERSION = "v6.3.1"`
-- `README.md`: Current version: v6.3.1
+- `app.py`: `APP_VERSION = "v6.3.2"`
+- `legacy_app.py`: `APP_VERSION = "v6.3.2"`
+- `README.md`: Current version: v6.3.2
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V6.3.1 adds the Real A-Share Realtime Data Layer. The data source order is EastMoney Direct realtime quotes, AkShare, BaoStock, then local Demo fallback. All external requests use explicit timeout handling, and the web dashboard shows data source, data status, stock count, load time, update time, and last error when available. This version only strengthens the free data-source layer and does not modify stock-selection algorithms, scoring weights, `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, or `selection_score`.
+V6.3.2 adds EastMoney Debug & Endpoint Fix. EastMoney Direct now uses page size 100 and loops up to 100 pages, records request URL, HTTP status, response preview, JSON keys, diff presence, diff length, and mapping warnings in DataFrame attrs, and prints those diagnostics in `scripts/check_eastmoney.py`. This version only strengthens the free data-source layer and does not modify stock-selection algorithms, scoring weights, `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, or `selection_score`.
 
 ## Current Architecture
 

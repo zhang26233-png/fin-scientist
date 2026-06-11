@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v6.3.1.
+Current: v6.3.2.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -223,6 +223,7 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.1.0: Web Product Integration completed.
 - v6.2.0: Live Pipeline Runner completed.
 - v6.3.1: Real A-Share Realtime Data Layer completed.
+- v6.3.2: EastMoney Debug & Endpoint Fix completed.
 - Next target: v6.4.0 Real Fundamental and Technical Data Integration.
 - A-share universe builder.
 - Fundamental screening entry point.
@@ -467,6 +468,14 @@ Completed v6.3.1 scope:
 - Updated Dashboard and System Status pages to show data source, data status, stock count, load time, update time, and recent errors.
 - Added tests for EastMoney field mapping, source failure handling, and A-share loader integration.
 - Did not modify `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, default sorting, stock-selection algorithms, trading logic, or real account integration.
+
+Completed v6.3.2 scope:
+
+- Fixed EastMoney Direct endpoint parameters to use `pn=1`, `pz=100`, and the A-share fs scope.
+- Added EastMoney pagination up to 100 pages, stopping when `diff` is empty.
+- Added detailed EastMoney diagnostics in DataFrame attrs: request URL, HTTP status, raw preview, JSON keys, diff presence, diff length, and mapping warnings.
+- Updated `scripts/check_eastmoney.py` to print rows, source, status, load time, last error, request URL, HTTP status, raw preview, and head rows.
+- Kept all outputs research-only and did not modify scoring logic, stock-selection algorithms, trading logic, or `core/scoring.py`.
 
 Boundary:
 

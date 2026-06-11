@@ -2,6 +2,15 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.3.2
+
+- Fixed EastMoney Direct endpoint handling in `data/eastmoney_loader.py`.
+- Changed EastMoney page parameters to `pn=1`, `pz=100`, and looped pagination up to 100 pages until `diff` is empty.
+- Added detailed diagnostics in `DataFrame.attrs`: `request_url`, `http_status`, `raw_preview`, `json_keys`, `diff_exists`, `diff_length`, `load_time`, and `last_error`.
+- Updated `scripts/check_eastmoney.py` to print rows, source, status, load time, last error, request URL, HTTP status, raw preview, JSON keys, diff state, columns, and head rows.
+- Added tests for EastMoney debug attrs and empty-diff error reporting.
+- Kept `core/scoring.py`, scoring fields, selection algorithms, trading logic, buy/sell advice, target prices, position suggestions, return promises, machine-learning prediction, paid API keys, databases, and vector stores unchanged.
+
 ## v6.3.1
 
 - Added `data/eastmoney_loader.py` for direct EastMoney push2 realtime A-share quotes with explicit request timeout.

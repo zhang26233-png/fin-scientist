@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: v6.3.1
+Current version: v6.3.2
 
-v6.3.1 adds the Real A-Share Realtime Data Layer. The app now tries EastMoney Direct realtime quotes first, then AkShare, then BaoStock, and finally local Demo fallback. All external data-source calls have explicit timeout handling so slow AkShare/BaoStock calls do not block the app indefinitely.
+v6.3.2 adds EastMoney Debug & Endpoint Fix. EastMoney Direct now uses paged push2 requests, captures request URL, HTTP status, raw response preview, JSON keys, diff state, diff length, and mapping warnings, and prints those diagnostics in the local check script.
 
 Startup command remains:
 
@@ -23,7 +23,7 @@ python scripts/check_akshare.py
 python scripts/check_baostock.py
 ```
 
-The preferred result is `data_source=EastMoney Direct`, `data_status=Live`, and more than 1000 rows. If EastMoney is unavailable, the app tries AkShare and BaoStock. If all live sources fail or return too few rows, the app falls back to Demo and displays the failure reason in Dashboard and System Status.
+The preferred result is `source=EastMoney Direct`, `status=Live`, and more than 1000 rows. If EastMoney returns zero rows, inspect `last_error`, `request_url`, `http_status`, and `raw_preview` from `python scripts/check_eastmoney.py`. If EastMoney is unavailable, the app tries AkShare and BaoStock. If all live sources fail or return too few rows, the app falls back to Demo and displays the failure reason in Dashboard and System Status.
 
 ### Project Structure
 
@@ -37,11 +37,11 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v6.3.1 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/eastmoney_loader.py` and `data/a_share_loader.py`.
+`legacy_app.py` is not an unused backup. In v6.3.2 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/eastmoney_loader.py` and `data/a_share_loader.py`.
 
-v6.3.1 Real A-Share Realtime Data Layer:
+v6.3.2 EastMoney Debug & Endpoint Fix:
 
-- Added EastMoney Direct realtime A-share quotes via `data/eastmoney_loader.py`.
+- Fixed EastMoney Direct paged request parameters and diagnostics.
 - Uses EastMoney Direct, AkShare, BaoStock, then Demo fallback.
 - Dashboard and System Status show data source, status, stock count, load time, update time, and recent error.
 - Built-in Demo fallback keeps pages non-empty when live sources fail or return too few rows.

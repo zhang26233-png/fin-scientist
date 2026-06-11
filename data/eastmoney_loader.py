@@ -1,9 +1,10 @@
-"""Direct EastMoney realtime A-share quote loader."""
+"""Direct EastMoney realtime A-share quote loader with debug metadata."""
 
 from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
+from urllib.parse import urlencode
 
 import pandas as pd
 import requests
@@ -32,13 +33,82 @@ OUTPUT_COLUMNS = [
 ]
 
 
-def _empty(status: str = "Error", warning: str = "", load_time: float = 0.0) -> pd.DataFrame:
+def _now_text() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _load_time(started: datetime) -> float:
+    return (datetime.now() - started).total_seconds()
+
+
+def _params(page: int) -> dict[str, str]:
+    return {
+        "pn": str(page),
+        "pz": "100",
+        "po": "1",
+        "np": "1",
+        "ut": "bd1d9ddb04089700cf9c27f6f7426281",
+        "fltt": "2",
+        "invt": "2",
+        "fid": "f3",
+        "fs": "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23",
+        "fields": EASTMONEY_FIELDS,
+    }
+
+
+def _request_url(params: dict[str, str]) -> str:
+    return f"{EASTMONEY_URL}?{urlencode(params)}"
+
+
+def _empty(
+    *,
+    started: datetime,
+    status: str = "Error",
+    warning: str = "",
+    request_url: str = "",
+    http_status: int | str | None = None,
+    raw_preview: str = "",
+) -> pd.DataFrame:
     frame = pd.DataFrame(columns=OUTPUT_COLUMNS)
+    _attach_debug_attrs(
+        frame,
+        started=started,
+        status=status,
+        warning=warning,
+        request_url=request_url,
+        http_status=http_status,
+        raw_preview=raw_preview,
+        json_keys=[],
+        diff_exists=False,
+        diff_length=0,
+    )
+    return frame
+
+
+def _attach_debug_attrs(
+    frame: pd.DataFrame,
+    *,
+    started: datetime,
+    status: str,
+    warning: str,
+    request_url: str,
+    http_status: int | str | None,
+    raw_preview: str,
+    json_keys: list[str],
+    diff_exists: bool,
+    diff_length: int,
+) -> pd.DataFrame:
     frame.attrs["data_source"] = "EastMoney Direct"
     frame.attrs["data_status"] = status
+    frame.attrs["load_time"] = _load_time(started)
     frame.attrs["last_error"] = warning
-    frame.attrs["load_time"] = float(load_time)
-    frame.attrs["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    frame.attrs["request_url"] = request_url
+    frame.attrs["http_status"] = http_status if http_status is not None else ""
+    frame.attrs["raw_preview"] = raw_preview[:300] if isinstance(raw_preview, str) else str(raw_preview)[:300]
+    frame.attrs["json_keys"] = json_keys
+    frame.attrs["diff_exists"] = bool(diff_exists)
+    frame.attrs["diff_length"] = int(diff_length)
+    frame.attrs["updated_at"] = _now_text()
     return frame
 
 
@@ -68,68 +138,147 @@ def _market_from_ticker(ticker: str) -> str:
     return "A股"
 
 
-def _normalize_row(item: dict[str, Any], timestamp: str) -> dict[str, Any]:
+def _normalize_row(item: dict[str, Any], timestamp: str) -> tuple[dict[str, Any] | None, str]:
     ticker = str(item.get("f12") or "").strip()
-    return {
-        "ticker": ticker,
-        "name": str(item.get("f14") or "").strip(),
-        "latest_price": _to_number(item.get("f2")),
-        "pct_change": _to_number(item.get("f3")),
-        "change_amount": _to_number(item.get("f4")),
-        "volume": _to_number(item.get("f5")),
-        "turnover": _to_number(item.get("f6")),
-        "amplitude": _to_number(item.get("f7")),
-        "high": _to_number(item.get("f15")),
-        "low": _to_number(item.get("f16")),
-        "open": _to_number(item.get("f17")),
-        "prev_close": _to_number(item.get("f18")),
-        "market": _market_from_ticker(ticker),
-        "data_source": "EastMoney Direct",
-        "data_status": "Live",
-        "data_timestamp": timestamp,
-        "data_warning": "",
-    }
+    name = str(item.get("f14") or "").strip()
+    if not ticker:
+        return None, "missing f12 ticker"
+    if not name:
+        return None, f"{ticker}: missing f14 name"
+    return (
+        {
+            "ticker": ticker,
+            "name": name,
+            "latest_price": _to_number(item.get("f2")),
+            "pct_change": _to_number(item.get("f3")),
+            "change_amount": _to_number(item.get("f4")),
+            "volume": _to_number(item.get("f5")),
+            "turnover": _to_number(item.get("f6")),
+            "amplitude": _to_number(item.get("f7")),
+            "high": _to_number(item.get("f15")),
+            "low": _to_number(item.get("f16")),
+            "open": _to_number(item.get("f17")),
+            "prev_close": _to_number(item.get("f18")),
+            "market": _market_from_ticker(ticker),
+            "data_source": "EastMoney Direct",
+            "data_status": "Live",
+            "data_timestamp": timestamp,
+            "data_warning": "",
+        },
+        "",
+    )
+
+
+def _extract_diff(payload: Any) -> tuple[list[Any], list[str], bool]:
+    if not isinstance(payload, dict):
+        return [], [], False
+    keys = list(payload.keys())
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        return [], keys, False
+    diff = data.get("diff")
+    if not isinstance(diff, list):
+        return [], keys, diff is not None
+    return diff, keys, True
 
 
 def load_eastmoney_a_share_spot(timeout: int = 30) -> pd.DataFrame:
     """Load realtime A-share quotes directly from EastMoney push2."""
     started = datetime.now()
-    params = {
-        "pn": "1",
-        "pz": "6000",
-        "po": "1",
-        "np": "1",
-        "ut": "bd1d9ddb04089700cf9c27f6f7426281",
-        "fltt": "2",
-        "invt": "2",
-        "fid": "f3",
-        "fs": "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23",
-        "fields": EASTMONEY_FIELDS,
-    }
-    try:
-        response = requests.get(
-            EASTMONEY_URL,
-            params=params,
-            timeout=timeout,
-            headers={"User-Agent": "Mozilla/5.0 FinScientist/1.0"},
-        )
-        response.raise_for_status()
-        payload = response.json()
-        diff = (payload.get("data") or {}).get("diff") or []
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        rows = [_normalize_row(item, timestamp) for item in diff if isinstance(item, dict)]
-        frame = pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
+    rows: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    last_request_url = ""
+    last_http_status: int | str | None = ""
+    last_raw_preview = ""
+    last_json_keys: list[str] = []
+    last_diff_exists = False
+    total_diff_length = 0
+
+    for page in range(1, 101):
+        params = _params(page)
+        last_request_url = _request_url(params)
+        try:
+            response = requests.get(
+                EASTMONEY_URL,
+                params=params,
+                timeout=timeout,
+                headers={
+                    "User-Agent": "Mozilla/5.0 FinScientist/1.0",
+                    "Referer": "https://quote.eastmoney.com/center/gridlist.html",
+                    "Accept": "application/json,text/plain,*/*",
+                },
+            )
+            last_http_status = getattr(response, "status_code", "")
+            last_raw_preview = getattr(response, "text", "")[:300]
+            response.raise_for_status()
+            payload = response.json()
+        except Exception as exc:
+            warning = f"page {page} request/json failed: {repr(exc)}"
+            if last_raw_preview:
+                warning = f"{warning}; raw_preview={last_raw_preview[:120]}"
+            return _empty(
+                started=started,
+                warning=warning,
+                request_url=last_request_url,
+                http_status=last_http_status,
+                raw_preview=last_raw_preview,
+            )
+
+        diff, json_keys, diff_exists = _extract_diff(payload)
+        last_json_keys = json_keys
+        last_diff_exists = diff_exists
+        total_diff_length += len(diff)
+
+        if page == 1 and not diff:
+            return _empty(
+                started=started,
+                warning=f"page 1 diff missing or empty; json_keys={json_keys}; diff_exists={diff_exists}",
+                request_url=last_request_url,
+                http_status=last_http_status,
+                raw_preview=last_raw_preview,
+            )
+        if not diff:
+            break
+
+        timestamp = _now_text()
+        for item in diff:
+            if not isinstance(item, dict):
+                warnings.append(f"page {page}: diff item is not dict")
+                continue
+            normalized, warning = _normalize_row(item, timestamp)
+            if warning:
+                warnings.append(warning)
+                continue
+            rows.append(normalized)
+
+    frame = pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
+    if not frame.empty:
         frame = frame[frame["ticker"].astype(str).str.fullmatch(r"\d{6}", na=False)].copy(deep=True)
         frame = frame.drop_duplicates(subset=["ticker"], keep="first")
-        load_time = (datetime.now() - started).total_seconds()
-        frame.attrs["data_source"] = "EastMoney Direct"
-        frame.attrs["data_status"] = "Live" if len(frame) > 0 else "Error"
-        frame.attrs["last_error"] = "" if len(frame) > 0 else "EastMoney returned empty quote rows."
-        frame.attrs["load_time"] = load_time
-        frame.attrs["updated_at"] = timestamp
-        return frame
-    except Exception as exc:
-        return _empty(warning=repr(exc), load_time=(datetime.now() - started).total_seconds())
+
+    status = "Live" if len(frame) > 1000 else "Error"
+    last_error = ""
+    if status != "Live":
+        last_error = (
+            f"EastMoney Direct returned {len(frame)} mapped rows from {total_diff_length} raw diff rows; "
+            f"json_keys={last_json_keys}; diff_exists={last_diff_exists}; "
+            f"mapping_warnings={warnings[:5]}"
+        )
+    elif warnings:
+        last_error = f"mapping_warnings={warnings[:5]}"
+
+    return _attach_debug_attrs(
+        frame,
+        started=started,
+        status=status,
+        warning=last_error,
+        request_url=last_request_url,
+        http_status=last_http_status,
+        raw_preview=last_raw_preview,
+        json_keys=last_json_keys,
+        diff_exists=last_diff_exists,
+        diff_length=total_diff_length,
+    )
 
 
 __all__ = [
