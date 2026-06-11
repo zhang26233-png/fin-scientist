@@ -2,6 +2,18 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.3.1
+
+- Added `data/eastmoney_loader.py` for direct EastMoney push2 realtime A-share quotes with explicit request timeout.
+- Updated `data/a_share_loader.py` data-source order to EastMoney Direct, AkShare, BaoStock, and Demo fallback.
+- Added standardized realtime quote fields: `ticker`, `name`, `latest_price`, `pct_change`, `change_amount`, `volume`, `turnover`, `amplitude`, `high`, `low`, `open`, `prev_close`, `market`, `data_source`, `data_status`, and `data_timestamp`.
+- Updated `pipeline/live_runner.py` to use real data only when a live source returns more than 1000 rows; otherwise it uses the complete Demo research fallback.
+- Added Dashboard and System Status data-source displays for current source, status, stock count, load time, update time, and recent error.
+- Added `scripts/check_eastmoney.py` and changed AkShare/BaoStock local check scripts to default to 30 seconds.
+- Added tests for EastMoney Direct field mapping, failure handling, and A-share loader integration.
+- Kept `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, scoring weights, selection algorithms, trading logic, and real account integration unchanged.
+- Did not add automated trading, buy/sell advice, target prices, position suggestions, return promises, machine-learning prediction, paid API keys, databases, or vector stores.
+
 ## v6.2.0
 
 - Added Live Pipeline Runner in `pipeline/live_runner.py`.

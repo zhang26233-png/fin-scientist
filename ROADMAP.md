@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v6.2.0.
+Current: v6.3.1.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -222,7 +222,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.0.0: Factor Research Lab completed.
 - v6.1.0: Web Product Integration completed.
 - v6.2.0: Live Pipeline Runner completed.
-- Next target: v6.3.0 Real A-Share Data Integration.
+- v6.3.1: Real A-Share Realtime Data Layer completed.
+- Next target: v6.4.0 Real Fundamental and Technical Data Integration.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -455,6 +456,17 @@ Completed v6.2.0 scope:
 - Added tests for live runner import, DataFrame output, demo fallback, required fields, input immutability, and app import.
 - Kept outputs read-only and research-only, with Demo and "not investment advice" boundaries preserved.
 - Did not modify `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, default sorting, trading logic, or any real trading/account integration.
+
+Completed v6.3.1 scope:
+
+- Added `data/eastmoney_loader.py` for direct EastMoney push2 realtime A-share quotes.
+- Updated `data/a_share_loader.py` to use EastMoney Direct first, then AkShare, then BaoStock, then Demo fallback.
+- Added strict timeout handling for external data-source calls.
+- Added `scripts/check_eastmoney.py` and updated local AkShare/BaoStock check scripts to default to 30 seconds.
+- Updated the live pipeline to use real data only when the Universe is live and larger than 1000 rows; otherwise it falls back to the complete Demo research result.
+- Updated Dashboard and System Status pages to show data source, data status, stock count, load time, update time, and recent errors.
+- Added tests for EastMoney field mapping, source failure handling, and A-share loader integration.
+- Did not modify `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, default sorting, stock-selection algorithms, trading logic, or real account integration.
 
 Boundary:
 

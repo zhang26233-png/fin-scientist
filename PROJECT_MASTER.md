@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.2.0
-- CURRENT_STAGE = Live Pipeline Runner
-- NEXT_TARGET = v6.3.0 Real A-Share Data Integration
+- CURRENT_VERSION = v6.3.1
+- CURRENT_STAGE = Real A-Share Realtime Data Layer
+- NEXT_TARGET = v6.4.0 Real Fundamental and Technical Data Integration
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.2.0"`
-- `legacy_app.py`: `APP_VERSION = "v6.2.0"`
-- `README.md`: Current version: v6.2.0
+- `app.py`: `APP_VERSION = "v6.3.1"`
+- `legacy_app.py`: `APP_VERSION = "v6.3.1"`
+- `README.md`: Current version: v6.3.1
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V6.2.0 adds Live Pipeline Runner for the Streamlit application. The web app can now run the existing A-share Universe, Fundamental, Technical, Composite, Candidate Pool, Backtest Foundation, Return Analysis, Backtest Evaluation, Stock Selection, Explainable Selection, and Factor Lab flow from a single button and store the complete result in `st.session_state["research_df"]` for all product pages. If live data is unavailable or empty, the runner falls back to a built-in 20-stock demo research DataFrame with complete display fields and a clear Demo notice. This version does not add new stock-selection algorithms, scoring changes, API keys, databases, vector stores, news sources, external services, trading connections, buy/sell points, target prices, position suggestions, automated trading, strategy optimization, parameter search, machine-learning predictions, return promises, default sorting changes, or changes to `core/scoring.py`.
+V6.3.1 adds the Real A-Share Realtime Data Layer. The data source order is EastMoney Direct realtime quotes, AkShare, BaoStock, then local Demo fallback. All external requests use explicit timeout handling, and the web dashboard shows data source, data status, stock count, load time, update time, and last error when available. This version only strengthens the free data-source layer and does not modify stock-selection algorithms, scoring weights, `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, or `selection_score`.
 
 ## Current Architecture
 

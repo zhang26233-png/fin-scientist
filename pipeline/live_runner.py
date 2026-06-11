@@ -10,6 +10,7 @@ import pandas as pd
 
 from backtest.backtest_engine import build_backtest_dataset
 from backtest.backtest_evaluation import build_backtest_evaluation
+from data.a_share_loader import load_a_share_universe
 from backtest.return_analysis import build_return_analysis
 from factor.factor_lab import build_factor_dataset
 from screening.candidate_pool import build_candidate_pool
@@ -18,7 +19,6 @@ from screening.fundamental_screening import build_fundamental_screening
 from screening.technical_screening import build_technical_screening
 from selection.explain_engine import build_explainable_selection
 from selection.stock_selection import build_stock_selection
-from universe.a_share_universe import build_a_share_universe
 
 
 LIVE_PIPELINE_FIELDS = [
@@ -120,6 +120,8 @@ def _build_demo_universe(max_stocks: int | None = None) -> pd.DataFrame:
         )
     frame = pd.DataFrame(rows)
     frame.attrs["universe_status"] = "Demo"
+    frame.attrs["data_source"] = "Demo"
+    frame.attrs["data_status"] = "Fallback"
     frame.attrs["universe_total_count"] = len(frame)
     frame.attrs["universe_filtered_count"] = len(frame)
     frame.attrs["universe_summary"] = DEMO_NOTICE
@@ -196,11 +198,23 @@ def _ensure_live_fields(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-def _finalize(df: pd.DataFrame, *, is_demo: bool, source: str, message: str | None = None) -> pd.DataFrame:
+def _finalize(
+    df: pd.DataFrame,
+    *,
+    is_demo: bool,
+    source: str,
+    message: str | None = None,
+    source_attrs: dict[str, Any] | None = None,
+) -> pd.DataFrame:
     result = _ensure_live_fields(df)
+    if source_attrs:
+        result.attrs.update(source_attrs)
     result.attrs["is_demo"] = bool(is_demo)
     result.attrs["data_source"] = source
+    result.attrs.setdefault("data_status", "Fallback" if is_demo else "Live")
     result.attrs["data_notice"] = message or (DEMO_NOTICE if is_demo else "Live pipeline result generated from available local/data-source inputs.")
+    result.attrs.setdefault("universe_size", len(result))
+    result.attrs.setdefault("final_count", len(result))
     return result
 
 
@@ -223,11 +237,11 @@ def _build_demo_result(max_stocks: int | None = None) -> pd.DataFrame:
     fundamentals = _build_demo_fundamentals(universe)
     histories = _build_demo_price_history(universe)
     result = _run_pipeline(universe, fundamentals, histories)
-    return _finalize(result, is_demo=True, source="Built-in demo", message=DEMO_NOTICE)
+    return _finalize(result, is_demo=True, source="Built-in demo", message=DEMO_NOTICE, source_attrs=universe.attrs)
 
 
 def run_live_pipeline(
-    max_stocks: int = 100,
+    max_stocks: int | None = None,
     use_sample_if_no_data: bool = True,
     price_history_dict: dict[str, pd.DataFrame] | None = None,
 ) -> pd.DataFrame:
@@ -238,18 +252,32 @@ def run_live_pipeline(
     """
     histories = _copy_price_history_dict(price_history_dict)
     try:
-        universe = build_a_share_universe()
+        universe = load_a_share_universe()
         universe = _copy_frame(universe)
         if max_stocks and not universe.empty:
             universe = universe.head(int(max_stocks)).copy(deep=True)
+        source_attrs = dict(universe.attrs)
         if universe.empty:
             raise ValueError("A-share Universe is empty.")
+        if source_attrs.get("data_status") != "Live" or len(universe) <= 1000:
+            demo = _build_demo_result(max_stocks=max_stocks)
+            demo.attrs["last_error"] = source_attrs.get("last_error", "Real A-share source unavailable or too small.")
+            return demo
+        universe["status"] = "Available"
+        universe["universe_status"] = "Available"
+        universe["universe_total_count"] = universe.attrs.get("raw_count", len(universe))
+        universe["universe_filtered_count"] = universe.attrs.get("final_count", len(universe))
+        universe["universe_summary"] = (
+            f"数据源：{universe.attrs.get('data_source', 'Unknown')}；"
+            f"原始股票：{universe.attrs.get('raw_count', len(universe))}；"
+            f"过滤后：{len(universe)}。"
+        )
         result = _run_pipeline(universe, fundamental_df=None, price_history_dict=histories)
         if result.empty:
             raise ValueError("Pipeline returned an empty result.")
         if use_sample_if_no_data and ("selection_score" not in result.columns or pd.to_numeric(result["selection_score"], errors="coerce").notna().sum() == 0):
             return _build_demo_result(max_stocks=max_stocks)
-        return _finalize(result, is_demo=False, source="A-share Universe")
+        return _finalize(result, is_demo=False, source=source_attrs.get("data_source", "A-share Universe"), source_attrs=source_attrs)
     except Exception as exc:
         if not use_sample_if_no_data:
             return _finalize(pd.DataFrame(), is_demo=False, source="Unavailable", message=f"Live pipeline failed: {exc}")

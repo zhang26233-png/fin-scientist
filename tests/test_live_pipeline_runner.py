@@ -19,7 +19,7 @@ def test_run_live_pipeline_returns_dataframe():
 def test_data_source_failure_returns_demo_dataframe(monkeypatch):
     import pipeline.live_runner as live_runner
 
-    monkeypatch.setattr(live_runner, "build_a_share_universe", lambda: pd.DataFrame())
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: pd.DataFrame())
     result = live_runner.run_live_pipeline(max_stocks=20)
 
     assert result.attrs.get("is_demo") is True
@@ -29,7 +29,7 @@ def test_data_source_failure_returns_demo_dataframe(monkeypatch):
 def test_demo_dataframe_has_required_selection_explain_and_factor_fields(monkeypatch):
     import pipeline.live_runner as live_runner
 
-    monkeypatch.setattr(live_runner, "build_a_share_universe", lambda: pd.DataFrame())
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: pd.DataFrame())
     result = live_runner.run_live_pipeline(max_stocks=20)
 
     for field in LIVE_PIPELINE_FIELDS:
@@ -48,7 +48,7 @@ def test_input_price_history_is_not_mutated(monkeypatch):
 
     history = {"600519": pd.DataFrame({"date": pd.date_range("2024-01-01", periods=80), "close": range(80)})}
     original = copy.deepcopy(history)
-    monkeypatch.setattr(live_runner, "build_a_share_universe", lambda: pd.DataFrame())
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: pd.DataFrame())
 
     live_runner.run_live_pipeline(price_history_dict=history)
 

@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: v6.2.0
+Current version: v6.3.1
 
-v6.2.0 adds Live Pipeline Runner. The Streamlit app can now execute the existing A-share research pipeline from the web UI, store the complete result in `st.session_state["research_df"]`, and show the result across Dashboard, A-share Universe, selection results, Research Workstation, backtest analysis, Chart Center, Factor Research Lab, report preview, and system/data-quality status.
+v6.3.1 adds the Real A-Share Realtime Data Layer. The app now tries EastMoney Direct realtime quotes first, then AkShare, then BaoStock, and finally local Demo fallback. All external data-source calls have explicit timeout handling so slow AkShare/BaoStock calls do not block the app indefinitely.
 
 Startup command remains:
 
@@ -13,6 +13,17 @@ streamlit run app.py
 ```
 
 After the app opens, click "运行完整选股模型" in the sidebar to generate research results. If live data is unavailable or the Universe is empty, the app automatically uses built-in Demo data and shows: "当前为 Demo 数据，用于展示系统结构；接入真实行情后可替换为真实结果。"
+
+Local data-source checks:
+
+```powershell
+python scripts/check_network.py
+python scripts/check_eastmoney.py
+python scripts/check_akshare.py
+python scripts/check_baostock.py
+```
+
+The preferred result is `data_source=EastMoney Direct`, `data_status=Live`, and more than 1000 rows. If EastMoney is unavailable, the app tries AkShare and BaoStock. If all live sources fail or return too few rows, the app falls back to Demo and displays the failure reason in Dashboard and System Status.
 
 ### Project Structure
 
@@ -26,14 +37,14 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v6.2.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`.
+`legacy_app.py` is not an unused backup. In v6.3.1 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/eastmoney_loader.py` and `data/a_share_loader.py`.
 
-v6.2.0 Live Pipeline Runner:
+v6.3.1 Real A-Share Realtime Data Layer:
 
-- Added `pipeline/live_runner.py`.
-- Added one-click web execution for Universe, Fundamental, Technical, Composite, Candidate Pool, Backtest Foundation, Return Analysis, Backtest Evaluation, Stock Selection, Explainable Selection, and Factor Lab.
-- All product pages prioritize the unified `research_df` result.
-- Built-in Demo fallback keeps pages non-empty when data sources fail.
+- Added EastMoney Direct realtime A-share quotes via `data/eastmoney_loader.py`.
+- Uses EastMoney Direct, AkShare, BaoStock, then Demo fallback.
+- Dashboard and System Status show data source, status, stock count, load time, update time, and recent error.
+- Built-in Demo fallback keeps pages non-empty when live sources fail or return too few rows.
 - Keeps all output read-only and neutral for learning and research.
 - Does not modify scoring logic, default sorting, trading logic, stock pools, or `core/scoring.py`.
 
@@ -100,7 +111,7 @@ ui.workstation_ui
               read-only research report preview
 ```
 
-FinScientist v6.2.0 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整选股模型”执行已有研究流水线，并将结果展示到 Dashboard、全A股票池、选股结果、个股研究工作台、回测分析、图表中心、因子研究实验室、研究报告预览和系统状态页面。
+FinScientist v6.3.1 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整选股模型”执行已有研究流水线，并优先通过 EastMoney Direct 获取真实 A 股实时行情；失败时会显示原因并使用 Demo fallback。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -110,7 +121,7 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：v6.2.0
+当前版本：v6.3.1
 
 V6.2.0 Live Pipeline Runner:
 

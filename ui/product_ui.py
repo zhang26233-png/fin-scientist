@@ -21,8 +21,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.2.0"
-PRODUCT_STAGE = "Live Pipeline Runner"
+PRODUCT_VERSION = "v6.3.1"
+PRODUCT_STAGE = "Real A-Share Realtime Data Layer"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -64,7 +64,7 @@ REQUIRED_FIELD_GROUPS = {
     "Factor Research Lab": ["factor_name", "factor_ic", "factor_rank_ic", "factor_effectiveness_label"],
 }
 
-UNIVERSE_COLUMNS = ["ticker", "name", "market", "list_date", "is_st", "is_suspended", "universe_status"]
+UNIVERSE_COLUMNS = ["ticker", "name", "market", "industry", "list_date", "status", "universe_status"]
 SELECTION_COLUMNS = [
     "selection_rank",
     "ticker",
@@ -189,6 +189,7 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
     warnings = collect_warning_fields(source)
     return {
         "total_count": int(len(source)),
+        "universe_size": int(source.attrs.get("universe_size", len(source))) if hasattr(source, "attrs") else int(len(source)),
         "core_count": int(bucket.eq("Core").sum()),
         "watch_count": int(bucket.eq("Watch").sum()),
         "exclude_count": int(bucket.isin(["Exclude", "Excluded"]).sum()),
@@ -278,7 +279,20 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
     source = safe_copy_frame(df)
     _render_page_header("首页总览 Dashboard", "研究对象、选股结果、风险和因子状态总览")
     summary = build_dashboard_summary(source)
+    data_source = source.attrs.get("data_source", "Unavailable") if hasattr(source, "attrs") else "Unavailable"
+    data_status = source.attrs.get("data_status", "Unavailable") if hasattr(source, "attrs") else "Unavailable"
+    load_time = source.attrs.get("load_time", 0) if hasattr(source, "attrs") else 0
+    updated_at = source.attrs.get("updated_at", "—") if hasattr(source, "attrs") else "—"
+    last_error = source.attrs.get("last_error", "") if hasattr(source, "attrs") else ""
+    status_text = f"当前数据源：{data_source} / {data_status} / 股票数量：{summary['universe_size']} / 加载时间：{load_time} 秒 / 更新时间：{updated_at}"
+    if data_status == "Live":
+        st.success(status_text)
+    elif data_status == "Fallback":
+        st.warning(status_text)
+    else:
+        st.error(f"{status_text} / 最近错误：{last_error}")
     cards = [
+        ("Universe Size", summary["universe_size"], "Current A-share universe size"),
         ("总股票数", summary["total_count"], "当前研究样本数量"),
         ("Core 数量", summary["core_count"], "核心研究对象"),
         ("Watch 数量", summary["watch_count"], "观察研究对象"),
@@ -306,6 +320,14 @@ def render_universe_page(df: Any) -> pd.DataFrame:
     _render_page_header("全A股票池", "Universe 股票池、ST、停牌和可用状态")
     filtered = source.copy(deep=True)
     if not filtered.empty:
+        query = st.text_input("搜索股票 / 代码 / 名称", value="")
+        if query.strip():
+            keyword = query.strip()
+            mask = pd.Series(False, index=filtered.index)
+            for field in ["ticker", "name"]:
+                if field in filtered.columns:
+                    mask = mask | filtered[field].astype(str).str.contains(keyword, case=False, na=False)
+            filtered = filtered[mask]
         if "market" in filtered.columns:
             markets = ["全部"] + sorted(str(value) for value in filtered["market"].dropna().unique())
             selected_market = st.selectbox("市场", options=markets)
@@ -466,7 +488,14 @@ def render_system_status_page(df: Any) -> dict[str, Any]:
     """Render system status and data-quality page."""
     source = safe_copy_frame(df)
     data_source = source.attrs.get("data_source", "Unavailable") if hasattr(source, "attrs") else "Unavailable"
+    data_status = source.attrs.get("data_status", "Unavailable") if hasattr(source, "attrs") else "Unavailable"
     is_demo = bool(source.attrs.get("is_demo", False)) if hasattr(source, "attrs") else False
+    raw_count = source.attrs.get("raw_count", len(source)) if hasattr(source, "attrs") else len(source)
+    filtered_count = source.attrs.get("filtered_count", 0) if hasattr(source, "attrs") else 0
+    final_count = source.attrs.get("final_count", len(source)) if hasattr(source, "attrs") else len(source)
+    load_time = source.attrs.get("load_time", "—") if hasattr(source, "attrs") else "—"
+    updated_at = source.attrs.get("updated_at", "—") if hasattr(source, "attrs") else "—"
+    last_error = source.attrs.get("last_error", "") if hasattr(source, "attrs") else ""
     _render_page_header("系统状态 / 数据质量", "版本、模块、缺失字段、warnings 和数据源说明")
     modules = list(REQUIRED_FIELD_GROUPS.keys())
     columns = st.columns(4)
@@ -494,10 +523,32 @@ def render_system_status_page(df: Any) -> dict[str, Any]:
         st.info("当前页面数据没有汇总到 warning 字段。")
     st.subheader("数据源状态说明")
     st.info("当前产品页读取已生成的本地研究结果。免费行情或基础数据源可能延迟、缺失或字段变化。")
+    status_rows = [
+        {"item": "数据源", "value": data_source},
+        {"item": "数据状态", "value": data_status},
+        {"item": "Universe Size", "value": final_count},
+        {"item": "加载时间", "value": load_time},
+        {"item": "更新时间", "value": updated_at},
+        {"item": "原始股票", "value": raw_count},
+        {"item": "过滤数量", "value": filtered_count},
+        {"item": "最终样本数", "value": final_count},
+        {"item": "最近错误", "value": last_error or "—"},
+    ]
+    st.dataframe(pd.DataFrame(status_rows), hide_index=True, use_container_width=True)
     if is_demo:
         st.warning(source.attrs.get("data_notice", "当前为 Demo 数据，用于展示系统结构；接入真实行情后可替换为真实结果。"))
     st.info(f"当前数据来源：{data_source}；是否 Demo：{is_demo}；样本数量：{len(source)}。所有结果仅供学习和研究，不构成投资建议。")
-    return {"missing_fields": missing, "warnings": warnings, "modules": modules, "data_source": data_source, "is_demo": is_demo}
+    return {
+        "missing_fields": missing,
+        "warnings": warnings,
+        "modules": modules,
+        "data_source": data_source,
+        "data_status": data_status,
+        "is_demo": is_demo,
+        "raw_count": raw_count,
+        "filtered_count": filtered_count,
+        "final_count": final_count,
+    }
 
 
 def render_product_page(page: str, state: dict[str, pd.DataFrame] | None = None) -> Any:
