@@ -2,6 +2,16 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.3.3
+
+- Added robust EastMoney endpoint fallback in `data/eastmoney_loader.py`.
+- Tries `https://push2.eastmoney.com/api/qt/clist/get`, `https://push2his.eastmoney.com/api/qt/clist/get`, and `https://82.push2.eastmoney.com/api/qt/clist/get` in order.
+- Keeps requests as `requests.get(url, params=params, headers=headers, timeout=timeout)` and avoids prebuilding encoded request URLs.
+- Switches to the next endpoint immediately when HTTP 502 is returned.
+- Records `active_endpoint` and `endpoint_attempts` in DataFrame attrs and prints them in `scripts/check_eastmoney.py`.
+- Added tests for 502 fallback, endpoint attempts, and `"-"` value conversion to `None`.
+- Kept `core/scoring.py`, scoring fields, selection algorithms, trading logic, buy/sell advice, target prices, position suggestions, return promises, machine-learning prediction, paid API keys, databases, and vector stores unchanged.
+
 ## v6.3.2
 
 - Fixed EastMoney Direct endpoint handling in `data/eastmoney_loader.py`.

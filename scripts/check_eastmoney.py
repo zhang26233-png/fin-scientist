@@ -7,7 +7,12 @@ Run on your Windows machine:
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from data.eastmoney_loader import load_eastmoney_a_share_spot
 
@@ -24,6 +29,8 @@ def main() -> int:
     print(f"load_time={frame.attrs.get('load_time', 0):.2f}s")
     print(f"last_error={frame.attrs.get('last_error', '')}")
     print(f"request_url={frame.attrs.get('request_url', '')}")
+    print(f"active_endpoint={frame.attrs.get('active_endpoint', '')}")
+    print(f"endpoint_attempts={frame.attrs.get('endpoint_attempts', [])}")
     print(f"http_status={frame.attrs.get('http_status', '')}")
     print(f"raw_preview={frame.attrs.get('raw_preview', '')}")
     print(f"json_keys={frame.attrs.get('json_keys', [])}")

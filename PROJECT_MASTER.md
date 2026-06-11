@@ -20,18 +20,18 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.3.2
+- CURRENT_VERSION = v6.3.3
 - CURRENT_STAGE = Real A-Share Realtime Data Layer
 - NEXT_TARGET = v6.4.0 Real Fundamental and Technical Data Integration
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.3.2"`
-- `legacy_app.py`: `APP_VERSION = "v6.3.2"`
-- `README.md`: Current version: v6.3.2
+- `app.py`: `APP_VERSION = "v6.3.3"`
+- `legacy_app.py`: `APP_VERSION = "v6.3.3"`
+- `README.md`: Current version: v6.3.3
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V6.3.2 adds EastMoney Debug & Endpoint Fix. EastMoney Direct now uses page size 100 and loops up to 100 pages, records request URL, HTTP status, response preview, JSON keys, diff presence, diff length, and mapping warnings in DataFrame attrs, and prints those diagnostics in `scripts/check_eastmoney.py`. This version only strengthens the free data-source layer and does not modify stock-selection algorithms, scoring weights, `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, or `selection_score`.
+V6.3.3 adds EastMoney Endpoint Robust Fix. EastMoney Direct now tries `push2`, `push2his`, and `82.push2` endpoints in order using `requests.get(url, params=params, headers=headers, timeout=timeout)`, switches endpoint immediately on HTTP 502, records `active_endpoint` and `endpoint_attempts`, and keeps the same timeout/fallback boundary. This version only strengthens the free data-source layer and does not modify stock-selection algorithms, scoring weights, `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, or `selection_score`.
 
 ## Current Architecture
 

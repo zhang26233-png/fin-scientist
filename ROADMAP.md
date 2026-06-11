@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v6.3.2.
+Current: v6.3.3.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -224,6 +224,7 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.2.0: Live Pipeline Runner completed.
 - v6.3.1: Real A-Share Realtime Data Layer completed.
 - v6.3.2: EastMoney Debug & Endpoint Fix completed.
+- v6.3.3: EastMoney Endpoint Robust Fix completed.
 - Next target: v6.4.0 Real Fundamental and Technical Data Integration.
 - A-share universe builder.
 - Fundamental screening entry point.
@@ -476,6 +477,14 @@ Completed v6.3.2 scope:
 - Added detailed EastMoney diagnostics in DataFrame attrs: request URL, HTTP status, raw preview, JSON keys, diff presence, diff length, and mapping warnings.
 - Updated `scripts/check_eastmoney.py` to print rows, source, status, load time, last error, request URL, HTTP status, raw preview, and head rows.
 - Kept all outputs research-only and did not modify scoring logic, stock-selection algorithms, trading logic, or `core/scoring.py`.
+
+Completed v6.3.3 scope:
+
+- Added EastMoney endpoint fallback across `push2`, `push2his`, and `82.push2`.
+- Kept EastMoney requests on `requests.get(url, params=params, headers=headers, timeout=timeout)` without prebuilding encoded URLs.
+- Added immediate endpoint switch on HTTP 502.
+- Added `active_endpoint` and `endpoint_attempts` diagnostics to EastMoney result attrs and local check output.
+- Kept scoring logic, stock-selection algorithms, trading logic, and `core/scoring.py` unchanged.
 
 Boundary:
 

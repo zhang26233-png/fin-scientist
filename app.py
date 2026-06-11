@@ -17,7 +17,7 @@ from ui.product_ui import (
 )
 from ui.screening_ui import render_screening_page
 
-APP_VERSION = "v6.3.2"
+APP_VERSION = "v6.3.3"
 APP_STAGE = "Real A-Share Realtime Data Layer"
 
 # Re-export core functions used by the existing tests and notebooks.

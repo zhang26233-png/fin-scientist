@@ -4,13 +4,16 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
-from urllib.parse import urlencode
-
 import pandas as pd
 import requests
 
 
-EASTMONEY_URL = "https://push2.eastmoney.com/api/qt/clist/get"
+EASTMONEY_ENDPOINTS = [
+    "https://push2.eastmoney.com/api/qt/clist/get",
+    "https://push2his.eastmoney.com/api/qt/clist/get",
+    "https://82.push2.eastmoney.com/api/qt/clist/get",
+]
+EASTMONEY_URL = EASTMONEY_ENDPOINTS[0]
 EASTMONEY_FIELDS = "f12,f14,f2,f3,f4,f5,f6,f7,f15,f16,f17,f18"
 OUTPUT_COLUMNS = [
     "ticker",
@@ -56,8 +59,12 @@ def _params(page: int) -> dict[str, str]:
     }
 
 
-def _request_url(params: dict[str, str]) -> str:
-    return f"{EASTMONEY_URL}?{urlencode(params)}"
+def _headers() -> dict[str, str]:
+    return {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://quote.eastmoney.com/",
+        "Accept": "application/json,text/plain,*/*",
+    }
 
 
 def _empty(
@@ -68,6 +75,8 @@ def _empty(
     request_url: str = "",
     http_status: int | str | None = None,
     raw_preview: str = "",
+    active_endpoint: str = "",
+    endpoint_attempts: list[dict[str, Any]] | None = None,
 ) -> pd.DataFrame:
     frame = pd.DataFrame(columns=OUTPUT_COLUMNS)
     _attach_debug_attrs(
@@ -78,6 +87,8 @@ def _empty(
         request_url=request_url,
         http_status=http_status,
         raw_preview=raw_preview,
+        active_endpoint=active_endpoint,
+        endpoint_attempts=endpoint_attempts or [],
         json_keys=[],
         diff_exists=False,
         diff_length=0,
@@ -94,6 +105,8 @@ def _attach_debug_attrs(
     request_url: str,
     http_status: int | str | None,
     raw_preview: str,
+    active_endpoint: str,
+    endpoint_attempts: list[dict[str, Any]],
     json_keys: list[str],
     diff_exists: bool,
     diff_length: int,
@@ -105,6 +118,8 @@ def _attach_debug_attrs(
     frame.attrs["request_url"] = request_url
     frame.attrs["http_status"] = http_status if http_status is not None else ""
     frame.attrs["raw_preview"] = raw_preview[:300] if isinstance(raw_preview, str) else str(raw_preview)[:300]
+    frame.attrs["active_endpoint"] = active_endpoint
+    frame.attrs["endpoint_attempts"] = list(endpoint_attempts)
     frame.attrs["json_keys"] = json_keys
     frame.attrs["diff_exists"] = bool(diff_exists)
     frame.attrs["diff_length"] = int(diff_length)
@@ -193,63 +208,87 @@ def load_eastmoney_a_share_spot(timeout: int = 30) -> pd.DataFrame:
     last_json_keys: list[str] = []
     last_diff_exists = False
     total_diff_length = 0
+    active_endpoint = ""
+    endpoint_attempts: list[dict[str, Any]] = []
 
-    for page in range(1, 101):
-        params = _params(page)
-        last_request_url = _request_url(params)
-        try:
-            response = requests.get(
-                EASTMONEY_URL,
-                params=params,
-                timeout=timeout,
-                headers={
-                    "User-Agent": "Mozilla/5.0 FinScientist/1.0",
-                    "Referer": "https://quote.eastmoney.com/center/gridlist.html",
-                    "Accept": "application/json,text/plain,*/*",
-                },
-            )
-            last_http_status = getattr(response, "status_code", "")
-            last_raw_preview = getattr(response, "text", "")[:300]
-            response.raise_for_status()
-            payload = response.json()
-        except Exception as exc:
-            warning = f"page {page} request/json failed: {repr(exc)}"
-            if last_raw_preview:
-                warning = f"{warning}; raw_preview={last_raw_preview[:120]}"
-            return _empty(
-                started=started,
-                warning=warning,
-                request_url=last_request_url,
-                http_status=last_http_status,
-                raw_preview=last_raw_preview,
-            )
+    for endpoint in EASTMONEY_ENDPOINTS:
+        endpoint_rows: list[dict[str, Any]] = []
+        endpoint_warnings: list[str] = []
+        endpoint_diff_length = 0
+        endpoint_error = ""
 
-        diff, json_keys, diff_exists = _extract_diff(payload)
-        last_json_keys = json_keys
-        last_diff_exists = diff_exists
-        total_diff_length += len(diff)
+        for page in range(1, 101):
+            params = _params(page)
+            last_request_url = endpoint
+            try:
+                response = requests.get(
+                    endpoint,
+                    params=params,
+                    timeout=timeout,
+                    headers=_headers(),
+                )
+                last_http_status = getattr(response, "status_code", "")
+                last_raw_preview = getattr(response, "text", "")[:300]
+                if last_http_status == 502:
+                    endpoint_error = f"page {page} HTTP 502 Bad Gateway"
+                    break
+                response.raise_for_status()
+                payload = response.json()
+            except Exception as exc:
+                endpoint_error = f"page {page} request/json failed: {repr(exc)}"
+                break
 
-        if page == 1 and not diff:
-            return _empty(
-                started=started,
-                warning=f"page 1 diff missing or empty; json_keys={json_keys}; diff_exists={diff_exists}",
-                request_url=last_request_url,
-                http_status=last_http_status,
-                raw_preview=last_raw_preview,
-            )
-        if not diff:
+            diff, json_keys, diff_exists = _extract_diff(payload)
+            last_json_keys = json_keys
+            last_diff_exists = diff_exists
+            endpoint_diff_length += len(diff)
+
+            if page == 1 and not diff:
+                endpoint_error = f"page 1 diff missing or empty; json_keys={json_keys}; diff_exists={diff_exists}"
+                break
+            if not diff:
+                break
+
+            timestamp = _now_text()
+            for item in diff:
+                if not isinstance(item, dict):
+                    endpoint_warnings.append(f"page {page}: diff item is not dict")
+                    continue
+                normalized, warning = _normalize_row(item, timestamp)
+                if warning:
+                    endpoint_warnings.append(warning)
+                    continue
+                endpoint_rows.append(normalized)
+
+        endpoint_attempts.append(
+            {
+                "endpoint": endpoint,
+                "http_status": last_http_status,
+                "diff_length": endpoint_diff_length,
+                "mapped_rows": len(endpoint_rows),
+                "error": endpoint_error,
+                "raw_preview": last_raw_preview[:120],
+            }
+        )
+
+        if len(endpoint_rows) > 1000:
+            active_endpoint = endpoint
+            rows = endpoint_rows
+            warnings = endpoint_warnings
+            total_diff_length = endpoint_diff_length
             break
 
-        timestamp = _now_text()
-        for item in diff:
-            if not isinstance(item, dict):
-                warnings.append(f"page {page}: diff item is not dict")
-                continue
-            normalized, warning = _normalize_row(item, timestamp)
-            if warning:
-                warnings.append(warning)
-                continue
-            rows.append(normalized)
+    if not rows:
+        last_error = "All EastMoney endpoints failed or returned too few rows: " + str(endpoint_attempts)
+        return _empty(
+            started=started,
+            warning=last_error,
+            request_url=last_request_url,
+            http_status=last_http_status,
+            raw_preview=last_raw_preview,
+            active_endpoint=active_endpoint,
+            endpoint_attempts=endpoint_attempts,
+        )
 
     frame = pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
     if not frame.empty:
@@ -275,6 +314,8 @@ def load_eastmoney_a_share_spot(timeout: int = 30) -> pd.DataFrame:
         request_url=last_request_url,
         http_status=last_http_status,
         raw_preview=last_raw_preview,
+        active_endpoint=active_endpoint,
+        endpoint_attempts=endpoint_attempts,
         json_keys=last_json_keys,
         diff_exists=last_diff_exists,
         diff_length=total_diff_length,

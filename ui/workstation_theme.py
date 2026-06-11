@@ -8,7 +8,7 @@ from typing import Any
 import streamlit as st
 
 
-WORKSTATION_VERSION = "v6.3.2"
+WORKSTATION_VERSION = "v6.3.3"
 WORKSTATION_STAGE = "Real A-Share Realtime Data Layer"
 
 
