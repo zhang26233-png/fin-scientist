@@ -21,8 +21,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.3.4"
-PRODUCT_STAGE = "Multi Realtime Source Fallback"
+PRODUCT_VERSION = "v6.3.5"
+PRODUCT_STAGE = "Full A-Share Pagination and Cache Layer"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -284,15 +284,29 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
     load_time = source.attrs.get("load_time", 0) if hasattr(source, "attrs") else 0
     updated_at = source.attrs.get("updated_at", "—") if hasattr(source, "attrs") else "—"
     last_error = source.attrs.get("last_error", "") if hasattr(source, "attrs") else ""
-    status_text = f"当前数据源：{data_source} / {data_status} / 股票数量：{summary['universe_size']} / 加载时间：{load_time} 秒 / 更新时间：{updated_at}"
+    raw_count = source.attrs.get("raw_count", len(source)) if hasattr(source, "attrs") else len(source)
+    filtered_count = source.attrs.get("filtered_count", 0) if hasattr(source, "attrs") else 0
+    cache_status = source.attrs.get("cache_status", "Missing") if hasattr(source, "attrs") else "Missing"
+    cache_updated_at = source.attrs.get("cache_updated_at", "—") if hasattr(source, "attrs") else "—"
+    status_text = (
+        f"当前数据源：{data_source} / {data_status} / 股票数量：{summary['universe_size']} / "
+        f"原始数量：{raw_count} / 过滤数量：{filtered_count} / "
+        f"缓存：{cache_status} / 缓存更新时间：{cache_updated_at or '—'} / "
+        f"加载时间：{load_time} 秒 / 更新时间：{updated_at}"
+    )
     if data_status == "Live":
         st.success(status_text)
     elif data_status == "Fallback":
         st.warning(status_text)
     else:
         st.error(f"{status_text} / 最近错误：{last_error}")
+    if summary["universe_size"] < 1000:
+        st.error("真实数据不足，仅用于结构验证。所有结果仅供学习和研究，不构成投资建议。")
     cards = [
         ("Universe Size", summary["universe_size"], "Current A-share universe size"),
+        ("Raw Count", raw_count, "Realtime/cache raw rows"),
+        ("Filtered Count", filtered_count, "Filtered rows removed"),
+        ("Cache Status", cache_status, f"Updated: {cache_updated_at or '—'}"),
         ("总股票数", summary["total_count"], "当前研究样本数量"),
         ("Core 数量", summary["core_count"], "核心研究对象"),
         ("Watch 数量", summary["watch_count"], "观察研究对象"),
@@ -497,6 +511,10 @@ def render_system_status_page(df: Any) -> dict[str, Any]:
     updated_at = source.attrs.get("updated_at", "—") if hasattr(source, "attrs") else "—"
     last_error = source.attrs.get("last_error", "") if hasattr(source, "attrs") else ""
     source_attempts = source.attrs.get("source_attempts", []) if hasattr(source, "attrs") else []
+    cache_status = source.attrs.get("cache_status", "Missing") if hasattr(source, "attrs") else "Missing"
+    cache_updated_at = source.attrs.get("cache_updated_at", "—") if hasattr(source, "attrs") else "—"
+    cache_universe_path = source.attrs.get("cache_universe_path", "cache/a_share_universe_latest.csv") if hasattr(source, "attrs") else "cache/a_share_universe_latest.csv"
+    cache_quotes_path = source.attrs.get("cache_quotes_path", "cache/a_share_quotes_latest.csv") if hasattr(source, "attrs") else "cache/a_share_quotes_latest.csv"
     _render_page_header("系统状态 / 数据质量", "版本、模块、缺失字段、warnings 和数据源说明")
     modules = list(REQUIRED_FIELD_GROUPS.keys())
     columns = st.columns(4)
@@ -533,6 +551,10 @@ def render_system_status_page(df: Any) -> dict[str, Any]:
         {"item": "原始股票", "value": raw_count},
         {"item": "过滤数量", "value": filtered_count},
         {"item": "最终样本数", "value": final_count},
+        {"item": "缓存状态", "value": cache_status},
+        {"item": "缓存更新时间", "value": cache_updated_at or "—"},
+        {"item": "Universe 缓存路径", "value": cache_universe_path},
+        {"item": "Quotes 缓存路径", "value": cache_quotes_path},
         {"item": "最近错误", "value": last_error or "—"},
     ]
     st.dataframe(pd.DataFrame(status_rows), hide_index=True, use_container_width=True)

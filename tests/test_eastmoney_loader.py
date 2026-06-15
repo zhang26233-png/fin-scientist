@@ -178,6 +178,9 @@ def test_a_share_loader_uses_eastmoney_when_large(monkeypatch):
     monkeypatch.setattr("data.a_share_loader.load_tencent_a_share_spot", lambda timeout=10: empty)
     monkeypatch.setattr("data.a_share_loader.load_sina_a_share_spot", lambda timeout=10: empty)
     monkeypatch.setattr("data.a_share_loader.load_eastmoney_a_share_spot", lambda timeout=30: frame)
+    monkeypatch.setattr("data.a_share_loader._fetch_akshare_universe", lambda timeout=10: empty)
+    monkeypatch.setattr("data.a_share_loader._fetch_baostock_universe", lambda timeout=10: empty)
+    monkeypatch.setattr("data.a_share_loader.read_a_share_universe_cache", lambda: pd.DataFrame())
     result = load_a_share_universe(timeout=1)
 
     assert len(result) > 1000

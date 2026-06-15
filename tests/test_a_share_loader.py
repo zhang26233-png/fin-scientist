@@ -79,3 +79,37 @@ def test_loader_filters_st_delisted_suspended_empty_name_and_new_stock():
     assert universe.attrs["filtered_breakdown"]["suspended"] >= 1
     assert universe.attrs["filtered_breakdown"]["empty_name"] >= 1
     assert universe.attrs["filtered_breakdown"]["new_listing"] >= 1
+
+
+def test_loader_uses_local_cache_before_demo(monkeypatch):
+    empty = pd.DataFrame()
+    empty.attrs["last_error"] = "mock source failure"
+    cache_rows = [
+        {
+            "ticker": f"6{index:05d}",
+            "name": f"Cached {index}",
+            "market": "SH",
+            "list_date": "2020-01-01",
+            "status": "Available",
+            "data_source": "Local Cache",
+            "data_status": "Cache",
+        }
+        for index in range(1100)
+    ]
+    cached = pd.DataFrame(cache_rows)
+    cached.attrs["cache_status"] = "Available"
+    cached.attrs["cache_updated_at"] = "2026-06-15 10:00:00"
+
+    monkeypatch.setattr("data.a_share_loader.load_tencent_a_share_spot", lambda timeout=10: empty)
+    monkeypatch.setattr("data.a_share_loader.load_sina_a_share_spot", lambda timeout=10: empty)
+    monkeypatch.setattr("data.a_share_loader.load_eastmoney_a_share_spot", lambda timeout=10: empty)
+    monkeypatch.setattr("data.a_share_loader._fetch_akshare_universe", lambda timeout=10: empty)
+    monkeypatch.setattr("data.a_share_loader._fetch_baostock_universe", lambda timeout=10: empty)
+    monkeypatch.setattr("data.a_share_loader.read_a_share_universe_cache", lambda: cached)
+
+    universe = load_a_share_universe(today=TODAY, timeout=1)
+
+    assert len(universe) > 1000
+    assert universe.attrs["data_source"] == "Local Cache"
+    assert universe.attrs["data_status"] == "Cache"
+    assert universe.attrs["cache_status"] == "Available"

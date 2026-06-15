@@ -213,7 +213,7 @@ def _load_quote_scan(*, timeout: int, deadline: float, headers: dict[str, str], 
     seen: set[str] = set()
     symbols = _quote_symbols()
     chunk_size = 300
-    chunks = [(index, symbols[index : index + chunk_size]) for index in range(0, min(len(symbols), chunk_size * 8), chunk_size)]
+    chunks = [(index, symbols[index : index + chunk_size]) for index in range(0, len(symbols), chunk_size)]
 
     def fetch_chunk(index: int, chunk: list[str]) -> dict[str, Any]:
         remaining = deadline - time.perf_counter()
@@ -232,7 +232,7 @@ def _load_quote_scan(*, timeout: int, deadline: float, headers: dict[str, str], 
             return {"chunk": index // chunk_size + 1, "error": repr(exc), "rows": []}
         return {"chunk": index // chunk_size + 1, "http_status": status_code, "rows": parsed}
 
-    executor = ThreadPoolExecutor(max_workers=6)
+    executor = ThreadPoolExecutor(max_workers=12)
     futures = [executor.submit(fetch_chunk, index, chunk) for index, chunk in chunks]
     try:
         for future in as_completed(futures, timeout=max(deadline - time.perf_counter(), 0.1)):
@@ -250,7 +250,7 @@ def _load_quote_scan(*, timeout: int, deadline: float, headers: dict[str, str], 
                 rows.append(row)
                 added += 1
             attempts.append({"type": "qt_quote_scan", "chunk": result.get("chunk"), "http_status": result.get("http_status"), "raw_rows": len(parsed), "added_rows": added})
-            if len(rows) > 1000:
+            if len(rows) >= 4000:
                 break
     except TimeoutError:
         attempts.append({"type": "qt_quote_scan", "error": f"timeout after {timeout}s"})

@@ -9,6 +9,7 @@ from typing import Any, Callable
 import pandas as pd
 
 from data.eastmoney_loader import load_eastmoney_a_share_spot
+from data.local_cache import cache_metadata, read_a_share_universe_cache, write_a_share_cache
 from data.sina_loader import load_sina_a_share_spot
 from data.tencent_loader import load_tencent_a_share_spot
 
@@ -37,6 +38,7 @@ OUTPUT_COLUMNS = [
 DEFAULT_MIN_LISTING_DAYS = 180
 DEFAULT_TIMEOUT_SECONDS = 10
 MIN_REAL_UNIVERSE_ROWS = 1000
+TARGET_REAL_UNIVERSE_ROWS = 4000
 
 DEMO_STOCKS = [
     ("600519", "Demo 600519", "Consumer"),
@@ -145,6 +147,7 @@ def _attach_attrs(
     last_error: str = "",
     filtered_breakdown: dict[str, int] | None = None,
     source_attempts: list[dict[str, Any]] | None = None,
+    cache_attrs: dict[str, Any] | None = None,
 ) -> pd.DataFrame:
     frame.attrs["data_source"] = data_source
     frame.attrs["data_status"] = data_status
@@ -157,6 +160,7 @@ def _attach_attrs(
     frame.attrs["last_error"] = last_error
     frame.attrs["filtered_breakdown"] = dict(filtered_breakdown or {})
     frame.attrs["source_attempts"] = list(source_attempts or [])
+    frame.attrs.update(cache_attrs or cache_metadata())
     return frame
 
 
@@ -212,6 +216,17 @@ def _normalize_source_frame(source: pd.DataFrame, *, data_source: str = "Provide
             }
         )
     return pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
+
+
+def _merge_source_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
+    valid = [frame for frame in frames if isinstance(frame, pd.DataFrame) and not frame.empty]
+    if not valid:
+        return pd.DataFrame(columns=OUTPUT_COLUMNS)
+    merged = pd.concat(valid, ignore_index=True)
+    normalized = _normalize_source_frame(merged, data_source="Multi Realtime", data_status="Live")
+    if normalized.empty:
+        return normalized
+    return normalized.drop_duplicates(subset=["ticker"], keep="first").reindex(columns=OUTPUT_COLUMNS)
 
 
 def _apply_filters(frame: pd.DataFrame, *, today: date, min_listing_days: int) -> tuple[pd.DataFrame, dict[str, int]]:
@@ -276,6 +291,7 @@ def _build_demo_universe(last_error: str = "") -> pd.DataFrame:
         filtered_count=0,
         final_count=len(frame),
         last_error=last_error,
+        cache_attrs=cache_metadata(),
     )
 
 
@@ -352,8 +368,9 @@ def _attempt_source(name: str, fetcher: Callable[..., pd.DataFrame], timeout: in
     return frame if isinstance(frame, pd.DataFrame) else pd.DataFrame(columns=OUTPUT_COLUMNS), attempt
 
 
-def _load_first_live_source(timeout: int) -> tuple[pd.DataFrame, str, str, list[dict[str, Any]]]:
+def _load_realtime_sources(timeout: int) -> tuple[pd.DataFrame, str, str, list[dict[str, Any]]]:
     attempts: list[dict[str, Any]] = []
+    live_frames: list[pd.DataFrame] = []
     sources: list[tuple[str, Callable[..., pd.DataFrame]]] = [
         ("Tencent Realtime", load_tencent_a_share_spot),
         ("Sina Realtime", load_sina_a_share_spot),
@@ -365,19 +382,37 @@ def _load_first_live_source(timeout: int) -> tuple[pd.DataFrame, str, str, list[
         frame, attempt = _attempt_source(name, fetcher, timeout)
         attempts.append(attempt)
         if attempt["rows"] > MIN_REAL_UNIVERSE_ROWS:
+            live_frames.append(_normalize_source_frame(frame, data_source=name, data_status="Live"))
+        merged = _merge_source_frames(live_frames)
+        if len(merged) >= TARGET_REAL_UNIVERSE_ROWS:
             for skipped_name, _ in sources[index + 1 :]:
                 attempts.append(
                     {
                         "data_source": skipped_name,
                         "rows": 0,
                         "data_status": "Not Tried",
-                        "last_error": f"Skipped because {name} returned live rows.",
+                        "last_error": f"Skipped because accumulated realtime rows reached {len(merged)}.",
                         "load_time": 0.0,
                     }
                 )
-            return _normalize_source_frame(frame, data_source=name, data_status="Live"), name, "", attempts
+            return merged, "Multi Realtime" if len(live_frames) > 1 else name, "", attempts
+    merged = _merge_source_frames(live_frames)
+    if len(merged) > MIN_REAL_UNIVERSE_ROWS:
+        return merged, "Multi Realtime" if len(live_frames) > 1 else str(merged["data_source"].iloc[0]), "", attempts
     last_error = "; ".join(f"{item['data_source']}: {item['last_error'] or item['rows']}" for item in attempts)
     return pd.DataFrame(columns=OUTPUT_COLUMNS), "Demo", last_error, attempts
+
+
+def _load_cache_source() -> tuple[pd.DataFrame, dict[str, Any], str]:
+    cache_attrs = cache_metadata()
+    cached = read_a_share_universe_cache()
+    cache_attrs.update(cached.attrs)
+    if cached.empty:
+        return pd.DataFrame(columns=OUTPUT_COLUMNS), cache_attrs, cached.attrs.get("last_error", "Local cache is empty.")
+    normalized = _normalize_source_frame(cached, data_source="Local Cache", data_status="Cache")
+    if normalized.empty:
+        return normalized, cache_attrs, "Local cache could not be normalized."
+    return normalized, cache_attrs, ""
 
 
 def load_a_share_universe(
@@ -394,31 +429,87 @@ def load_a_share_universe(
     started = datetime.now()
     last_error = ""
     source_attempts: list[dict[str, Any]] = []
+    cache_attrs = cache_metadata()
 
     if source_df is not None:
         raw = _normalize_source_frame(source_df, data_source="Provided", data_status="Live")
         data_source = "Provided"
     else:
-        raw, data_source, last_error, source_attempts = _load_first_live_source(timeout)
+        raw, data_source, last_error, source_attempts = _load_realtime_sources(timeout)
         if raw.empty:
-            demo = _build_demo_universe(last_error=last_error or "All realtime A-share data sources failed.")
-            demo.attrs["source_attempts"] = source_attempts
-            return demo
+            raw, cache_attrs, cache_error = _load_cache_source()
+            if not raw.empty:
+                data_source = "Local Cache"
+                last_error = last_error or cache_error
+                source_attempts.append(
+                    {
+                        "data_source": "Local Cache",
+                        "rows": len(raw),
+                        "data_status": "Cache",
+                        "last_error": cache_error,
+                        "load_time": 0.0,
+                    }
+                )
+            else:
+                source_attempts.append(
+                    {
+                        "data_source": "Local Cache",
+                        "rows": 0,
+                        "data_status": "Error",
+                        "last_error": cache_error,
+                        "load_time": 0.0,
+                    }
+                )
+                demo = _build_demo_universe(last_error=last_error or "All realtime A-share data sources failed.")
+                demo.attrs["source_attempts"] = source_attempts
+                return demo
+        else:
+            cache_attrs = cache_metadata()
 
     raw_count = len(raw)
     filtered, breakdown = _apply_filters(raw, today=today_value, min_listing_days=min_listing_days)
+    if data_source != "Local Cache" and len(filtered) < MIN_REAL_UNIVERSE_ROWS:
+        cached_raw, cached_attrs, cache_error = _load_cache_source()
+        if not cached_raw.empty:
+            cached_filtered, cached_breakdown = _apply_filters(cached_raw, today=today_value, min_listing_days=min_listing_days)
+            if len(cached_filtered) > len(filtered):
+                raw = cached_raw
+                raw_count = len(raw)
+                filtered = cached_filtered
+                breakdown = cached_breakdown
+                data_source = "Local Cache"
+                cache_attrs = cached_attrs
+                last_error = (last_error + "; " if last_error else "") + "Realtime filtered rows were insufficient; loaded local cache."
+                source_attempts.append(
+                    {
+                        "data_source": "Local Cache",
+                        "rows": len(raw),
+                        "data_status": "Cache",
+                        "last_error": cache_error,
+                        "load_time": 0.0,
+                    }
+                )
+    if data_source != "Local Cache" and raw_count > MIN_REAL_UNIVERSE_ROWS:
+        cache_attrs = write_a_share_cache(universe=filtered, quotes=raw)
+    elif data_source == "Local Cache":
+        cache_attrs = cache_metadata()
     load_time = (datetime.now() - started).total_seconds()
+    data_status = "Cache" if data_source == "Local Cache" else "Live"
+    final_last_error = last_error
+    if len(filtered) < MIN_REAL_UNIVERSE_ROWS:
+        final_last_error = (final_last_error + "; " if final_last_error else "") + "真实数据不足，仅用于结构验证"
     return _attach_attrs(
         filtered,
         data_source=data_source,
-        data_status="Live",
+        data_status=data_status,
         raw_count=raw_count,
         filtered_count=raw_count - len(filtered),
         final_count=len(filtered),
         load_time=load_time,
-        last_error=last_error,
+        last_error=final_last_error,
         filtered_breakdown=breakdown,
         source_attempts=source_attempts,
+        cache_attrs=cache_attrs,
     )
 
 
@@ -427,5 +518,6 @@ __all__ = [
     "DEFAULT_TIMEOUT_SECONDS",
     "MIN_REAL_UNIVERSE_ROWS",
     "OUTPUT_COLUMNS",
+    "TARGET_REAL_UNIVERSE_ROWS",
     "load_a_share_universe",
 ]
