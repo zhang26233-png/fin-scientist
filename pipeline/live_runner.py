@@ -14,6 +14,7 @@ from data.a_share_loader import load_a_share_universe
 from data.kline_loader import build_price_history_dict
 from backtest.return_analysis import build_return_analysis
 from factor.factor_lab import build_factor_dataset
+from fundamental.fundamental_engine import FUNDAMENTAL_RESEARCH_FIELDS, build_fundamental_research
 from research.score_activation import ACTIVATED_RESEARCH_FIELDS, activate_research_scores
 from screening.candidate_pool import build_candidate_pool
 from screening.composite_score_engine import build_composite_quant_score
@@ -52,6 +53,7 @@ LIVE_PIPELINE_FIELDS = [
     "factor_rank_ic",
     "factor_effectiveness_label",
     *REAL_TECHNICAL_INDICATOR_FIELDS,
+    *FUNDAMENTAL_RESEARCH_FIELDS,
     *ACTIVATED_RESEARCH_FIELDS,
 ]
 
@@ -317,7 +319,8 @@ def _run_pipeline(
         max_kline_stocks=max_kline_stocks,
     )
     with_real_technical = build_real_technical_indicators(with_factors, price_history_dict=enriched_history)
-    result = activate_research_scores(with_real_technical)
+    with_fundamental_research = build_fundamental_research(with_real_technical, fundamental_df=fundamental_df)
+    result = activate_research_scores(with_fundamental_research)
     result.attrs.update(kline_attrs)
     return result
 

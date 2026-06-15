@@ -202,15 +202,25 @@ def _activate_row(row: pd.Series) -> dict[str, Any]:
         activated_technical_score = _clip_score(
             (0.4 * liquidity_score) + (0.4 * momentum_score) + (0.2 * price_position_score)
         )
-    existing_composite = _existing_positive_score(row, "composite_score")
-    if existing_composite is not None:
-        activated_composite_score = _clip_score((0.7 * existing_composite) + (0.3 * activated_technical_score))
-        reasons.append("Activated composite score blends existing composite_score with realtime technical activation.")
-    else:
+    fundamental_research_score = _existing_positive_score(row, "fundamental_research_score")
+    if fundamental_research_score is not None:
+        technical_component = real_technical_score if real_technical_score is not None else activated_technical_score
         activated_composite_score = _clip_score(
-            (0.5 * activated_technical_score) + (0.3 * quote_quality_score) + (0.2 * liquidity_score)
+            (0.4 * fundamental_research_score) + (0.4 * technical_component) + (0.2 * liquidity_score)
         )
-        reasons.append("Activated composite score is derived from realtime quote quality, liquidity, and momentum context.")
+        reasons.append("基本面研究评分已接入")
+        warnings.extend(_as_list(row.get("fundamental_warnings")))
+        warnings.extend(_as_list(row.get("fundamental_risks")))
+    else:
+        existing_composite = _existing_positive_score(row, "composite_score")
+        if existing_composite is not None:
+            activated_composite_score = _clip_score((0.7 * existing_composite) + (0.3 * activated_technical_score))
+            reasons.append("Activated composite score blends existing composite_score with realtime technical activation.")
+        else:
+            activated_composite_score = _clip_score(
+                (0.5 * activated_technical_score) + (0.3 * quote_quality_score) + (0.2 * liquidity_score)
+            )
+            reasons.append("Activated composite score is derived from realtime quote quality, liquidity, and momentum context.")
 
     activated_selection_score = (
         (0.5 * activated_composite_score)

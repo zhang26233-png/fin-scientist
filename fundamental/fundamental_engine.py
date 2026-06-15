@@ -70,9 +70,9 @@ PERCENT_FIELDS = {
 }
 
 FIELD_ALIASES = {
-    "pe_ttm": ["pe_ttm", "pe", "市盈率", "市盈率-动态", "市盈率ttm"],
+    "pe_ttm": ["pe_ttm", "pe", "市盈率", "市盈率-动态", "市盈率ttm", "市盈率TTM"],
     "pb": ["pb", "市净率"],
-    "ps_ttm": ["ps_ttm", "ps", "市销率", "市销率ttm"],
+    "ps_ttm": ["ps_ttm", "ps", "市销率", "市销率ttm", "市销率TTM"],
     "market_cap": ["market_cap", "total_market_cap", "总市值"],
     "float_market_cap": ["float_market_cap", "circulating_market_cap", "流通市值"],
     "roe": ["roe", "净资产收益率"],
@@ -80,13 +80,15 @@ FIELD_ALIASES = {
     "gross_margin": ["gross_margin", "毛利率"],
     "net_margin": ["net_margin", "净利率"],
     "revenue_growth_yoy": ["revenue_growth_yoy", "revenue_growth", "营收同比", "营业收入同比增长"],
-    "net_profit_growth_yoy": ["net_profit_growth_yoy", "profit_growth", "net_profit_growth", "净利润同比"],
-    "deducted_profit_growth_yoy": ["deducted_profit_growth_yoy", "扣非净利润同比", "deducted_profit_growth"],
+    "net_profit_growth_yoy": ["net_profit_growth_yoy", "net_profit_growth", "profit_growth", "净利润同比"],
+    "deducted_profit_growth_yoy": ["deducted_profit_growth_yoy", "deducted_profit_growth", "扣非净利润同比"],
     "debt_to_asset": ["debt_to_asset", "debt_ratio", "资产负债率"],
     "operating_cash_flow": ["operating_cash_flow", "operating_cashflow", "经营现金流"],
     "ocf_to_net_profit": ["ocf_to_net_profit", "经营现金流净利润比"],
     "dividend_yield": ["dividend_yield", "股息率"],
 }
+
+BOOLEAN_FIELDS = {"fundamental_available"}
 
 
 def _to_number(value: Any) -> float | None:
@@ -144,40 +146,33 @@ def _normalize_ticker(value: Any) -> str:
 
 def _first_existing(row: dict[str, Any], field: str) -> Any:
     for name in FIELD_ALIASES[field]:
-        if name in row:
-            value = row.get(name)
-            if value is None:
+        if name not in row:
+            continue
+        value = row.get(name)
+        if value is None:
+            continue
+        try:
+            if pd.isna(value):
                 continue
-            try:
-                if pd.isna(value):
-                    continue
-            except (TypeError, ValueError):
-                pass
-            if isinstance(value, str) and not value.strip():
-                continue
-            return value
+        except (TypeError, ValueError):
+            pass
+        if isinstance(value, str) and not value.strip():
+            continue
+        return value
     return None
 
 
-def _prepare_fundamental_df(fundamental_df: pd.DataFrame | None) -> pd.DataFrame:
-    if fundamental_df is None or fundamental_df.empty:
-        return pd.DataFrame()
+def _prepare_fundamental_map(fundamental_df: pd.DataFrame | None) -> dict[str, dict[str, Any]]:
+    if fundamental_df is None or fundamental_df.empty or "ticker" not in fundamental_df.columns:
+        return {}
     frame = fundamental_df.copy(deep=True)
-    if "ticker" not in frame.columns:
-        return pd.DataFrame()
     frame["_fundamental_ticker"] = frame["ticker"].map(_normalize_ticker)
     frame = frame.drop_duplicates(subset=["_fundamental_ticker"], keep="first")
-    return frame
-
-
-def _merge_source(df: pd.DataFrame, fundamental_df: pd.DataFrame | None) -> pd.DataFrame:
-    result = df.copy(deep=True)
-    prepared = _prepare_fundamental_df(fundamental_df)
-    if prepared.empty or "ticker" not in result.columns:
-        return result
-    result["_fundamental_ticker"] = result["ticker"].map(_normalize_ticker)
-    merged = result.merge(prepared, on="_fundamental_ticker", how="left", suffixes=("", "_fundamental"))
-    return merged.drop(columns=["_fundamental_ticker"], errors="ignore")
+    return {
+        str(row["_fundamental_ticker"]): row.drop(labels=["_fundamental_ticker"]).to_dict()
+        for _, row in frame.iterrows()
+        if row.get("_fundamental_ticker")
+    }
 
 
 def _score_valuation(values: dict[str, float | None], warnings: list[str], strengths: list[str], risks: list[str]) -> float:
@@ -187,7 +182,7 @@ def _score_valuation(values: dict[str, float | None], warnings: list[str], stren
         warnings.append("PE TTM 不可用")
     elif pe <= 15:
         score += 20
-        strengths.append("估值水平偏低")
+        strengths.append("估值水平较低")
     elif pe <= 30:
         score += 10
     elif pe > 60:
@@ -342,8 +337,18 @@ def _score_quality(values: dict[str, float | None], warnings: list[str], strengt
     return _clip_score(score)
 
 
-def _build_row(row: pd.Series, has_input_df: bool) -> dict[str, Any]:
-    raw = row.to_dict()
+def _source_row_for(base_row: dict[str, Any], fundamental_map: dict[str, dict[str, Any]]) -> tuple[dict[str, Any], str]:
+    ticker = _normalize_ticker(base_row.get("ticker", base_row.get("symbol", "")))
+    provided = fundamental_map.get(ticker)
+    if provided:
+        merged = dict(base_row)
+        merged.update({key: value for key, value in provided.items() if key != "ticker"})
+        return merged, "Provided Fundamental"
+    return base_row, "Existing Fields"
+
+
+def _build_row(row: pd.Series, fundamental_map: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    raw, data_source = _source_row_for(row.to_dict(), fundamental_map)
     values = {field: _normalize_number(field, _first_existing(raw, field)) for field in NUMERIC_FIELDS}
     available_count = sum(1 for value in values.values() if value is not None)
     fundamental_available = available_count >= 3
@@ -361,15 +366,17 @@ def _build_row(row: pd.Series, has_input_df: bool) -> dict[str, Any]:
         warnings.append("基本面数据不可用，使用中性分")
         summary = "基本面数据不可用，当前仅保留中性研究分。"
         status = "Unavailable"
+        data_source = "Unavailable"
+        strengths = []
+        risks = []
     else:
-        score = _clip_score((0.25 * valuation) + (0.25 * profitability) + (0.25 * growth) + (0.25 * quality))
+        score = _clip_score(0.25 * valuation + 0.25 * profitability + 0.25 * growth + 0.25 * quality)
         summary = f"估值 {valuation} / 盈利 {profitability} / 成长 {growth} / 财务质量 {quality}"
         status = "Available"
 
-    data_source = "Provided Fundamental" if has_input_df else "Existing Fields"
     output: dict[str, Any] = {
         "fundamental_available": bool(fundamental_available),
-        "fundamental_data_source": data_source if fundamental_available else "Unavailable",
+        "fundamental_data_source": data_source,
         "fundamental_data_status": status,
         "valuation_score": valuation,
         "profitability_score": profitability,
@@ -400,11 +407,10 @@ def build_fundamental_research(df: pd.DataFrame | None, fundamental_df: pd.DataF
         return result
 
     attrs = dict(getattr(df, "attrs", {}))
-    merged = _merge_source(result, fundamental_df)
-    has_input_df = fundamental_df is not None and not fundamental_df.empty
-    output = pd.DataFrame([_build_row(merged.loc[index], has_input_df) for index in merged.index], index=result.index)
+    fundamental_map = _prepare_fundamental_map(fundamental_df)
+    output = pd.DataFrame([_build_row(result.loc[index], fundamental_map) for index in result.index], index=result.index)
     for field in FUNDAMENTAL_RESEARCH_FIELDS:
-        result[field] = output[field].astype(object) if field == "fundamental_available" else output[field]
+        result[field] = output[field].astype(object) if field in BOOLEAN_FIELDS else output[field]
     result.attrs.update(attrs)
     return result
 

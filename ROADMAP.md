@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v6.4.0.
+Current: v6.6.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -228,7 +228,10 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.3.4: Multi Realtime Source Fallback completed.
 - v6.3.5: Full A-Share Pagination and Cache Layer completed.
 - v6.4.0: Research Score Activation completed.
-- Next target: v6.5.2 Technical Score Calibration.
+- v6.5.0: Real Technical Indicator Engine completed.
+- v6.5.1: Real Historical K-Line Integration completed.
+- v6.6.0: Fundamental Research Engine completed.
+- Next target: v6.6.1 Real Fundamental Data Integration.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -539,7 +542,19 @@ Completed v6.5.1 scope:
 - Updated the Streamlit sidebar with the K-line enable switch, max-stock selector, and K-line status display.
 - Updated Dashboard, Selection Results, and System Status to expose history availability, real technical score, K-line cache hits, K-line failures, and selected K-line technical fields.
 - Added K-line loader tests and pipeline tests for disabled K-line mode, enabled history passing, and no-history no-crash behavior.
-- Next target: v6.5.2 Technical Score Calibration.
+- Next target: v6.6.0 Fundamental Research Engine.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, old scoring functions, stock-selection algorithms, default underlying order, data-source order, and trading logic unchanged.
+
+Completed v6.6.0 scope:
+
+- Added `fundamental/__init__.py` and `fundamental/fundamental_engine.py`.
+- Added additive valuation, profitability, growth, financial-quality, and `fundamental_research_score` fields.
+- `build_fundamental_research()` can merge caller-provided `fundamental_df` by ticker or extract available existing fields from the pipeline.
+- Updated `pipeline/live_runner.py` order to run realtime quotes, K-line technical indicators, fundamental research, score activation, and UI output.
+- Updated `research/score_activation.py` so activated composite scoring can blend `fundamental_research_score`, real technical score, and liquidity when fundamental research fields are available.
+- Updated Dashboard, Selection Results, and Research Workstation to expose fundamental research score, component scores, valuation/profitability/growth fields, summaries, warnings, and risks.
+- Added `tests/test_fundamental_engine.py` plus score-activation coverage for fundamental-score fusion.
+- Next target: v6.6.1 Real Fundamental Data Integration.
 - Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, old scoring functions, stock-selection algorithms, default underlying order, data-source order, and trading logic unchanged.
 
 Boundary:

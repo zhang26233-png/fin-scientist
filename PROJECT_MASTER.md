@@ -20,16 +20,25 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.5.1
-- CURRENT_STAGE = Real Historical K-Line Integration
-- NEXT_TARGET = v6.5.2 Technical Score Calibration
+- CURRENT_VERSION = v6.6.0
+- CURRENT_STAGE = Fundamental Research Engine
+- NEXT_TARGET = v6.6.1 Real Fundamental Data Integration
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.5.1"`
-- `legacy_app.py`: `APP_VERSION = "v6.5.1"`
-- `README.md`: Current version: v6.5.1
+- `app.py`: `APP_VERSION = "v6.6.0"`
+- `legacy_app.py`: `APP_VERSION = "v6.6.0"`
+- `README.md`: Current version: v6.6.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
+
+V6.6.0 adds the Fundamental Research Engine. `fundamental/fundamental_engine.py` creates additive research-only fields for valuation, profitability, growth, financial quality, and `fundamental_research_score`. It can merge caller-provided `fundamental_df` rows by ticker or extract available PE/PB/PS, market cap, margin, growth, debt, cash-flow, and dividend fields already present in the pipeline. `pipeline/live_runner.py` now runs realtime quotes, K-line technical indicators, fundamental research, score activation, then UI output. `research/score_activation.py` can blend `fundamental_research_score`, real technical score, and liquidity into the activated composite score when the new fundamental layer is available. Dashboard, Selection Results, and Research Workstation expose fundamental research fields, while the system remains learning/research-only and does not constitute investment advice.
+
+V6.6.0 file additions:
+
+- `fundamental/__init__.py`
+- `fundamental/fundamental_engine.py`
+- `tests/test_fundamental_engine.py`
+- Fundamental Research Fields
 
 V6.5.1 adds Real Historical K-Line Integration. `data/kline_loader.py` loads standardized daily A-share K-line history by ticker, normalizes date, open, high, low, close, volume, turnover, ticker, source, status, and warning fields, writes successful histories with at least 60 rows to `cache/kline/{ticker}.csv`, and reads that cache when the external source is unavailable. `pipeline/live_runner.py` now supports `kline_enabled=True` and `max_kline_stocks=200`, selects a bounded front subset of the research pool, builds `price_history_dict`, and passes it into `build_real_technical_indicators()` so `real_technical_score` can be based on historical K-line data where available. The UI exposes the K-line switch, max-stock control, cache-hit count, failure count, and history availability metrics. This version keeps K-line loading sequential and bounded for performance, does not add API keys or databases, and does not modify `core/scoring.py`, old scoring functions, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, or `selection_score`.
 
@@ -265,6 +274,7 @@ Generated from the current `strategy/` directory.
 | Chart components | `ui/chart_components.py` | active | Safe numeric conversion, defensive chart DataFrame preparation, ranking data, scatter data, score profile data, and distribution data |
 | Web Product Integration | `ui/product_ui.py` | active | Product-level navigation, dashboard, module pages, data-quality status, Chart Center page, Factor Lab page, and empty-state-safe Streamlit rendering |
 | Research Score Activation | `research.score_activation` | active | Additive realtime quote activation fields for research scoring without overwriting old score columns |
+| Fundamental Research Engine | `fundamental/fundamental_engine.py` | active | Additive valuation, profitability, growth, financial quality, and fundamental research score fields |
 | Factor Research Lab | `factor/factor_lab.py` | active | Read-only factor dataset builder, z-score normalization, factor grouping, factor warnings, and factor summaries |
 | Factor metrics | `factor/factor_metrics.py` | active | Pearson IC, Rank IC, group returns, and factor effectiveness labels |
 | Factor report | `factor/factor_report.py` | active | Structured neutral factor research report fields |
@@ -907,6 +917,24 @@ Web Product Integration is a read-only Streamlit product layer. V6.1.0 makes com
 | `activated_research_warnings` | `research.score_activation` | Data-quality and short-term volatility warnings |
 
 Research Score Activation is additive and read-only. V6.4.0 does not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, existing scoring functions, default sorting, stock-selection algorithms, data-source order, or trading logic. It only lets realtime quote fields participate in separate activated research fields for learning, screening structure, and further research review.
+
+### Fundamental Research Fields
+
+| Field | Source | Meaning |
+|---|---|---|
+| `fundamental_available` | `fundamental.fundamental_engine` | Whether enough valuation, profitability, growth, or financial-quality fields are available |
+| `fundamental_data_source` | `fundamental.fundamental_engine` | Provided Fundamental, Existing Fields, or Unavailable |
+| `fundamental_data_status` | `fundamental.fundamental_engine` | Available or Unavailable fundamental research status |
+| `pe_ttm`, `pb`, `ps_ttm` | `fundamental.fundamental_engine` | Valuation metrics used by `valuation_score` |
+| `market_cap`, `float_market_cap` | `fundamental.fundamental_engine` | Market value context fields when available |
+| `roe`, `roa`, `gross_margin`, `net_margin` | `fundamental.fundamental_engine` | Profitability metrics used by `profitability_score` |
+| `revenue_growth_yoy`, `net_profit_growth_yoy`, `deducted_profit_growth_yoy` | `fundamental.fundamental_engine` | Growth metrics used by `growth_score` |
+| `debt_to_asset`, `operating_cash_flow`, `ocf_to_net_profit`, `dividend_yield` | `fundamental.fundamental_engine` | Financial-quality metrics used by `financial_quality_score` |
+| `valuation_score`, `profitability_score`, `growth_score`, `financial_quality_score` | `fundamental.fundamental_engine` | Additive 0-100 research component scores |
+| `fundamental_research_score` | `fundamental.fundamental_engine` | Equal-weight valuation, profitability, growth, and financial-quality research score |
+| `fundamental_summary`, `fundamental_strengths`, `fundamental_risks`, `fundamental_warnings` | `fundamental.fundamental_engine` | Neutral summary, strengths, risks, and data-quality warnings |
+
+Fundamental Research Engine is additive and read-only. V6.6.0 does not modify `core/scoring.py`, old scoring functions, `strategy_score`, `research_priority_score`, `priority_stability_score`, `technical_score`, `composite_score`, `candidate_rank`, or `selection_score`. It does not add buy/sell advice, target prices, position suggestions, return promises, automated trading, machine-learning predictions, API keys, databases, or vector stores.
 
 ## Current Development Principles
 

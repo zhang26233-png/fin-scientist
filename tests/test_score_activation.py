@@ -206,5 +206,20 @@ def test_output_order_is_preserved():
     assert result["ticker"].tolist() == frame["ticker"].tolist()
 
 
+def test_fundamental_research_score_blends_into_activated_composite():
+    frame = quote_frame().iloc[[0]].copy(deep=True)
+    frame["fundamental_research_score"] = 80
+    frame["real_technical_score"] = 60
+    frame["fundamental_warnings"] = [["基本面字段样本有限"]]
+    frame["fundamental_risks"] = [["资产负债率较高"]]
+
+    result = activate_research_scores(frame)
+
+    assert result.iloc[0]["activated_composite_score"] == 76
+    assert "基本面研究评分已接入" in result.iloc[0]["activated_research_reasons"]
+    assert "基本面字段样本有限" in result.iloc[0]["activated_research_warnings"]
+    assert "资产负债率较高" in result.iloc[0]["activated_research_warnings"]
+
+
 def test_module_importable():
     assert importlib.import_module("research.score_activation")

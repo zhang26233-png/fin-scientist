@@ -2,6 +2,18 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.6.0
+
+- Added Fundamental Research Engine.
+- Added `fundamental/__init__.py`, `fundamental/fundamental_engine.py`, and `tests/test_fundamental_engine.py`.
+- Added additive fundamental research fields for availability, source/status, PE/PB/PS, market cap, ROE/ROA, margins, growth, debt, operating cash flow, cash-flow quality, dividend yield, component scores, `fundamental_research_score`, summary, strengths, risks, and warnings.
+- `build_fundamental_research()` safely returns empty frames, avoids mutating inputs, preserves row order, merges caller-provided `fundamental_df` by ticker, and gracefully degrades to neutral scoring when data is unavailable.
+- Updated `pipeline/live_runner.py` so the live sequence is realtime quotes, K-line technical indicators, fundamental research, score activation, and UI output.
+- Updated `research/score_activation.py` so activated composite scoring can blend `fundamental_research_score`, real technical score or activated technical score, and liquidity when fundamental research fields are available.
+- Updated Dashboard, Selection Results, and the product Research Workstation to expose fundamental research metrics, component scores, valuation/profitability/growth fields, summaries, warnings, and risks.
+- Added tests for fundamental scoring, merge behavior, unavailable-data fallback, risks, score bounds, row-order preservation, module import, and score-activation fusion.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, old scoring functions, stock-selection algorithms, default underlying order, trading logic, buy/sell/hold advice, target prices, position suggestions, return promises, machine-learning prediction, paid API keys, databases, and vector stores unchanged.
+
 ## v6.5.1
 
 - Added Real Historical K-Line Integration.

@@ -21,8 +21,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.5.1"
-PRODUCT_STAGE = "Real Historical K-Line Integration"
+PRODUCT_VERSION = "v6.6.0"
+PRODUCT_STAGE = "Fundamental Research Engine"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -88,6 +88,20 @@ REQUIRED_FIELD_GROUPS = {
         "technical_signal_summary",
         "technical_risk_flags",
     ],
+    "Fundamental Research Engine": [
+        "fundamental_available",
+        "fundamental_research_score",
+        "valuation_score",
+        "profitability_score",
+        "growth_score",
+        "financial_quality_score",
+        "pe_ttm",
+        "pb",
+        "roe",
+        "net_profit_growth_yoy",
+        "fundamental_summary",
+        "fundamental_warnings",
+    ],
     "Explainable Selection": ["selection_thesis", "selection_strengths", "selection_risks", "selection_explanation"],
     "Factor Research Lab": ["factor_name", "factor_ic", "factor_rank_ic", "factor_effectiveness_label"],
 }
@@ -122,6 +136,18 @@ SELECTION_COLUMNS = [
     "technical_volatility_score",
     "technical_position_score",
     "technical_signal_summary",
+    "fundamental_research_score",
+    "valuation_score",
+    "profitability_score",
+    "growth_score",
+    "financial_quality_score",
+    "pe_ttm",
+    "pb",
+    "roe",
+    "revenue_growth_yoy",
+    "net_profit_growth_yoy",
+    "fundamental_summary",
+    "fundamental_warnings",
 ]
 BACKTEST_COLUMNS = [
     "ticker",
@@ -162,6 +188,20 @@ STOCK_DETAIL_FIELDS = [
     "position_52w",
     "technical_signal_summary",
     "technical_risk_flags",
+    "fundamental_research_score",
+    "valuation_score",
+    "profitability_score",
+    "growth_score",
+    "financial_quality_score",
+    "pe_ttm",
+    "pb",
+    "roe",
+    "revenue_growth_yoy",
+    "net_profit_growth_yoy",
+    "fundamental_summary",
+    "fundamental_strengths",
+    "fundamental_risks",
+    "fundamental_warnings",
 ]
 
 
@@ -277,6 +317,11 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         if "technical_risk_flags" in source.columns
         else 0
     )
+    fundamental_available_count = (
+        int(source["fundamental_available"].fillna(False).astype(bool).sum())
+        if "fundamental_available" in source.columns
+        else 0
+    )
     return {
         "total_count": int(len(source)),
         "universe_size": int(source.attrs.get("universe_size", len(source))) if hasattr(source, "attrs") else int(len(source)),
@@ -288,6 +333,12 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         "average_real_technical_score": _metric_value(source, "real_technical_score"),
         "technical_history_available_count": technical_history_count,
         "technical_high_risk_count": technical_high_risk_count,
+        "average_fundamental_research_score": _metric_value(source, "fundamental_research_score"),
+        "fundamental_available_count": fundamental_available_count,
+        "average_pe_ttm": _metric_value(source, "pe_ttm"),
+        "average_pb": _metric_value(source, "pb"),
+        "average_roe": _metric_value(source, "roe"),
+        "average_net_profit_growth_yoy": _metric_value(source, "net_profit_growth_yoy"),
         "kline_cache_hits": int(source.attrs.get("kline_cache_hits", 0)) if hasattr(source, "attrs") else 0,
         "kline_failures": int(source.attrs.get("kline_failures", 0)) if hasattr(source, "attrs") else 0,
         "average_risk_score": _metric_value(source, "risk_score"),
@@ -413,6 +464,12 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
         ("平均 real_technical_score", summary["average_real_technical_score"], "真实技术指标研究分均值"),
         ("技术历史可用数量", summary["technical_history_available_count"], "历史行情可用的研究对象"),
         ("技术风险提示数量", summary["technical_high_risk_count"], "存在技术风险提示的对象"),
+        ("平均 fundamental_research_score", summary["average_fundamental_research_score"], "基本面研究分均值"),
+        ("基本面可用数量", summary["fundamental_available_count"], "基本面字段可用的研究对象"),
+        ("平均 PE", summary["average_pe_ttm"], "PE TTM 均值"),
+        ("平均 PB", summary["average_pb"], "PB 均值"),
+        ("平均 ROE", summary["average_roe"], "ROE 均值"),
+        ("平均净利润增速", summary["average_net_profit_growth_yoy"], "net_profit_growth_yoy 均值"),
         ("K线缓存命中", summary["kline_cache_hits"], "cache/kline 命中数量"),
         ("K线加载失败", summary["kline_failures"], "外部源和缓存均不可用数量"),
         ("平均 risk_score", summary["average_risk_score"], "风险评分均值"),
@@ -525,6 +582,22 @@ def _render_technical_indicator_cards(row: pd.Series) -> None:
         ("波动", safe_get(row, "technical_volatility_score"), f"Volatility {format_value(safe_get(row, 'volatility_20d'))}"),
         ("位置", safe_get(row, "technical_position_score"), f"52w position {format_value(safe_get(row, 'position_52w'))}"),
         ("风险提示", safe_get(row, "technical_risk_flags"), safe_get(row, "technical_indicator_warnings")),
+    ]
+    columns = st.columns(3)
+    for column, (title, value, caption) in zip(columns * 2, cards):
+        with column:
+            _render_metric_card(title, value, caption)
+
+
+def _render_fundamental_research_cards(row: pd.Series) -> None:
+    st.subheader("基本面分析")
+    cards = [
+        ("估值", safe_get(row, "valuation_score"), f"PE {format_value(safe_get(row, 'pe_ttm'))} / PB {format_value(safe_get(row, 'pb'))}"),
+        ("盈利能力", safe_get(row, "profitability_score"), f"ROE {format_value(safe_get(row, 'roe'))}"),
+        ("成长能力", safe_get(row, "growth_score"), f"净利润增速 {format_value(safe_get(row, 'net_profit_growth_yoy'))}"),
+        ("财务质量", safe_get(row, "financial_quality_score"), f"现金流质量 {format_value(safe_get(row, 'ocf_to_net_profit'))}"),
+        ("基本面研究分", safe_get(row, "fundamental_research_score"), safe_get(row, "fundamental_summary")),
+        ("基本面风险提示", safe_get(row, "fundamental_risks"), safe_get(row, "fundamental_warnings")),
     ]
     columns = st.columns(3)
     for column, (title, value, caption) in zip(columns * 2, cards):
@@ -754,6 +827,8 @@ def render_research_workstation_product(df: Any) -> dict[str, Any]:
         return {"metrics": {}, "selected_row": None, "compare": pd.DataFrame(), "charts": {}, "factor_lab": {}, "pipeline": [], "report": ""}
     if any(field in source.columns for field in ["real_technical_score", "technical_trend_score", "technical_risk_flags"]):
         _render_technical_indicator_cards(source.iloc[0].copy(deep=True))
+    if any(field in source.columns for field in ["fundamental_research_score", "valuation_score", "fundamental_risks"]):
+        _render_fundamental_research_cards(source.iloc[0].copy(deep=True))
     return render_research_workstation(source)
 
 
