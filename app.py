@@ -17,8 +17,8 @@ from ui.product_ui import (
 )
 from ui.screening_ui import render_screening_page
 
-APP_VERSION = "v6.4.0"
-APP_STAGE = "Research Score Activation"
+APP_VERSION = "v6.5.0"
+APP_STAGE = "Real Technical Indicator Engine"
 
 # Re-export core functions used by the existing tests and notebooks.
 calculate_indicators = legacy_app.calculate_indicators

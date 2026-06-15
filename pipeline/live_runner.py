@@ -20,6 +20,7 @@ from screening.fundamental_screening import build_fundamental_screening
 from screening.technical_screening import build_technical_screening
 from selection.explain_engine import build_explainable_selection
 from selection.stock_selection import build_stock_selection
+from technical.indicator_engine import REAL_TECHNICAL_INDICATOR_FIELDS, build_real_technical_indicators
 
 
 LIVE_PIPELINE_FIELDS = [
@@ -49,6 +50,7 @@ LIVE_PIPELINE_FIELDS = [
     "factor_ic",
     "factor_rank_ic",
     "factor_effectiveness_label",
+    *REAL_TECHNICAL_INDICATOR_FIELDS,
     *ACTIVATED_RESEARCH_FIELDS,
 ]
 
@@ -232,7 +234,8 @@ def _run_pipeline(universe: pd.DataFrame, fundamental_df: pd.DataFrame | None, p
     stock_selection = build_stock_selection(backtest_evaluation)
     explainable_selection = build_explainable_selection(stock_selection)
     with_factors = _attach_factor_fields(explainable_selection)
-    return activate_research_scores(with_factors)
+    with_real_technical = build_real_technical_indicators(with_factors, price_history_dict=history)
+    return activate_research_scores(with_real_technical)
 
 
 def _build_demo_result(max_stocks: int | None = None) -> pd.DataFrame:

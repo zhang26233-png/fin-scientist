@@ -158,6 +158,19 @@ def _existing_positive_score(row: pd.Series, field: str) -> float | None:
     return _clip_score(value)
 
 
+def _as_list(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item) for item in value if item]
+    if isinstance(value, tuple) or isinstance(value, set):
+        return [str(item) for item in value if item]
+    if pd.isna(value):
+        return []
+    text = str(value).strip()
+    return [text] if text else []
+
+
 def _layer(score: float, quote_available: bool) -> tuple[str, str, str]:
     if not quote_available:
         return "Unavailable", "Unavailable", "Incomplete"
@@ -179,9 +192,16 @@ def _activate_row(row: pd.Series) -> dict[str, Any]:
     momentum_score = _momentum_score(row, warnings)
     price_position_score = _price_position_score(row, warnings)
 
-    activated_technical_score = _clip_score(
-        (0.4 * liquidity_score) + (0.4 * momentum_score) + (0.2 * price_position_score)
-    )
+    real_technical_score = _existing_positive_score(row, "real_technical_score")
+    if real_technical_score is not None:
+        activated_technical_score = real_technical_score
+        reasons.append("真实技术指标已接入")
+        warnings.extend(_as_list(row.get("technical_indicator_warnings")))
+        warnings.extend(_as_list(row.get("technical_risk_flags")))
+    else:
+        activated_technical_score = _clip_score(
+            (0.4 * liquidity_score) + (0.4 * momentum_score) + (0.2 * price_position_score)
+        )
     existing_composite = _existing_positive_score(row, "composite_score")
     if existing_composite is not None:
         activated_composite_score = _clip_score((0.7 * existing_composite) + (0.3 * activated_technical_score))

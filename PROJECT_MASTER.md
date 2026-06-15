@@ -20,16 +20,25 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.4.0
-- CURRENT_STAGE = Research Score Activation
-- NEXT_TARGET = v6.5.0 Real Technical Feature Integration
+- CURRENT_VERSION = v6.5.0
+- CURRENT_STAGE = Real Technical Indicator Engine
+- NEXT_TARGET = v6.5.1 Real Historical K-Line Integration
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.4.0"`
-- `legacy_app.py`: `APP_VERSION = "v6.4.0"`
-- `README.md`: Current version: v6.4.0
+- `app.py`: `APP_VERSION = "v6.5.0"`
+- `legacy_app.py`: `APP_VERSION = "v6.5.0"`
+- `README.md`: Current version: v6.5.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
+
+V6.5.0 adds the Real Technical Indicator Engine. `technical/indicator_engine.py` builds additive real technical indicator fields from optional historical price data, including moving averages, MA alignment, 20/60-day returns, RSI14, MACD, ATR14, annualized 20-day volatility, 60-day drawdown, volume and turnover ratios, 52-week position, neutral signal summaries, technical risk flags, warnings, and the read-only `real_technical_score`. `pipeline/live_runner.py` calls `build_real_technical_indicators()` before `activate_research_scores()`, so v6.4 score activation can prefer `real_technical_score` when historical indicators are available and gracefully fall back to realtime snapshot activation when history is missing. Dashboard, Selection Results, and the product Research Workstation expose the new technical research fields. This version does not modify `core/scoring.py`, old scoring functions, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, or `selection_score`, and it does not add buy/sell/hold advice, target prices, position suggestions, return promises, machine-learning predictions, API keys, databases, or vector stores.
+
+V6.5.0 file additions:
+
+- `technical/__init__.py`
+- `technical/indicator_engine.py`
+- `tests/test_indicator_engine.py`
+- Real Technical Indicator Fields
 
 V6.4.0 adds Research Score Activation. `research/score_activation.py` converts realtime quote fields from the Live A-share universe into additive `activated_*` research fields, including quote availability, quote quality, liquidity, momentum, intraday price position, activated technical score, activated composite score, activated selection score, research level, research bucket, status, reasons, and warnings. Tencent-style turnover units are normalized inside the activation calculation without mutating the original `turnover` column. `pipeline/live_runner.py` calls `activate_research_scores()` at the end of the read-only pipeline, after explainable selection and factor fields are assembled. Dashboard and Selection Results now prefer activated research score fields while preserving the old `selection_score`, `composite_score`, `technical_score`, `fundamental_score`, and `candidate_rank` contracts. This version does not modify `core/scoring.py`, existing scoring functions, stock-selection algorithms, trading logic, or default underlying DataFrame order, and it does not create buy/sell/hold advice, target prices, position suggestions, return promises, machine-learning predictions, API keys, databases, or vector stores.
 

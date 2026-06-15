@@ -517,6 +517,18 @@ Completed v6.4.0 scope:
 - Added focused tests for score activation, input immutability, quote availability, scoring thresholds, warnings, risk-score deduction, row-order preservation, and module import.
 - Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, existing scoring functions, stock-selection algorithms, default underlying order, data-source order, and trading logic unchanged.
 
+Completed v6.5.0 scope:
+
+- Added `technical/__init__.py` and `technical/indicator_engine.py`.
+- Added `build_real_technical_indicators(df, price_history_dict=None)` as an additive real technical indicator engine.
+- Added real technical fields for history availability, moving averages, MA alignment, 20/60-day returns, RSI14, MACD, ATR14, annualized volatility, 60-day drawdown, volume and turnover ratios, 52-week position, technical score components, `real_technical_score`, neutral signal summaries, risk flags, and warnings.
+- Integrated real technical indicators in `pipeline/live_runner.py` before `activate_research_scores()`.
+- Updated `research/score_activation.py` so `activated_technical_score` and the technical component of activated composite scoring prefer `real_technical_score` when it is available.
+- Updated Dashboard, Selection Results, and the product Research Workstation to display real technical research fields, history availability, average real technical score, and technical risk flag counts.
+- Added `tests/test_indicator_engine.py` for indicator calculation, warning behavior, risk flags, score clipping, order preservation, and module import.
+- Next target: v6.5.1 Real Historical K-Line Integration.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, old scoring functions, stock-selection algorithms, default underlying order, data-source order, and trading logic unchanged.
+
 Boundary:
 
 - Models must not generate black-box operational conclusions.

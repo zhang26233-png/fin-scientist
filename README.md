@@ -2,9 +2,11 @@
 
 ## Current Version
 
-Current version: v6.4.0
+Current version: v6.5.0
 
-v6.4.0 adds Research Score Activation. Realtime A-share quote fields now enter an additive research activation layer through `research/score_activation.py`, producing quote quality, liquidity, momentum, intraday price-position, activated technical, activated composite, and activated selection research fields. Tencent-style turnover units are normalized inside the activation calculation without changing the original `turnover` column. Dashboard and Selection Results prefer these activated fields when available, while the original scoring columns and scoring functions remain unchanged.
+v6.5.0 adds the Real Technical Indicator Engine. Historical price and volume data can now enter a research-only technical indicator layer through `technical/indicator_engine.py`, producing moving averages, MA alignment, RSI14, MACD, ATR14, volatility, drawdown, volume and turnover ratios, 52-week position, technical component scores, risk flags, warnings, and `real_technical_score`. The live pipeline builds these fields before Research Score Activation, so activated research scoring can prefer real technical indicators when history is available and gracefully fall back to realtime quote activation when history is missing.
+
+v6.4.0 added Research Score Activation. Realtime A-share quote fields enter an additive research activation layer through `research/score_activation.py`, producing quote quality, liquidity, momentum, intraday price-position, activated technical, activated composite, and activated selection research fields. Tencent-style turnover units are normalized inside the activation calculation without changing the original `turnover` column. Dashboard and Selection Results prefer these activated fields when available, while the original scoring columns and scoring functions remain unchanged.
 
 All outputs remain only for learning and research and do not constitute investment advice. The system does not provide buy/sell/hold advice, target prices, position suggestions, return promises, automated trading, machine-learning predictions, external API keys, databases, or vector stores.
 
@@ -52,7 +54,16 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v6.4.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`; realtime quote research activation lives in `research/score_activation.py`.
+`legacy_app.py` is not an unused backup. In v6.5.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`; realtime quote research activation lives in `research/score_activation.py`; real technical indicator research fields live in `technical/indicator_engine.py`.
+
+v6.5.0 Real Technical Indicator Engine:
+
+- Adds `technical_history_available`, `technical_history_days`, MA fields, MA alignment fields, `return_20d`, `return_60d`, `rsi14`, MACD fields, `atr14`, `volatility_20d`, `max_drawdown_60d`, volume and turnover ratio fields, 52-week position fields, technical component scores, `real_technical_score`, `technical_signal_summary`, `technical_risk_flags`, and `technical_indicator_warnings`.
+- Runs technical indicator construction before score activation in the live pipeline.
+- Uses `real_technical_score` in activated research scoring when available; missing historical data falls back to realtime snapshot scoring without crashing the page.
+- Dashboard shows average real technical score, technical history availability, and technical risk flag counts.
+- Selection Results and Research Workstation show real technical indicator fields for research review.
+- This layer remains only for learning and research and does not constitute investment advice.
 
 v6.4.0 Research Score Activation:
 

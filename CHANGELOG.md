@@ -2,6 +2,18 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.5.0
+
+- Added Real Technical Indicator Engine.
+- Added `technical/__init__.py`, `technical/indicator_engine.py`, and `tests/test_indicator_engine.py`.
+- Added additive fields for technical history availability, usable history days, MA5/10/20/60/120, MA alignment, 20/60-day returns, RSI14, MACD DIF/DEA/hist/signal, ATR14, annualized 20-day volatility, 60-day max drawdown, volume and turnover ratios, 52-week position, technical component scores, `real_technical_score`, neutral signal summaries, technical risk flags, and indicator warnings.
+- Integrated `build_real_technical_indicators()` in `pipeline/live_runner.py` before `activate_research_scores()`.
+- Updated `research/score_activation.py` so real technical score is preferred by activated technical and composite research scoring when available, while missing history falls back to v6.4 realtime snapshot activation.
+- Updated Dashboard to show average `real_technical_score`, technical history availability count, and technical risk flag count.
+- Updated Selection Results and the product Research Workstation to expose real technical indicator fields and risk notes.
+- Added tests for empty input, immutability, missing history fallback, insufficient-history warnings, MA/RSI/MACD/ATR/volatility/drawdown/volume/turnover/52-week calculations, risk flags, score clipping, order preservation, and module import.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, old scoring functions, stock-selection algorithms, default underlying order, trading logic, buy/sell/hold advice, target prices, position suggestions, return promises, machine-learning prediction, paid API keys, databases, and vector stores unchanged.
+
 ## v6.4.0
 
 - Added Research Score Activation.

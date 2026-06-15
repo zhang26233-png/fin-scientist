@@ -21,8 +21,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.4.0"
-PRODUCT_STAGE = "Research Score Activation"
+PRODUCT_VERSION = "v6.5.0"
+PRODUCT_STAGE = "Real Technical Indicator Engine"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -73,6 +73,21 @@ REQUIRED_FIELD_GROUPS = {
         "activated_research_status",
         "activated_research_level",
     ],
+    "Real Technical Indicator Engine": [
+        "technical_history_available",
+        "technical_history_days",
+        "real_technical_score",
+        "technical_trend_score",
+        "technical_momentum_score",
+        "technical_volume_score",
+        "technical_volatility_score",
+        "technical_position_score",
+        "macd_signal",
+        "rsi14",
+        "position_52w",
+        "technical_signal_summary",
+        "technical_risk_flags",
+    ],
     "Explainable Selection": ["selection_thesis", "selection_strengths", "selection_risks", "selection_explanation"],
     "Factor Research Lab": ["factor_name", "factor_ic", "factor_rank_ic", "factor_effectiveness_label"],
 }
@@ -90,6 +105,17 @@ SELECTION_COLUMNS = [
     "activated_research_level",
     "activated_research_reasons",
     "activated_research_warnings",
+    "real_technical_score",
+    "technical_trend_score",
+    "technical_momentum_score",
+    "technical_volume_score",
+    "technical_volatility_score",
+    "technical_position_score",
+    "macd_signal",
+    "rsi14",
+    "position_52w",
+    "technical_signal_summary",
+    "technical_risk_flags",
 ]
 BACKTEST_COLUMNS = [
     "ticker",
@@ -119,6 +145,17 @@ STOCK_DETAIL_FIELDS = [
     "selection_strengths",
     "selection_risks",
     "selection_explanation",
+    "real_technical_score",
+    "technical_trend_score",
+    "technical_momentum_score",
+    "technical_volume_score",
+    "technical_volatility_score",
+    "technical_position_score",
+    "macd_signal",
+    "rsi14",
+    "position_52w",
+    "technical_signal_summary",
+    "technical_risk_flags",
 ]
 
 
@@ -192,6 +229,18 @@ def _metric_value(df: pd.DataFrame, field: str) -> Any:
     return pd.to_numeric(df[field], errors="coerce").mean()
 
 
+def _has_nonempty_value(value: Any) -> bool:
+    if isinstance(value, list):
+        return any(bool(item) for item in value)
+    if isinstance(value, tuple) or isinstance(value, set):
+        return any(bool(item) for item in value)
+    if value is None:
+        return False
+    if pd.isna(value):
+        return False
+    return bool(str(value).strip())
+
+
 def _first_available_field(df: pd.DataFrame, fields: list[str]) -> str | None:
     for field in fields:
         if field in df.columns:
@@ -212,6 +261,16 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
     else:
         bucket = pd.Series([""] * len(source), index=source.index)
     warnings = collect_warning_fields(source)
+    technical_history_count = (
+        int(source["technical_history_available"].fillna(False).astype(bool).sum())
+        if "technical_history_available" in source.columns
+        else 0
+    )
+    technical_high_risk_count = (
+        int(source["technical_risk_flags"].map(_has_nonempty_value).sum())
+        if "technical_risk_flags" in source.columns
+        else 0
+    )
     return {
         "total_count": int(len(source)),
         "universe_size": int(source.attrs.get("universe_size", len(source))) if hasattr(source, "attrs") else int(len(source)),
@@ -220,6 +279,9 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         "exclude_count": int(bucket.isin(["Exclude", "Excluded"]).sum()),
         "average_selection_score": _metric_value(source, selection_score_field) if selection_score_field else None,
         "average_composite_score": _metric_value(source, composite_score_field) if composite_score_field else None,
+        "average_real_technical_score": _metric_value(source, "real_technical_score"),
+        "technical_history_available_count": technical_history_count,
+        "technical_high_risk_count": technical_high_risk_count,
         "average_risk_score": _metric_value(source, "risk_score"),
         "factor_count": len([field for field in DEFAULT_FACTOR_COLUMNS if field in source.columns]),
         "backtest_available_count": int(source["backtest_available"].fillna(False).sum()) if "backtest_available" in source.columns else 0,
@@ -340,6 +402,9 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
         ("Exclude 数量", summary["exclude_count"], "排除或不可用对象"),
         ("平均 activated_selection_score", summary["average_selection_score"], "激活后的研究分数均值"),
         ("平均 activated_composite_score", summary["average_composite_score"], "激活后的综合研究分数均值"),
+        ("平均 real_technical_score", summary["average_real_technical_score"], "真实技术指标研究分均值"),
+        ("技术历史可用数量", summary["technical_history_available_count"], "历史行情可用的研究对象"),
+        ("技术风险提示数量", summary["technical_high_risk_count"], "存在技术风险提示的对象"),
         ("平均 risk_score", summary["average_risk_score"], "风险评分均值"),
         ("因子数量", summary["factor_count"], "可识别默认因子数量"),
         ("可回测数量", summary["backtest_available_count"], "Backtest Foundation 可用数量"),
@@ -439,6 +504,22 @@ def render_stock_workstation_page(df: Any) -> dict[str, Any]:
     report = build_stock_research_report(row)
     st.text_area("只读报告", value=report, height=320, disabled=True)
     return {"selected_row": row.copy(deep=True), "report": report}
+
+
+def _render_technical_indicator_cards(row: pd.Series) -> None:
+    st.subheader("技术指标")
+    cards = [
+        ("趋势", safe_get(row, "technical_trend_score"), safe_get(row, "technical_signal_summary")),
+        ("动量", safe_get(row, "technical_momentum_score"), f"RSI {format_value(safe_get(row, 'rsi14'))} / MACD {format_value(safe_get(row, 'macd_signal'))}"),
+        ("量能", safe_get(row, "technical_volume_score"), f"Volume ratio {format_value(safe_get(row, 'volume_ratio_20d'))}"),
+        ("波动", safe_get(row, "technical_volatility_score"), f"Volatility {format_value(safe_get(row, 'volatility_20d'))}"),
+        ("位置", safe_get(row, "technical_position_score"), f"52w position {format_value(safe_get(row, 'position_52w'))}"),
+        ("风险提示", safe_get(row, "technical_risk_flags"), safe_get(row, "technical_indicator_warnings")),
+    ]
+    columns = st.columns(3)
+    for column, (title, value, caption) in zip(columns * 2, cards):
+        with column:
+            _render_metric_card(title, value, caption)
 
 
 def render_backtest_page(df: Any) -> pd.DataFrame:
@@ -650,6 +731,8 @@ def render_research_workstation_product(df: Any) -> dict[str, Any]:
         _render_page_header("个股研究工作台", "Research Workstation 页面框架")
         _render_empty_notice("Research Workstation")
         return {"metrics": {}, "selected_row": None, "compare": pd.DataFrame(), "charts": {}, "factor_lab": {}, "pipeline": [], "report": ""}
+    if any(field in source.columns for field in ["real_technical_score", "technical_trend_score", "technical_risk_flags"]):
+        _render_technical_indicator_cards(source.iloc[0].copy(deep=True))
     return render_research_workstation(source)
 
 
