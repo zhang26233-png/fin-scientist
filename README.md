@@ -2,9 +2,9 @@
 
 ## Current Version
 
-Current version: v6.3.3
+Current version: v6.3.5
 
-v6.3.3 adds EastMoney Endpoint Robust Fix. EastMoney Direct now tries push2, push2his, and 82.push2 endpoints in order, keeps requests as `requests.get(url, params=params, headers=headers, timeout=timeout)`, and switches endpoint immediately on HTTP 502.
+v6.3.5 adds Full A-Share Pagination and Cache Layer. The realtime A-share loader now prioritizes Tencent Realtime, then Sina Realtime, EastMoney Direct, AkShare, BaoStock, Local Cache, and finally Demo. Tencent Realtime scans supported A-share code ranges with bounded batch requests and targets raw rows above 4000 when the public endpoint is available.
 
 Startup command remains:
 
@@ -18,12 +18,23 @@ Local data-source checks:
 
 ```powershell
 python scripts/check_network.py
+python scripts/check_tencent.py
+python scripts/check_sina.py
 python scripts/check_eastmoney.py
 python scripts/check_akshare.py
 python scripts/check_baostock.py
 ```
 
-The preferred result is `source=EastMoney Direct`, `status=Live`, and more than 1000 rows. If EastMoney returns zero rows, inspect `last_error`, `active_endpoint`, `endpoint_attempts`, `http_status`, and `raw_preview` from `python scripts/check_eastmoney.py`. If EastMoney is unavailable, the app tries AkShare and BaoStock. If all live sources fail or return too few rows, the app falls back to Demo and displays the failure reason in Dashboard and System Status.
+The preferred result is `source=Tencent Realtime`, `status=Live`, and raw rows near or above 4000. If Tencent is partial or unavailable, the loader continues through Sina, EastMoney Direct, AkShare, and BaoStock. If all external sources fail, the app reads Local Cache before Demo.
+
+Runtime cache files:
+
+```text
+cache/a_share_universe_latest.csv
+cache/a_share_quotes_latest.csv
+```
+
+The `cache/` directory is ignored by Git. Successful external source loads with more than 1000 rows update the cache. Dashboard and System Status display data source, data status, raw count, filtered count, cache status, cache update time, load time, and update time. If the final universe has fewer than 1000 rows, the page shows "真实数据不足，仅用于结构验证。"
 
 ### Project Structure
 
@@ -37,14 +48,14 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v6.3.3 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/eastmoney_loader.py` and `data/a_share_loader.py`.
+`legacy_app.py` is not an unused backup. In v6.3.5 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`.
 
-v6.3.3 EastMoney Endpoint Robust Fix:
+v6.3.5 Full A-Share Pagination and Cache Layer:
 
-- Added EastMoney Direct endpoint fallback for push2, push2his, and 82.push2.
-- Uses EastMoney Direct, AkShare, BaoStock, then Demo fallback.
-- Dashboard and System Status show data source, status, stock count, load time, update time, and recent error.
-- Built-in Demo fallback keeps pages non-empty when live sources fail or return too few rows.
+- Expanded Tencent Realtime batch scanning for supported A-share markets.
+- Uses Tencent Realtime, Sina Realtime, EastMoney Direct, AkShare, BaoStock, Local Cache, then Demo fallback.
+- Dashboard and System Status show data source, status, raw count, filtered count, stock count, cache status, cache update time, load time, update time, and recent error.
+- Local Cache keeps pages usable when external sources fail.
 - Keeps all output read-only and neutral for learning and research.
 - Does not modify scoring logic, default sorting, trading logic, stock pools, or `core/scoring.py`.
 

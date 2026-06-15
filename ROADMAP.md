@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v6.3.3.
+Current: v6.3.5.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -225,7 +225,9 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.3.1: Real A-Share Realtime Data Layer completed.
 - v6.3.2: EastMoney Debug & Endpoint Fix completed.
 - v6.3.3: EastMoney Endpoint Robust Fix completed.
-- Next target: v6.4.0 Real Fundamental and Technical Data Integration.
+- v6.3.4: Multi Realtime Source Fallback completed.
+- v6.3.5: Full A-Share Pagination and Cache Layer completed.
+- Next target: v6.4.0 Research Score Activation.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -484,6 +486,24 @@ Completed v6.3.3 scope:
 - Kept EastMoney requests on `requests.get(url, params=params, headers=headers, timeout=timeout)` without prebuilding encoded URLs.
 - Added immediate endpoint switch on HTTP 502.
 - Added `active_endpoint` and `endpoint_attempts` diagnostics to EastMoney result attrs and local check output.
+- Kept scoring logic, stock-selection algorithms, trading logic, and `core/scoring.py` unchanged.
+
+Completed v6.3.4 scope:
+
+- Added Tencent Realtime and Sina Realtime as A-share realtime fallback sources.
+- Updated source priority to Tencent Realtime, Sina Realtime, EastMoney Direct, AkShare, BaoStock, and Demo.
+- Added bounded timeout behavior, unified realtime fields, source attempts metadata, and local check scripts for Tencent and Sina.
+- Updated Dashboard and System Status to show all source attempts.
+- Kept scoring logic, stock-selection algorithms, trading logic, and `core/scoring.py` unchanged.
+
+Completed v6.3.5 scope:
+
+- Expanded Tencent Realtime scanning across supported Shanghai, Shenzhen, ChiNext, STAR, and Beijing-style code ranges with bounded batch requests.
+- Merged and deduplicated realtime rows with a target raw universe above 4000 when public endpoints are available.
+- Added `data/local_cache.py` with `save_a_share_cache`, `load_a_share_cache`, and `get_cache_status`.
+- Added local CSV caches at `cache/a_share_universe_latest.csv` and `cache/a_share_quotes_latest.csv`.
+- Updated `data/a_share_loader.py` priority to Tencent Realtime, Sina Realtime, EastMoney Direct, AkShare, BaoStock, Local Cache, and Demo.
+- Added cache metadata attrs for data status pages and Dashboard display.
 - Kept scoring logic, stock-selection algorithms, trading logic, and `core/scoring.py` unchanged.
 
 Boundary:

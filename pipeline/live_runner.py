@@ -259,7 +259,7 @@ def run_live_pipeline(
         source_attrs = dict(universe.attrs)
         if universe.empty:
             raise ValueError("A-share Universe is empty.")
-        if source_attrs.get("data_status") != "Live" or len(universe) <= 1000:
+        if source_attrs.get("data_status") not in {"Live", "Cache"} or len(universe) <= 1000:
             demo = _build_demo_result(max_stocks=max_stocks)
             demo.attrs["last_error"] = source_attrs.get("last_error", "Real A-share source unavailable or too small.")
             return demo
@@ -275,8 +275,6 @@ def run_live_pipeline(
         result = _run_pipeline(universe, fundamental_df=None, price_history_dict=histories)
         if result.empty:
             raise ValueError("Pipeline returned an empty result.")
-        if use_sample_if_no_data and ("selection_score" not in result.columns or pd.to_numeric(result["selection_score"], errors="coerce").notna().sum() == 0):
-            return _build_demo_result(max_stocks=max_stocks)
         return _finalize(result, is_demo=False, source=source_attrs.get("data_source", "A-share Universe"), source_attrs=source_attrs)
     except Exception as exc:
         if not use_sample_if_no_data:

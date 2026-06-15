@@ -25,12 +25,18 @@ def test_write_and_read_a_share_universe_cache(tmp_path, monkeypatch):
     )
 
     metadata = local_cache.write_a_share_cache(universe=frame, quotes=frame)
+    direct_metadata = local_cache.save_a_share_cache(frame, "universe")
     cached = local_cache.read_a_share_universe_cache()
+    loaded = local_cache.load_a_share_cache("universe")
+    status = local_cache.get_cache_status("universe")
 
     assert Path(metadata["cache_universe_path"]) == universe_path
     assert Path(metadata["cache_quotes_path"]) == quotes_path
+    assert Path(direct_metadata["cache_path"]) == universe_path
+    assert Path(status["cache_path"]) == universe_path
     assert metadata["cache_status"] == "Available"
     assert len(cached) == 1
+    assert len(loaded) == 1
     assert cached.iloc[0]["ticker"] == "600000"
     assert cached.attrs["cache_status"] == "Available"
 
@@ -41,7 +47,9 @@ def test_missing_cache_returns_empty_with_metadata(tmp_path, monkeypatch):
     monkeypatch.setattr(local_cache, "A_SHARE_QUOTES_CACHE", tmp_path / "missing_quotes.csv")
 
     cached = local_cache.read_a_share_universe_cache()
+    status = local_cache.get_cache_status("universe")
 
     assert cached.empty
     assert cached.attrs["cache_status"] == "Missing"
+    assert status["cache_status"] == "Missing"
     assert "missing" in cached.attrs["last_error"].lower()

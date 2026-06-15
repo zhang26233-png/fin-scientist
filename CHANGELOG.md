@@ -2,6 +2,28 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.3.5
+
+- Added Full A-Share Pagination and Cache Layer.
+- Expanded `data/tencent_loader.py` from partial quote batches to bounded multi-range A-share scanning across supported Shanghai, Shenzhen, ChiNext, STAR, and Beijing-style prefixes.
+- Kept unified realtime output fields: `ticker`, `name`, `latest_price`, `pct_change`, `change_amount`, `volume`, `turnover`, `open`, `high`, `low`, `prev_close`, `market`, `data_source`, `data_status`, `data_timestamp`, and `data_warning`.
+- Added `data/local_cache.py` with `save_a_share_cache`, `load_a_share_cache`, `get_cache_status`, and compatibility helpers for universe and quotes cache files.
+- Added runtime cache files under ignored `cache/`: `a_share_universe_latest.csv` and `a_share_quotes_latest.csv`.
+- Updated `data/a_share_loader.py` source priority to Tencent Realtime, Sina Realtime, EastMoney Direct, AkShare, BaoStock, Local Cache, and Demo.
+- External source success with more than 1000 rows writes cache; external source failure reads Local Cache before Demo.
+- Updated Dashboard and System Status to display current source, data status, raw count, filtered count, cache status, cache update time, load time, and update time.
+- Updated `pipeline/live_runner.py` so Live and Cache universe data can continue through the read-only pipeline without being forced to Demo solely because downstream fields are incomplete.
+- Added cache and pipeline tests for local cache behavior, cache fallback, metadata, import boundaries, and no-crash empty data handling.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, scoring weights, selection algorithms, trading logic, buy/sell advice, target prices, position suggestions, return promises, machine-learning prediction, paid API keys, databases, and vector stores unchanged.
+
+## v6.3.4
+
+- Added Multi Realtime Source Fallback.
+- Added `data/tencent_loader.py`, `data/sina_loader.py`, `scripts/check_tencent.py`, `scripts/check_sina.py`, `tests/test_tencent_loader.py`, and `tests/test_sina_loader.py`.
+- Updated data-source priority to Tencent Realtime, Sina Realtime, EastMoney Direct, AkShare, BaoStock, and Demo.
+- Added bounded timeout handling, unified realtime fields, source attempt metadata, and all-source status display.
+- Kept scoring logic, stock-selection algorithms, trading logic, and `core/scoring.py` unchanged.
+
 ## v6.3.3
 
 - Added robust EastMoney endpoint fallback in `data/eastmoney_loader.py`.

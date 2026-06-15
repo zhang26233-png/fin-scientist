@@ -20,18 +20,26 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.3.3
-- CURRENT_STAGE = Real A-Share Realtime Data Layer
-- NEXT_TARGET = v6.4.0 Real Fundamental and Technical Data Integration
+- CURRENT_VERSION = v6.3.5
+- CURRENT_STAGE = Full A-Share Pagination and Cache Layer
+- NEXT_TARGET = v6.4.0 Research Score Activation
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.3.3"`
-- `legacy_app.py`: `APP_VERSION = "v6.3.3"`
-- `README.md`: Current version: v6.3.3
+- `app.py`: `APP_VERSION = "v6.3.5"`
+- `legacy_app.py`: `APP_VERSION = "v6.3.5"`
+- `README.md`: Current version: v6.3.5
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
-V6.3.3 adds EastMoney Endpoint Robust Fix. EastMoney Direct now tries `push2`, `push2his`, and `82.push2` endpoints in order using `requests.get(url, params=params, headers=headers, timeout=timeout)`, switches endpoint immediately on HTTP 502, records `active_endpoint` and `endpoint_attempts`, and keeps the same timeout/fallback boundary. This version only strengthens the free data-source layer and does not modify stock-selection algorithms, scoring weights, `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, or `selection_score`.
+V6.3.5 adds Full A-Share Pagination and Cache Layer. Tencent Realtime now scans supported A-share code ranges across Shanghai, Shenzhen, ChiNext, STAR, and Beijing-style prefixes through bounded batch quote requests, merges and deduplicates tickers, and targets raw rows above 4000 when the public endpoint is available. `data/a_share_loader.py` keeps the priority order Tencent Realtime, Sina Realtime, EastMoney Direct, AkShare, BaoStock, Local Cache, then Demo. `data/local_cache.py` stores `cache/a_share_universe_latest.csv` and `cache/a_share_quotes_latest.csv`; external source success with more than 1000 rows writes cache, and external failure reads Local Cache before Demo. Dashboard and System Status expose data source, data status, raw count, filtered count, cache status, cache update time, load time, and update time. This version only strengthens the free data-source and cache layer and does not modify stock-selection algorithms, scoring weights, `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, or `selection_score`.
+
+V6.3.5 file additions and data artifacts:
+
+- `data/local_cache.py`
+- `cache/a_share_universe_latest.csv` runtime cache, ignored by Git
+- `cache/a_share_quotes_latest.csv` runtime cache, ignored by Git
+- Full A-Share Pagination in `data/tencent_loader.py`
+- Cache Layer in `data/a_share_loader.py`
 
 ## Current Architecture
 

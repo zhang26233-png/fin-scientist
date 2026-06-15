@@ -14,6 +14,15 @@ A_SHARE_UNIVERSE_CACHE = CACHE_DIR / "a_share_universe_latest.csv"
 A_SHARE_QUOTES_CACHE = CACHE_DIR / "a_share_quotes_latest.csv"
 
 
+def _cache_path(cache_type: str) -> Path:
+    normalized = str(cache_type).strip().lower()
+    if normalized in {"universe", "a_share_universe"}:
+        return A_SHARE_UNIVERSE_CACHE
+    if normalized in {"quotes", "quote", "a_share_quotes"}:
+        return A_SHARE_QUOTES_CACHE
+    raise ValueError(f"Unsupported cache_type: {cache_type}")
+
+
 def _now_text() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -40,6 +49,16 @@ def cache_metadata() -> dict[str, Any]:
     }
 
 
+def get_cache_status(cache_type: str) -> dict[str, Any]:
+    """Return cache metadata for one cache type."""
+    path = _cache_path(cache_type)
+    return {
+        "cache_status": "Available" if path.exists() else "Missing",
+        "cache_updated_at": _mtime_text(path),
+        "cache_path": str(path),
+    }
+
+
 def write_frame_cache(frame: pd.DataFrame, path: Path) -> None:
     """Write a DataFrame cache atomically enough for local single-user use."""
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -57,18 +76,35 @@ def write_a_share_cache(*, universe: pd.DataFrame | None = None, quotes: pd.Data
     return metadata
 
 
-def read_a_share_universe_cache() -> pd.DataFrame:
-    """Read the latest cached A-share universe, returning empty on miss/failure."""
-    if not A_SHARE_UNIVERSE_CACHE.exists():
+def save_a_share_cache(df: pd.DataFrame, cache_type: str) -> dict[str, Any]:
+    """Save one A-share cache file by type: universe or quotes."""
+    path = _cache_path(cache_type)
+    write_frame_cache(df, path)
+    status = get_cache_status(cache_type)
+    status["cache_written_at"] = _now_text()
+    return status
+
+
+def load_a_share_cache(cache_type: str) -> pd.DataFrame:
+    """Load one A-share cache file by type, returning empty on miss/failure."""
+    path = _cache_path(cache_type)
+    if not path.exists():
         frame = pd.DataFrame()
-        frame.attrs.update(cache_metadata())
+        frame.attrs.update(get_cache_status(cache_type))
         frame.attrs["last_error"] = "Local cache file is missing."
         return frame
     try:
-        frame = pd.read_csv(A_SHARE_UNIVERSE_CACHE, dtype={"ticker": str, "code": str})
+        frame = pd.read_csv(path, dtype={"ticker": str, "code": str})
     except Exception as exc:
         frame = pd.DataFrame()
         frame.attrs["last_error"] = repr(exc)
+    frame.attrs.update(get_cache_status(cache_type))
+    return frame
+
+
+def read_a_share_universe_cache() -> pd.DataFrame:
+    """Read the latest cached A-share universe, returning empty on miss/failure."""
+    frame = load_a_share_cache("universe")
     frame.attrs.update(cache_metadata())
     return frame
 
@@ -78,7 +114,10 @@ __all__ = [
     "A_SHARE_UNIVERSE_CACHE",
     "CACHE_DIR",
     "cache_metadata",
+    "get_cache_status",
+    "load_a_share_cache",
     "read_a_share_universe_cache",
+    "save_a_share_cache",
     "write_a_share_cache",
     "write_frame_cache",
 ]

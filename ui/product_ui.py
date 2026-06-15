@@ -296,6 +296,8 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
     )
     if data_status == "Live":
         st.success(status_text)
+    elif data_status == "Cache":
+        st.info(status_text)
     elif data_status == "Fallback":
         st.warning(status_text)
     else:
