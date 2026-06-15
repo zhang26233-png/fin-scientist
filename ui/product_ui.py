@@ -21,8 +21,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.3.5"
-PRODUCT_STAGE = "Full A-Share Pagination and Cache Layer"
+PRODUCT_VERSION = "v6.4.0"
+PRODUCT_STAGE = "Research Score Activation"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -60,21 +60,36 @@ REQUIRED_FIELD_GROUPS = {
     "Return Analysis": ["period_return", "annualized_return", "volatility", "max_drawdown", "win_rate"],
     "Backtest Evaluation": ["risk_score", "risk_level", "return_risk_ratio", "performance_label"],
     "Stock Selection": ["selection_score", "selection_bucket", "selection_status", "selection_rank"],
+    "Research Score Activation": [
+        "quote_available",
+        "quote_quality_score",
+        "liquidity_score",
+        "momentum_score",
+        "price_position_score",
+        "activated_technical_score",
+        "activated_composite_score",
+        "activated_selection_score",
+        "activated_research_bucket",
+        "activated_research_status",
+        "activated_research_level",
+    ],
     "Explainable Selection": ["selection_thesis", "selection_strengths", "selection_risks", "selection_explanation"],
     "Factor Research Lab": ["factor_name", "factor_ic", "factor_rank_ic", "factor_effectiveness_label"],
 }
 
 UNIVERSE_COLUMNS = ["ticker", "name", "market", "industry", "list_date", "status", "universe_status"]
 SELECTION_COLUMNS = [
-    "selection_rank",
     "ticker",
     "name",
-    "selection_score",
-    "selection_bucket",
-    "selection_status",
-    "selection_quality_label",
-    "selection_summary",
-    "selection_risk_notes",
+    "latest_price",
+    "pct_change",
+    "turnover",
+    "activated_selection_score",
+    "activated_research_bucket",
+    "activated_research_status",
+    "activated_research_level",
+    "activated_research_reasons",
+    "activated_research_warnings",
 ]
 BACKTEST_COLUMNS = [
     "ticker",
@@ -177,13 +192,23 @@ def _metric_value(df: pd.DataFrame, field: str) -> Any:
     return pd.to_numeric(df[field], errors="coerce").mean()
 
 
+def _first_available_field(df: pd.DataFrame, fields: list[str]) -> str | None:
+    for field in fields:
+        if field in df.columns:
+            return field
+    return None
+
+
 def build_dashboard_summary(df: Any) -> dict[str, Any]:
     """Build product dashboard metrics from the current research frame."""
     source = safe_copy_frame(df)
+    bucket_field = _first_available_field(source, ["activated_research_bucket", "selection_bucket"])
+    selection_score_field = _first_available_field(source, ["activated_selection_score", "selection_score"])
+    composite_score_field = _first_available_field(source, ["activated_composite_score", "composite_score"])
     if source.empty:
         bucket = pd.Series(dtype=object)
-    elif "selection_bucket" in source.columns:
-        bucket = source["selection_bucket"].fillna("")
+    elif bucket_field:
+        bucket = source[bucket_field].fillna("")
     else:
         bucket = pd.Series([""] * len(source), index=source.index)
     warnings = collect_warning_fields(source)
@@ -193,8 +218,8 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         "core_count": int(bucket.eq("Core").sum()),
         "watch_count": int(bucket.eq("Watch").sum()),
         "exclude_count": int(bucket.isin(["Exclude", "Excluded"]).sum()),
-        "average_selection_score": _metric_value(source, "selection_score"),
-        "average_composite_score": _metric_value(source, "composite_score"),
+        "average_selection_score": _metric_value(source, selection_score_field) if selection_score_field else None,
+        "average_composite_score": _metric_value(source, composite_score_field) if composite_score_field else None,
         "average_risk_score": _metric_value(source, "risk_score"),
         "factor_count": len([field for field in DEFAULT_FACTOR_COLUMNS if field in source.columns]),
         "backtest_available_count": int(source["backtest_available"].fillna(False).sum()) if "backtest_available" in source.columns else 0,
@@ -313,8 +338,8 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
         ("Core 数量", summary["core_count"], "核心研究对象"),
         ("Watch 数量", summary["watch_count"], "观察研究对象"),
         ("Exclude 数量", summary["exclude_count"], "排除或不可用对象"),
-        ("平均 selection_score", summary["average_selection_score"], "选股层研究分数均值"),
-        ("平均 composite_score", summary["average_composite_score"], "综合评分均值"),
+        ("平均 activated_selection_score", summary["average_selection_score"], "激活后的研究分数均值"),
+        ("平均 activated_composite_score", summary["average_composite_score"], "激活后的综合研究分数均值"),
         ("平均 risk_score", summary["average_risk_score"], "风险评分均值"),
         ("因子数量", summary["factor_count"], "可识别默认因子数量"),
         ("可回测数量", summary["backtest_available_count"], "Backtest Foundation 可用数量"),
@@ -366,8 +391,16 @@ def render_selection_page(df: Any) -> dict[str, pd.DataFrame]:
     """Render stock-selection result page."""
     source = safe_copy_frame(df)
     _render_page_header("选股结果", "Core、Watch、风险和数据缺失对象分组")
-    table = _render_table(source, SELECTION_COLUMNS, "Stock Selection")
-    bucket = source["selection_bucket"] if "selection_bucket" in source.columns else pd.Series([""] * len(source), index=source.index)
+    display_source = source.copy(deep=True)
+    if "activated_selection_score" in display_source.columns:
+        display_source = display_source.sort_values(
+            by="activated_selection_score",
+            ascending=False,
+            kind="mergesort",
+        )
+    table = _render_table(display_source, SELECTION_COLUMNS, "Stock Selection")
+    bucket_field = _first_available_field(source, ["activated_research_bucket", "selection_bucket"])
+    bucket = source[bucket_field] if bucket_field else pd.Series([""] * len(source), index=source.index)
     risk = source["risk_level"] if "risk_level" in source.columns else pd.Series([""] * len(source), index=source.index)
     warnings = collect_warning_fields(source)
     sections = {

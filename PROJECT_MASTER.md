@@ -20,16 +20,24 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.3.5
-- CURRENT_STAGE = Full A-Share Pagination and Cache Layer
-- NEXT_TARGET = v6.4.0 Research Score Activation
+- CURRENT_VERSION = v6.4.0
+- CURRENT_STAGE = Research Score Activation
+- NEXT_TARGET = v6.5.0 Real Technical Feature Integration
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.3.5"`
-- `legacy_app.py`: `APP_VERSION = "v6.3.5"`
-- `README.md`: Current version: v6.3.5
+- `app.py`: `APP_VERSION = "v6.4.0"`
+- `legacy_app.py`: `APP_VERSION = "v6.4.0"`
+- `README.md`: Current version: v6.4.0
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
+
+V6.4.0 adds Research Score Activation. `research/score_activation.py` converts realtime quote fields from the Live A-share universe into additive `activated_*` research fields, including quote availability, quote quality, liquidity, momentum, intraday price position, activated technical score, activated composite score, activated selection score, research level, research bucket, status, reasons, and warnings. Tencent-style turnover units are normalized inside the activation calculation without mutating the original `turnover` column. `pipeline/live_runner.py` calls `activate_research_scores()` at the end of the read-only pipeline, after explainable selection and factor fields are assembled. Dashboard and Selection Results now prefer activated research score fields while preserving the old `selection_score`, `composite_score`, `technical_score`, `fundamental_score`, and `candidate_rank` contracts. This version does not modify `core/scoring.py`, existing scoring functions, stock-selection algorithms, trading logic, or default underlying DataFrame order, and it does not create buy/sell/hold advice, target prices, position suggestions, return promises, machine-learning predictions, API keys, databases, or vector stores.
+
+V6.4.0 file additions:
+
+- `research/__init__.py`
+- `research/score_activation.py`
+- `tests/test_score_activation.py`
 
 V6.3.5 adds Full A-Share Pagination and Cache Layer. Tencent Realtime now scans supported A-share code ranges across Shanghai, Shenzhen, ChiNext, STAR, and Beijing-style prefixes through bounded batch quote requests, merges and deduplicates tickers, and targets raw rows above 4000 when the public endpoint is available. `data/a_share_loader.py` keeps the priority order Tencent Realtime, Sina Realtime, EastMoney Direct, AkShare, BaoStock, Local Cache, then Demo. `data/local_cache.py` stores `cache/a_share_universe_latest.csv` and `cache/a_share_quotes_latest.csv`; external source success with more than 1000 rows writes cache, and external failure reads Local Cache before Demo. Dashboard and System Status expose data source, data status, raw count, filtered count, cache status, cache update time, load time, and update time. This version only strengthens the free data-source and cache layer and does not modify stock-selection algorithms, scoring weights, `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, or `selection_score`.
 
@@ -238,6 +246,7 @@ Generated from the current `strategy/` directory.
 | Chart Center | `ui/chart_center.py` | active | Read-only chart center for score profile, return-risk scatter, drawdown-risk view, score breakdown, ranking, and quality distribution |
 | Chart components | `ui/chart_components.py` | active | Safe numeric conversion, defensive chart DataFrame preparation, ranking data, scatter data, score profile data, and distribution data |
 | Web Product Integration | `ui/product_ui.py` | active | Product-level navigation, dashboard, module pages, data-quality status, Chart Center page, Factor Lab page, and empty-state-safe Streamlit rendering |
+| Research Score Activation | `research.score_activation` | active | Additive realtime quote activation fields for research scoring without overwriting old score columns |
 | Factor Research Lab | `factor/factor_lab.py` | active | Read-only factor dataset builder, z-score normalization, factor grouping, factor warnings, and factor summaries |
 | Factor metrics | `factor/factor_metrics.py` | active | Pearson IC, Rank IC, group returns, and factor effectiveness labels |
 | Factor report | `factor/factor_report.py` | active | Structured neutral factor research report fields |
@@ -860,6 +869,26 @@ Factor Research Lab is a read-only quantitative factor research foundation. V6.0
 | System status page | `ui.product_ui` | Version, stage, module registry, missing fields, warning summary, test status, and data-source notes |
 
 Web Product Integration is a read-only Streamlit product layer. V6.1.0 makes completed modules visible through a unified product navigation and stores screening pipeline outputs in session state for reuse by the product pages. Empty DataFrames and missing fields render page structure and explanatory notices instead of blank pages. It does not modify `core/scoring.py`, `strategy_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, default sorting, default screening workflow, upstream research modules, data sources, or trading logic.
+
+### Research Score Activation
+
+| Field | Source | Meaning |
+|---|---|---|
+| `quote_available` | `research.score_activation` | Whether realtime quote fields are sufficient for score activation |
+| `quote_quality_score` | `research.score_activation` | Completeness score for realtime price, change, volume, turnover, and OHLC fields |
+| `liquidity_score` | `research.score_activation` | Liquidity score based on turnover, with volume fallback |
+| `momentum_score` | `research.score_activation` | Neutral short-term price-change context score |
+| `price_position_score` | `research.score_activation` | Intraday price-position score from latest, open, high, and low |
+| `activated_technical_score` | `research.score_activation` | Additive technical activation from liquidity, momentum, and price position |
+| `activated_composite_score` | `research.score_activation` | Additive composite activation using old composite score when available, otherwise quote-derived inputs |
+| `activated_selection_score` | `research.score_activation` | Additive research selection activation score with optional risk-score deduction |
+| `activated_research_level` | `research.score_activation` | High, Medium, Low, or Unavailable research level |
+| `activated_research_bucket` | `research.score_activation` | Core, Watch, Exclude, or Unavailable research bucket |
+| `activated_research_status` | `research.score_activation` | Selected, Watch, Excluded, or Incomplete research status |
+| `activated_research_reasons` | `research.score_activation` | Neutral reasons explaining score activation inputs |
+| `activated_research_warnings` | `research.score_activation` | Data-quality and short-term volatility warnings |
+
+Research Score Activation is additive and read-only. V6.4.0 does not modify `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, existing scoring functions, default sorting, stock-selection algorithms, data-source order, or trading logic. It only lets realtime quote fields participate in separate activated research fields for learning, screening structure, and further research review.
 
 ## Current Development Principles
 

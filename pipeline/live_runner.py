@@ -13,6 +13,7 @@ from backtest.backtest_evaluation import build_backtest_evaluation
 from data.a_share_loader import load_a_share_universe
 from backtest.return_analysis import build_return_analysis
 from factor.factor_lab import build_factor_dataset
+from research.score_activation import ACTIVATED_RESEARCH_FIELDS, activate_research_scores
 from screening.candidate_pool import build_candidate_pool
 from screening.composite_score_engine import build_composite_quant_score
 from screening.fundamental_screening import build_fundamental_screening
@@ -48,6 +49,7 @@ LIVE_PIPELINE_FIELDS = [
     "factor_ic",
     "factor_rank_ic",
     "factor_effectiveness_label",
+    *ACTIVATED_RESEARCH_FIELDS,
 ]
 
 DEMO_NOTICE = "当前为 Demo 数据，用于展示系统结构；接入真实行情后可替换为真实结果。"
@@ -229,7 +231,8 @@ def _run_pipeline(universe: pd.DataFrame, fundamental_df: pd.DataFrame | None, p
     backtest_evaluation = build_backtest_evaluation(return_analysis)
     stock_selection = build_stock_selection(backtest_evaluation)
     explainable_selection = build_explainable_selection(stock_selection)
-    return _attach_factor_fields(explainable_selection)
+    with_factors = _attach_factor_fields(explainable_selection)
+    return activate_research_scores(with_factors)
 
 
 def _build_demo_result(max_stocks: int | None = None) -> pd.DataFrame:

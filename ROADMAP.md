@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v6.3.5.
+Current: v6.4.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -227,7 +227,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.3.3: EastMoney Endpoint Robust Fix completed.
 - v6.3.4: Multi Realtime Source Fallback completed.
 - v6.3.5: Full A-Share Pagination and Cache Layer completed.
-- Next target: v6.4.0 Research Score Activation.
+- v6.4.0: Research Score Activation completed.
+- Next target: v6.5.0 Real Technical Feature Integration.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -505,6 +506,16 @@ Completed v6.3.5 scope:
 - Updated `data/a_share_loader.py` priority to Tencent Realtime, Sina Realtime, EastMoney Direct, AkShare, BaoStock, Local Cache, and Demo.
 - Added cache metadata attrs for data status pages and Dashboard display.
 - Kept scoring logic, stock-selection algorithms, trading logic, and `core/scoring.py` unchanged.
+
+Completed v6.4.0 scope:
+
+- Added `research/__init__.py` and `research/score_activation.py`.
+- Added additive realtime quote activation fields: `quote_available`, `quote_quality_score`, `liquidity_score`, `momentum_score`, `price_position_score`, `activated_technical_score`, `activated_composite_score`, `activated_selection_score`, `activated_research_level`, `activated_research_bucket`, `activated_research_status`, `activated_research_reasons`, and `activated_research_warnings`.
+- Integrated `activate_research_scores()` at the end of `pipeline/live_runner.py` after explainable selection and factor fields are assembled.
+- Updated Dashboard to prefer activated selection/composite scores and activated Core/Watch/Exclude buckets when available.
+- Updated Selection Results to display realtime quote fields and activated research fields, with display-only sorting by `activated_selection_score` while preserving the underlying DataFrame order.
+- Added focused tests for score activation, input immutability, quote availability, scoring thresholds, warnings, risk-score deduction, row-order preservation, and module import.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, existing scoring functions, stock-selection algorithms, default underlying order, data-source order, and trading logic unchanged.
 
 Boundary:
 

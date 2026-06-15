@@ -2,6 +2,19 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.4.0
+
+- Added Research Score Activation.
+- Added `research/__init__.py`, `research/score_activation.py`, and `tests/test_score_activation.py`.
+- Added additive fields: `quote_available`, `quote_quality_score`, `liquidity_score`, `momentum_score`, `price_position_score`, `activated_technical_score`, `activated_composite_score`, `activated_selection_score`, `activated_research_level`, `activated_research_bucket`, `activated_research_status`, `activated_research_reasons`, and `activated_research_warnings`.
+- Activated realtime quote data from Tencent/Sina/EastMoney/AkShare/BaoStock/Cache universe rows into separate research score fields without overwriting old score columns.
+- Normalized Tencent-style turnover units inside the activation score calculation without mutating the original `turnover` column.
+- Integrated `activate_research_scores()` at the end of `pipeline/live_runner.py` after explainable selection and factor fields are assembled.
+- Updated Dashboard to prefer activated selection score, activated composite score, and activated research bucket/status/level when available.
+- Updated Selection Results to show realtime quote fields plus activated research score, bucket, status, level, reasons, and warnings; sorting by activated score is display-only and does not mutate the underlying DataFrame order.
+- Added tests for empty input, input immutability, quote availability, quote quality, liquidity, momentum, high/low volatility warnings, price position, score clipping, bucket/status layering, risk-score deduction, old zero score activation, row-order preservation, and module import.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, existing scoring functions, stock-selection algorithms, default underlying order, data-source order, trading logic, buy/sell/hold advice, target prices, position suggestions, return promises, machine-learning prediction, paid API keys, databases, and vector stores unchanged.
+
 ## v6.3.5
 
 - Added Full A-Share Pagination and Cache Layer.

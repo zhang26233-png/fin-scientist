@@ -2,9 +2,13 @@
 
 ## Current Version
 
-Current version: v6.3.5
+Current version: v6.4.0
 
-v6.3.5 adds Full A-Share Pagination and Cache Layer. The realtime A-share loader now prioritizes Tencent Realtime, then Sina Realtime, EastMoney Direct, AkShare, BaoStock, Local Cache, and finally Demo. Tencent Realtime scans supported A-share code ranges with bounded batch requests and targets raw rows above 4000 when the public endpoint is available.
+v6.4.0 adds Research Score Activation. Realtime A-share quote fields now enter an additive research activation layer through `research/score_activation.py`, producing quote quality, liquidity, momentum, intraday price-position, activated technical, activated composite, and activated selection research fields. Tencent-style turnover units are normalized inside the activation calculation without changing the original `turnover` column. Dashboard and Selection Results prefer these activated fields when available, while the original scoring columns and scoring functions remain unchanged.
+
+All outputs remain only for learning and research and do not constitute investment advice. The system does not provide buy/sell/hold advice, target prices, position suggestions, return promises, automated trading, machine-learning predictions, external API keys, databases, or vector stores.
+
+v6.3.5 added Full A-Share Pagination and Cache Layer. The realtime A-share loader now prioritizes Tencent Realtime, then Sina Realtime, EastMoney Direct, AkShare, BaoStock, Local Cache, and finally Demo. Tencent Realtime scans supported A-share code ranges with bounded batch requests and targets raw rows above 4000 when the public endpoint is available.
 
 Startup command remains:
 
@@ -48,7 +52,16 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v6.3.5 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`.
+`legacy_app.py` is not an unused backup. In v6.4.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`; realtime quote research activation lives in `research/score_activation.py`.
+
+v6.4.0 Research Score Activation:
+
+- Adds `quote_available`, `quote_quality_score`, `liquidity_score`, `momentum_score`, `price_position_score`, `activated_technical_score`, `activated_composite_score`, `activated_selection_score`, `activated_research_level`, `activated_research_bucket`, `activated_research_status`, `activated_research_reasons`, and `activated_research_warnings`.
+- Runs score activation at the end of the live pipeline after explainable selection and factor fields are assembled.
+- Dashboard uses activated research buckets and activated score averages when available.
+- Selection Results show realtime quote fields plus activated research fields and can display-sort by activated score without changing the underlying DataFrame order.
+- Keeps `core/scoring.py`, existing scoring functions, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, and `selection_score` unchanged.
+- Keeps all output read-only and neutral for learning and research; it does not constitute investment advice.
 
 v6.3.5 Full A-Share Pagination and Cache Layer:
 
@@ -122,7 +135,7 @@ ui.workstation_ui
               read-only research report preview
 ```
 
-FinScientist v6.3.1 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整选股模型”执行已有研究流水线，并优先通过 EastMoney Direct 获取真实 A 股实时行情；失败时会显示原因并使用 Demo fallback。
+FinScientist v6.4.0 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整选股模型”执行已有研究流水线，并将真实 A 股实时行情字段接入研究评分激活层；失败时会显示原因并使用缓存或 Demo fallback。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -132,7 +145,7 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：v6.3.1
+当前版本：v6.4.0
 
 V6.2.0 Live Pipeline Runner:
 
