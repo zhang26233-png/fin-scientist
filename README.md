@@ -2,9 +2,11 @@
 
 ## Current Version
 
-Current version: v6.5.0
+Current version: v6.5.1
 
-v6.5.0 adds the Real Technical Indicator Engine. Historical price and volume data can now enter a research-only technical indicator layer through `technical/indicator_engine.py`, producing moving averages, MA alignment, RSI14, MACD, ATR14, volatility, drawdown, volume and turnover ratios, 52-week position, technical component scores, risk flags, warnings, and `real_technical_score`. The live pipeline builds these fields before Research Score Activation, so activated research scoring can prefer real technical indicators when history is available and gracefully fall back to realtime quote activation when history is missing.
+v6.5.1 adds Real Historical K-Line Integration. The data layer now includes `data/kline_loader.py` for daily A-share historical K-line loading, local CSV caching, batch construction of `price_history_dict`, and cache fallback when the external source is unavailable. The live pipeline can pass historical K-line data into `technical/indicator_engine.py`, so `real_technical_score` can be based on historical moving averages, RSI, MACD, ATR, volatility, drawdown, volume, turnover, and 52-week position where data is available.
+
+v6.5.0 added the Real Technical Indicator Engine. Historical price and volume data can enter a research-only technical indicator layer through `technical/indicator_engine.py`, producing moving averages, MA alignment, RSI14, MACD, ATR14, volatility, drawdown, volume and turnover ratios, 52-week position, technical component scores, risk flags, warnings, and `real_technical_score`. The live pipeline builds these fields before Research Score Activation, so activated research scoring can prefer real technical indicators when history is available and gracefully fall back to realtime quote activation when history is missing.
 
 v6.4.0 added Research Score Activation. Realtime A-share quote fields enter an additive research activation layer through `research/score_activation.py`, producing quote quality, liquidity, momentum, intraday price-position, activated technical, activated composite, and activated selection research fields. Tencent-style turnover units are normalized inside the activation calculation without changing the original `turnover` column. Dashboard and Selection Results prefer these activated fields when available, while the original scoring columns and scoring functions remain unchanged.
 
@@ -38,9 +40,17 @@ Runtime cache files:
 ```text
 cache/a_share_universe_latest.csv
 cache/a_share_quotes_latest.csv
+cache/kline/{ticker}.csv
 ```
 
-The `cache/` directory is ignored by Git. Successful external source loads with more than 1000 rows update the cache. Dashboard and System Status display data source, data status, raw count, filtered count, cache status, cache update time, load time, and update time. If the final universe has fewer than 1000 rows, the page shows "真实数据不足，仅用于结构验证。"
+The `cache/` directory is ignored by Git. Successful external source loads with more than 1000 realtime rows update the universe and quote cache. Successful K-line loads with at least 60 rows update `cache/kline/{ticker}.csv`. Dashboard and System Status display data source, data status, raw count, filtered count, cache status, K-line cache hits, K-line failures, load time, and update time. If the final universe has fewer than 1000 rows, the page shows "真实数据不足，仅用于结构验证。"
+
+Historical K-line performance boundary:
+
+- The sidebar option "启用历史K线技术指标" controls whether live runs request historical K-line data.
+- "K线最大股票数" defaults to 200 and can be set to 50, 100, 200, or 500.
+- The pipeline intentionally does not request full-market K-line data in one run.
+- Single-ticker K-line failures do not stop the batch; the pipeline falls back to cache or leaves that ticker in the v6.5.0 degradation path.
 
 ### Project Structure
 
@@ -54,7 +64,16 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v6.5.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`; realtime quote research activation lives in `research/score_activation.py`; real technical indicator research fields live in `technical/indicator_engine.py`.
+`legacy_app.py` is not an unused backup. In v6.5.1 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`; historical K-line loading lives in `data/kline_loader.py`; realtime quote research activation lives in `research/score_activation.py`; real technical indicator research fields live in `technical/indicator_engine.py`.
+
+v6.5.1 Real Historical K-Line Integration:
+
+- Adds `data/kline_loader.py` with single-ticker and batch K-line loading.
+- Standardizes K-line fields for `date`, OHLC, volume, turnover, ticker, source, status, and warnings.
+- Writes usable histories to `cache/kline/{ticker}.csv`.
+- Builds `price_history_dict` for the bounded front subset of the research pool and passes it into the real technical indicator engine.
+- Keeps K-line loading sequential and bounded in this version; future versions can add asynchronous or incremental refresh.
+- Keeps all output read-only and only for learning and research; it does not constitute investment advice.
 
 v6.5.0 Real Technical Indicator Engine:
 

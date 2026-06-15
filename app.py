@@ -17,8 +17,8 @@ from ui.product_ui import (
 )
 from ui.screening_ui import render_screening_page
 
-APP_VERSION = "v6.5.0"
-APP_STAGE = "Real Technical Indicator Engine"
+APP_VERSION = "v6.5.1"
+APP_STAGE = "Real Historical K-Line Integration"
 
 # Re-export core functions used by the existing tests and notebooks.
 calculate_indicators = legacy_app.calculate_indicators
@@ -48,13 +48,23 @@ def main():
     with st.sidebar:
         st.title("Fin-Scientist")
         st.caption(f"{APP_VERSION} | {APP_STAGE}")
+        kline_enabled = st.checkbox("启用历史K线技术指标", value=True)
+        max_kline_stocks = st.selectbox("K线最大股票数", options=[50, 100, 200, 500], index=2)
+        st.caption(f"K线数据状态：{'启用' if kline_enabled else '关闭'}；仅对前 {max_kline_stocks} 只生成历史技术指标。")
         if st.button("运行完整选股模型"):
             try:
                 with st.spinner("正在运行 Fin-Scientist 选股流水线..."):
-                    result_df = run_live_pipeline()
+                    result_df = run_live_pipeline(kline_enabled=kline_enabled, max_kline_stocks=int(max_kline_stocks))
                 _store_live_pipeline_result(result_df)
                 if result_df.attrs.get("is_demo"):
                     st.info(result_df.attrs.get("data_notice", "当前为 Demo 数据，用于展示系统结构；接入真实行情后可替换为真实结果。"))
+                st.info(
+                    f"K线状态：{result_df.attrs.get('kline_status', 'Unavailable')} / "
+                    f"请求：{result_df.attrs.get('kline_requested', 0)} / "
+                    f"加载：{result_df.attrs.get('kline_loaded', 0)} / "
+                    f"缓存命中：{result_df.attrs.get('kline_cache_hits', 0)} / "
+                    f"失败：{result_df.attrs.get('kline_failures', 0)}"
+                )
                 st.success(f"选股流水线已完成，生成 {len(result_df)} 条研究结果。")
             except Exception as exc:
                 st.error(f"选股流水线运行失败，请稍后重试或检查数据源：{exc}")

@@ -21,8 +21,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.5.0"
-PRODUCT_STAGE = "Real Technical Indicator Engine"
+PRODUCT_VERSION = "v6.5.1"
+PRODUCT_STAGE = "Real Historical K-Line Integration"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -105,17 +105,23 @@ SELECTION_COLUMNS = [
     "activated_research_level",
     "activated_research_reasons",
     "activated_research_warnings",
+    "technical_history_available",
+    "technical_history_days",
     "real_technical_score",
+    "rsi14",
+    "macd_signal",
+    "ma20",
+    "ma60",
+    "return_20d",
+    "return_60d",
+    "position_52w",
+    "technical_risk_flags",
     "technical_trend_score",
     "technical_momentum_score",
     "technical_volume_score",
     "technical_volatility_score",
     "technical_position_score",
-    "macd_signal",
-    "rsi14",
-    "position_52w",
     "technical_signal_summary",
-    "technical_risk_flags",
 ]
 BACKTEST_COLUMNS = [
     "ticker",
@@ -282,6 +288,8 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         "average_real_technical_score": _metric_value(source, "real_technical_score"),
         "technical_history_available_count": technical_history_count,
         "technical_high_risk_count": technical_high_risk_count,
+        "kline_cache_hits": int(source.attrs.get("kline_cache_hits", 0)) if hasattr(source, "attrs") else 0,
+        "kline_failures": int(source.attrs.get("kline_failures", 0)) if hasattr(source, "attrs") else 0,
         "average_risk_score": _metric_value(source, "risk_score"),
         "factor_count": len([field for field in DEFAULT_FACTOR_COLUMNS if field in source.columns]),
         "backtest_available_count": int(source["backtest_available"].fillna(False).sum()) if "backtest_available" in source.columns else 0,
@@ -405,6 +413,8 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
         ("平均 real_technical_score", summary["average_real_technical_score"], "真实技术指标研究分均值"),
         ("技术历史可用数量", summary["technical_history_available_count"], "历史行情可用的研究对象"),
         ("技术风险提示数量", summary["technical_high_risk_count"], "存在技术风险提示的对象"),
+        ("K线缓存命中", summary["kline_cache_hits"], "cache/kline 命中数量"),
+        ("K线加载失败", summary["kline_failures"], "外部源和缓存均不可用数量"),
         ("平均 risk_score", summary["average_risk_score"], "风险评分均值"),
         ("因子数量", summary["factor_count"], "可识别默认因子数量"),
         ("可回测数量", summary["backtest_available_count"], "Backtest Foundation 可用数量"),
@@ -631,6 +641,11 @@ def render_system_status_page(df: Any) -> dict[str, Any]:
     cache_updated_at = source.attrs.get("cache_updated_at", "—") if hasattr(source, "attrs") else "—"
     cache_universe_path = source.attrs.get("cache_universe_path", "cache/a_share_universe_latest.csv") if hasattr(source, "attrs") else "cache/a_share_universe_latest.csv"
     cache_quotes_path = source.attrs.get("cache_quotes_path", "cache/a_share_quotes_latest.csv") if hasattr(source, "attrs") else "cache/a_share_quotes_latest.csv"
+    kline_status = source.attrs.get("kline_status", "Unavailable") if hasattr(source, "attrs") else "Unavailable"
+    kline_requested = source.attrs.get("kline_requested", 0) if hasattr(source, "attrs") else 0
+    kline_loaded = source.attrs.get("kline_loaded", 0) if hasattr(source, "attrs") else 0
+    kline_cache_hits = source.attrs.get("kline_cache_hits", 0) if hasattr(source, "attrs") else 0
+    kline_failures = source.attrs.get("kline_failures", 0) if hasattr(source, "attrs") else 0
     _render_page_header("系统状态 / 数据质量", "版本、模块、缺失字段、warnings 和数据源说明")
     modules = list(REQUIRED_FIELD_GROUPS.keys())
     columns = st.columns(4)
@@ -671,6 +686,12 @@ def render_system_status_page(df: Any) -> dict[str, Any]:
         {"item": "缓存更新时间", "value": cache_updated_at or "—"},
         {"item": "Universe 缓存路径", "value": cache_universe_path},
         {"item": "Quotes 缓存路径", "value": cache_quotes_path},
+        {"item": "K线状态", "value": kline_status},
+        {"item": "K线请求数量", "value": kline_requested},
+        {"item": "K线加载数量", "value": kline_loaded},
+        {"item": "K线缓存命中", "value": kline_cache_hits},
+        {"item": "K线加载失败", "value": kline_failures},
+        {"item": "K线缓存路径", "value": "cache/kline/{ticker}.csv"},
         {"item": "最近错误", "value": last_error or "—"},
     ]
     st.dataframe(pd.DataFrame(status_rows), hide_index=True, use_container_width=True)

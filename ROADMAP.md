@@ -228,7 +228,7 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.3.4: Multi Realtime Source Fallback completed.
 - v6.3.5: Full A-Share Pagination and Cache Layer completed.
 - v6.4.0: Research Score Activation completed.
-- Next target: v6.5.0 Real Technical Feature Integration.
+- Next target: v6.5.2 Technical Score Calibration.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -527,6 +527,19 @@ Completed v6.5.0 scope:
 - Updated Dashboard, Selection Results, and the product Research Workstation to display real technical research fields, history availability, average real technical score, and technical risk flag counts.
 - Added `tests/test_indicator_engine.py` for indicator calculation, warning behavior, risk flags, score clipping, order preservation, and module import.
 - Next target: v6.5.1 Real Historical K-Line Integration.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, old scoring functions, stock-selection algorithms, default underlying order, data-source order, and trading logic unchanged.
+
+Completed v6.5.1 scope:
+
+- Added `data/kline_loader.py` for real A-share historical daily K-line loading.
+- Added local K-line cache files under `cache/kline/{ticker}.csv`.
+- Standardized K-line fields: `date`, `open`, `high`, `low`, `close`, `volume`, `turnover`, `ticker`, `data_source`, `data_status`, and `data_warning`.
+- Added `load_a_share_kline()`, `load_batch_a_share_klines()`, `load_cached_kline()`, `save_cached_kline()`, and `build_price_history_dict()`.
+- Updated `pipeline/live_runner.py` with `kline_enabled=True` and `max_kline_stocks=200`; the pipeline selects a bounded front subset and passes `price_history_dict` into `build_real_technical_indicators()`.
+- Updated the Streamlit sidebar with the K-line enable switch, max-stock selector, and K-line status display.
+- Updated Dashboard, Selection Results, and System Status to expose history availability, real technical score, K-line cache hits, K-line failures, and selected K-line technical fields.
+- Added K-line loader tests and pipeline tests for disabled K-line mode, enabled history passing, and no-history no-crash behavior.
+- Next target: v6.5.2 Technical Score Calibration.
 - Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, old scoring functions, stock-selection algorithms, default underlying order, data-source order, and trading logic unchanged.
 
 Boundary:

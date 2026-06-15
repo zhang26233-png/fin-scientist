@@ -20,16 +20,25 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.5.0
-- CURRENT_STAGE = Real Technical Indicator Engine
-- NEXT_TARGET = v6.5.1 Real Historical K-Line Integration
+- CURRENT_VERSION = v6.5.1
+- CURRENT_STAGE = Real Historical K-Line Integration
+- NEXT_TARGET = v6.5.2 Technical Score Calibration
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.5.0"`
-- `legacy_app.py`: `APP_VERSION = "v6.5.0"`
-- `README.md`: Current version: v6.5.0
+- `app.py`: `APP_VERSION = "v6.5.1"`
+- `legacy_app.py`: `APP_VERSION = "v6.5.1"`
+- `README.md`: Current version: v6.5.1
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
+
+V6.5.1 adds Real Historical K-Line Integration. `data/kline_loader.py` loads standardized daily A-share K-line history by ticker, normalizes date, open, high, low, close, volume, turnover, ticker, source, status, and warning fields, writes successful histories with at least 60 rows to `cache/kline/{ticker}.csv`, and reads that cache when the external source is unavailable. `pipeline/live_runner.py` now supports `kline_enabled=True` and `max_kline_stocks=200`, selects a bounded front subset of the research pool, builds `price_history_dict`, and passes it into `build_real_technical_indicators()` so `real_technical_score` can be based on historical K-line data where available. The UI exposes the K-line switch, max-stock control, cache-hit count, failure count, and history availability metrics. This version keeps K-line loading sequential and bounded for performance, does not add API keys or databases, and does not modify `core/scoring.py`, old scoring functions, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, or `selection_score`.
+
+V6.5.1 file additions:
+
+- `data/kline_loader.py`
+- `tests/test_kline_loader.py`
+- K-Line Cache Layer
+- price_history_dict Pipeline
 
 V6.5.0 adds the Real Technical Indicator Engine. `technical/indicator_engine.py` builds additive real technical indicator fields from optional historical price data, including moving averages, MA alignment, 20/60-day returns, RSI14, MACD, ATR14, annualized 20-day volatility, 60-day drawdown, volume and turnover ratios, 52-week position, neutral signal summaries, technical risk flags, warnings, and the read-only `real_technical_score`. `pipeline/live_runner.py` calls `build_real_technical_indicators()` before `activate_research_scores()`, so v6.4 score activation can prefer `real_technical_score` when historical indicators are available and gracefully fall back to realtime snapshot activation when history is missing. Dashboard, Selection Results, and the product Research Workstation expose the new technical research fields. This version does not modify `core/scoring.py`, old scoring functions, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, or `selection_score`, and it does not add buy/sell/hold advice, target prices, position suggestions, return promises, machine-learning predictions, API keys, databases, or vector stores.
 

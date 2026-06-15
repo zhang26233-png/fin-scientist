@@ -2,6 +2,19 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.5.1
+
+- Added Real Historical K-Line Integration.
+- Added `data/kline_loader.py` and `tests/test_kline_loader.py`.
+- Added daily K-line functions: `load_a_share_kline`, `load_batch_a_share_klines`, `load_cached_kline`, `save_cached_kline`, and `build_price_history_dict`.
+- Standardized K-line output fields: `date`, `open`, `high`, `low`, `close`, `volume`, `turnover`, `ticker`, `data_source`, `data_status`, and `data_warning`.
+- Added CSV cache fallback at `cache/kline/{ticker}.csv`; successful histories with at least 60 rows are cached and external failures read cache before returning empty data.
+- Updated `pipeline/live_runner.py` so live runs can build bounded `price_history_dict` inputs before calling `build_real_technical_indicators()`.
+- Added `kline_enabled=True` and `max_kline_stocks=200` pipeline controls to avoid full-market blocking requests.
+- Updated the Streamlit sidebar, Dashboard, Selection Results, and System Status with K-line controls, status, cache hit count, failure count, history availability, and K-line technical fields.
+- Added tests for ticker normalization, field standardization, date sorting, numeric conversion, cache write/read fallback, batch failure isolation, max-stock limits, module import, pipeline disabled mode, enabled history passing, and no-K-line no-crash behavior.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, old scoring functions, stock-selection algorithms, default underlying order, trading logic, buy/sell/hold advice, target prices, position suggestions, return promises, machine-learning prediction, paid API keys, databases, and vector stores unchanged.
+
 ## v6.5.0
 
 - Added Real Technical Indicator Engine.

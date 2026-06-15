@@ -52,7 +52,7 @@ def test_cache_universe_is_not_forced_to_demo(monkeypatch):
     frame.attrs["cache_updated_at"] = "2026-06-15 10:00:00"
 
     monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: frame)
-    result = live_runner.run_live_pipeline(max_stocks=1101)
+    result = live_runner.run_live_pipeline(max_stocks=1101, kline_enabled=False)
 
     assert result.attrs.get("is_demo") is False
     assert result.attrs["data_source"] == "Local Cache"
@@ -91,3 +91,82 @@ def test_input_price_history_is_not_mutated(monkeypatch):
 
 def test_app_importable_after_live_pipeline_addition():
     assert importlib.import_module("app")
+
+
+def _large_live_universe(rows=1002):
+    frame = pd.DataFrame(
+        [
+            {
+                "ticker": f"6{index:05d}",
+                "name": f"Live {index}",
+                "market": "SH",
+                "industry": "",
+                "list_date": "2020-01-01",
+                "status": "Available",
+                "latest_price": 10.0,
+                "pct_change": 0.1,
+                "volume": 1_000_000,
+                "turnover": 20_000_000,
+                "open": 9.8,
+                "high": 10.2,
+                "low": 9.7,
+                "prev_close": 9.9,
+            }
+            for index in range(rows)
+        ]
+    )
+    frame.attrs["data_source"] = "Tencent Realtime"
+    frame.attrs["data_status"] = "Live"
+    frame.attrs["raw_count"] = rows
+    frame.attrs["filtered_count"] = 0
+    frame.attrs["final_count"] = rows
+    return frame
+
+
+def test_kline_disabled_does_not_call_history_builder(monkeypatch):
+    import pipeline.live_runner as live_runner
+
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: _large_live_universe())
+
+    def fail_builder(*args, **kwargs):
+        raise AssertionError("K-line builder should not be called")
+
+    monkeypatch.setattr(live_runner, "build_price_history_dict", fail_builder)
+    result = live_runner.run_live_pipeline(kline_enabled=False)
+
+    assert result.attrs["kline_status"] == "Disabled"
+
+
+def test_kline_enabled_passes_price_history_dict(monkeypatch):
+    import pipeline.live_runner as live_runner
+
+    captured = {}
+    history = pd.DataFrame({"date": pd.date_range("2025-01-01", periods=80), "close": range(80), "volume": range(80)})
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: _large_live_universe())
+
+    def fake_builder(tickers, **kwargs):
+        captured["tickers"] = list(tickers)
+        return {"600000": history, "_attrs": {"requested": len(tickers), "loaded": 1, "cache_hits": 0, "failures": 0, "attempts": []}}
+
+    monkeypatch.setattr(live_runner, "build_price_history_dict", fake_builder)
+    result = live_runner.run_live_pipeline(kline_enabled=True, max_kline_stocks=1)
+
+    assert captured["tickers"] == ["600000"]
+    assert result.attrs["kline_requested"] == 1
+    assert result["technical_history_available"].astype(bool).any()
+
+
+def test_no_kline_data_does_not_crash(monkeypatch):
+    import pipeline.live_runner as live_runner
+
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: _large_live_universe())
+    monkeypatch.setattr(
+        live_runner,
+        "build_price_history_dict",
+        lambda *args, **kwargs: {"_attrs": {"requested": 1, "loaded": 0, "cache_hits": 0, "failures": 1, "attempts": []}},
+    )
+
+    result = live_runner.run_live_pipeline(kline_enabled=True, max_kline_stocks=1)
+
+    assert isinstance(result, pd.DataFrame)
+    assert result.attrs["kline_failures"] == 1

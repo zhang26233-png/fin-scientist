@@ -11,6 +11,7 @@ import pandas as pd
 from backtest.backtest_engine import build_backtest_dataset
 from backtest.backtest_evaluation import build_backtest_evaluation
 from data.a_share_loader import load_a_share_universe
+from data.kline_loader import build_price_history_dict
 from backtest.return_analysis import build_return_analysis
 from factor.factor_lab import build_factor_dataset
 from research.score_activation import ACTIVATED_RESEARCH_FIELDS, activate_research_scores
@@ -97,6 +98,8 @@ def _copy_price_history_dict(price_history_dict: Any) -> dict[str, pd.DataFrame]
         return {}
     copied: dict[str, pd.DataFrame] = {}
     for key, value in price_history_dict.items():
+        if key == "_attrs":
+            continue
         copied[str(key)] = _copy_frame(value)
     return copied
 
@@ -202,6 +205,72 @@ def _ensure_live_fields(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
+def _select_kline_tickers(df: pd.DataFrame, max_kline_stocks: int) -> list[str]:
+    if df.empty or "ticker" not in df.columns or max_kline_stocks <= 0:
+        return []
+    source = df.copy(deep=True)
+    if "activated_selection_score" in source.columns:
+        score = pd.to_numeric(source["activated_selection_score"], errors="coerce")
+        source = source.assign(_kline_rank_score=score).sort_values("_kline_rank_score", ascending=False, kind="mergesort")
+    elif "selection_score" in source.columns:
+        score = pd.to_numeric(source["selection_score"], errors="coerce")
+        source = source.assign(_kline_rank_score=score).sort_values("_kline_rank_score", ascending=False, kind="mergesort")
+    elif "candidate_rank" in source.columns:
+        rank = pd.to_numeric(source["candidate_rank"], errors="coerce")
+        source = source.assign(_kline_rank_score=rank).sort_values("_kline_rank_score", ascending=True, kind="mergesort")
+    tickers: list[str] = []
+    for value in source["ticker"].tolist():
+        text = str(value).strip()
+        if text and text not in tickers:
+            tickers.append(text)
+        if len(tickers) >= max_kline_stocks:
+            break
+    return tickers
+
+
+def _build_pipeline_histories(
+    df: pd.DataFrame,
+    existing_history: dict[str, pd.DataFrame],
+    *,
+    kline_enabled: bool,
+    max_kline_stocks: int,
+) -> tuple[dict[str, pd.DataFrame], dict[str, Any]]:
+    histories = _copy_price_history_dict(existing_history)
+    kline_attrs: dict[str, Any] = {
+        "kline_enabled": bool(kline_enabled),
+        "kline_max_stocks": int(max_kline_stocks),
+        "kline_requested": 0,
+        "kline_loaded": len(histories),
+        "kline_cache_hits": 0,
+        "kline_failures": 0,
+        "kline_status": "Disabled" if not kline_enabled else "Not Requested",
+        "kline_attempts": [],
+    }
+    if not kline_enabled:
+        return histories, kline_attrs
+
+    tickers = _select_kline_tickers(df, max_kline_stocks)
+    missing = [ticker for ticker in tickers if ticker not in histories]
+    kline_attrs["kline_requested"] = len(tickers)
+    if missing:
+        loaded = build_price_history_dict(missing, max_stocks=max_kline_stocks)
+        loaded_attrs = loaded.get("_attrs", {}) if isinstance(loaded, dict) else {}
+        for ticker, frame in loaded.items():
+            if ticker == "_attrs":
+                continue
+            histories[str(ticker)] = _copy_frame(frame)
+        kline_attrs.update(
+            {
+                "kline_loaded": len(histories),
+                "kline_cache_hits": int(loaded_attrs.get("cache_hits", 0)),
+                "kline_failures": int(loaded_attrs.get("failures", 0)),
+                "kline_attempts": list(loaded_attrs.get("attempts", [])),
+            }
+        )
+    kline_attrs["kline_status"] = "Available" if histories else "Unavailable"
+    return histories, kline_attrs
+
+
 def _finalize(
     df: pd.DataFrame,
     *,
@@ -222,7 +291,14 @@ def _finalize(
     return result
 
 
-def _run_pipeline(universe: pd.DataFrame, fundamental_df: pd.DataFrame | None, price_history_dict: dict[str, pd.DataFrame] | None) -> pd.DataFrame:
+def _run_pipeline(
+    universe: pd.DataFrame,
+    fundamental_df: pd.DataFrame | None,
+    price_history_dict: dict[str, pd.DataFrame] | None,
+    *,
+    kline_enabled: bool = True,
+    max_kline_stocks: int = 200,
+) -> pd.DataFrame:
     history = _copy_price_history_dict(price_history_dict)
     fundamental = build_fundamental_screening(universe, fundamental_df=fundamental_df)
     technical = build_technical_screening(universe, price_data=history)
@@ -234,15 +310,23 @@ def _run_pipeline(universe: pd.DataFrame, fundamental_df: pd.DataFrame | None, p
     stock_selection = build_stock_selection(backtest_evaluation)
     explainable_selection = build_explainable_selection(stock_selection)
     with_factors = _attach_factor_fields(explainable_selection)
-    with_real_technical = build_real_technical_indicators(with_factors, price_history_dict=history)
-    return activate_research_scores(with_real_technical)
+    enriched_history, kline_attrs = _build_pipeline_histories(
+        with_factors,
+        history,
+        kline_enabled=kline_enabled,
+        max_kline_stocks=max_kline_stocks,
+    )
+    with_real_technical = build_real_technical_indicators(with_factors, price_history_dict=enriched_history)
+    result = activate_research_scores(with_real_technical)
+    result.attrs.update(kline_attrs)
+    return result
 
 
 def _build_demo_result(max_stocks: int | None = None) -> pd.DataFrame:
     universe = _build_demo_universe(max_stocks=max_stocks)
     fundamentals = _build_demo_fundamentals(universe)
     histories = _build_demo_price_history(universe)
-    result = _run_pipeline(universe, fundamentals, histories)
+    result = _run_pipeline(universe, fundamentals, histories, kline_enabled=False, max_kline_stocks=max_stocks or 200)
     return _finalize(result, is_demo=True, source="Built-in demo", message=DEMO_NOTICE, source_attrs=universe.attrs)
 
 
@@ -250,6 +334,8 @@ def run_live_pipeline(
     max_stocks: int | None = None,
     use_sample_if_no_data: bool = True,
     price_history_dict: dict[str, pd.DataFrame] | None = None,
+    kline_enabled: bool = True,
+    max_kline_stocks: int = 200,
 ) -> pd.DataFrame:
     """Run the full read-only research pipeline for the Streamlit web app.
 
@@ -278,7 +364,13 @@ def run_live_pipeline(
             f"原始股票：{universe.attrs.get('raw_count', len(universe))}；"
             f"过滤后：{len(universe)}。"
         )
-        result = _run_pipeline(universe, fundamental_df=None, price_history_dict=histories)
+        result = _run_pipeline(
+            universe,
+            fundamental_df=None,
+            price_history_dict=histories,
+            kline_enabled=kline_enabled,
+            max_kline_stocks=max_kline_stocks,
+        )
         if result.empty:
             raise ValueError("Pipeline returned an empty result.")
         return _finalize(result, is_demo=False, source=source_attrs.get("data_source", "A-share Universe"), source_attrs=source_attrs)
