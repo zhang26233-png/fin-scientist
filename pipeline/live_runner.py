@@ -11,6 +11,7 @@ import pandas as pd
 from backtest.backtest_engine import build_backtest_dataset
 from backtest.backtest_evaluation import build_backtest_evaluation
 from data.a_share_loader import load_a_share_universe
+from data.fundamental_loader import build_fundamental_dataset
 from data.kline_loader import build_price_history_dict
 from backtest.return_analysis import build_return_analysis
 from factor.factor_lab import build_factor_dataset
@@ -300,6 +301,7 @@ def _run_pipeline(
     *,
     kline_enabled: bool = True,
     max_kline_stocks: int = 200,
+    fundamental_enabled: bool = True,
 ) -> pd.DataFrame:
     history = _copy_price_history_dict(price_history_dict)
     fundamental = build_fundamental_screening(universe, fundamental_df=fundamental_df)
@@ -319,9 +321,27 @@ def _run_pipeline(
         max_kline_stocks=max_kline_stocks,
     )
     with_real_technical = build_real_technical_indicators(with_factors, price_history_dict=enriched_history)
-    with_fundamental_research = build_fundamental_research(with_real_technical, fundamental_df=fundamental_df)
+    loaded_fundamentals = (
+        build_fundamental_dataset(
+            with_real_technical,
+            tickers=with_real_technical["ticker"].astype(str).tolist() if "ticker" in with_real_technical.columns else None,
+            use_external=True,
+        )
+        if fundamental_enabled
+        else build_fundamental_dataset(with_real_technical, use_external=False)
+    )
+    if fundamental_df is not None and not fundamental_df.empty:
+        source_attrs = dict(getattr(loaded_fundamentals, "attrs", {}))
+        loaded_fundamentals = pd.concat([fundamental_df, loaded_fundamentals], ignore_index=True)
+        loaded_fundamentals.attrs.update(source_attrs)
+    with_fundamental_research = build_fundamental_research(with_real_technical, fundamental_df=loaded_fundamentals)
     result = activate_research_scores(with_fundamental_research)
     result.attrs.update(kline_attrs)
+    result.attrs["fundamental_enabled"] = bool(fundamental_enabled)
+    result.attrs["fundamental_data_source"] = loaded_fundamentals.attrs.get("fundamental_data_source", "Unavailable")
+    result.attrs["fundamental_data_status"] = loaded_fundamentals.attrs.get("fundamental_data_status", "Unavailable")
+    result.attrs["fundamental_rows"] = int(loaded_fundamentals.attrs.get("fundamental_rows", len(loaded_fundamentals)))
+    result.attrs["fundamental_source_attempts"] = list(loaded_fundamentals.attrs.get("fundamental_source_attempts", []))
     return result
 
 
@@ -329,7 +349,7 @@ def _build_demo_result(max_stocks: int | None = None) -> pd.DataFrame:
     universe = _build_demo_universe(max_stocks=max_stocks)
     fundamentals = _build_demo_fundamentals(universe)
     histories = _build_demo_price_history(universe)
-    result = _run_pipeline(universe, fundamentals, histories, kline_enabled=False, max_kline_stocks=max_stocks or 200)
+    result = _run_pipeline(universe, fundamentals, histories, kline_enabled=False, max_kline_stocks=max_stocks or 200, fundamental_enabled=False)
     return _finalize(result, is_demo=True, source="Built-in demo", message=DEMO_NOTICE, source_attrs=universe.attrs)
 
 
@@ -339,6 +359,7 @@ def run_live_pipeline(
     price_history_dict: dict[str, pd.DataFrame] | None = None,
     kline_enabled: bool = True,
     max_kline_stocks: int = 200,
+    fundamental_enabled: bool = True,
 ) -> pd.DataFrame:
     """Run the full read-only research pipeline for the Streamlit web app.
 
@@ -373,6 +394,7 @@ def run_live_pipeline(
             price_history_dict=histories,
             kline_enabled=kline_enabled,
             max_kline_stocks=max_kline_stocks,
+            fundamental_enabled=fundamental_enabled,
         )
         if result.empty:
             raise ValueError("Pipeline returned an empty result.")

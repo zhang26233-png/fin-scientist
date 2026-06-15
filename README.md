@@ -2,7 +2,27 @@
 
 ## Current Version
 
-Current version: v6.6.0
+Current version: v6.6.2
+
+v6.6.2 adds the Real Fundamental Data Layer. The project now includes `data/fundamental_loader.py`, which standardizes real fundamental fields from the current realtime/pipeline DataFrame, EastMoney public payloads, AkShare fallback, and local cache. The live pipeline runs realtime quotes, historical K-line loading, technical indicators, fundamental data loading, fundamental research scoring, score activation, and UI output.
+
+Fundamental data source priority:
+
+1. Current realtime/pipeline DataFrame, extracting PE, PB, PS, market cap, and any available profitability/growth/quality fields.
+2. EastMoney public endpoint payloads, primarily valuation and market-cap fields, with flexible mapping for richer public fields when present.
+3. AkShare fallback when available locally.
+4. Local cache at `cache/fundamental/fundamental_latest.csv`.
+
+Standardized fundamental fields include `ticker`, `name`, `pe_ttm`, `pb`, `ps_ttm`, `market_cap`, `float_market_cap`, `roe`, `roa`, `gross_margin`, `net_margin`, `revenue_growth_yoy`, `net_profit_growth_yoy`, `debt_to_asset`, `operating_cash_flow`, `ocf_to_net_profit`, `dividend_yield`, `fundamental_data_source`, `fundamental_data_status`, `fundamental_data_warning`, and `fundamental_updated_at`.
+
+Fundamental cache and fallback strategy:
+
+- Successful external/public fundamental loads with at least 100 rows write `cache/fundamental/fundamental_latest.csv`.
+- If external sources fail, the loader reads local cache before returning an empty DataFrame.
+- Missing or corrupt cache never crashes the page.
+- If fewer than three core fields among PE, PB, ROE, revenue growth, profit growth, and debt ratio are available, the research scorer uses a neutral fundamental score and emits a data-quality warning.
+
+All fundamental outputs remain only for learning and research and do not constitute investment advice.
 
 v6.6.0 adds the Fundamental Research Engine. The live pipeline now builds technical indicators first, then calls `fundamental/fundamental_engine.py` to append valuation, profitability, growth, financial-quality, and `fundamental_research_score` fields before Research Score Activation. When caller-provided `fundamental_df` data is available it is merged by ticker; otherwise the engine extracts available PE/PB/PS, market cap, margin, growth, debt, cash-flow, and dividend fields already present in the research DataFrame, and safely falls back to neutral fundamental scoring when those fields are unavailable.
 
@@ -45,9 +65,10 @@ Runtime cache files:
 cache/a_share_universe_latest.csv
 cache/a_share_quotes_latest.csv
 cache/kline/{ticker}.csv
+cache/fundamental/fundamental_latest.csv
 ```
 
-The `cache/` directory is ignored by Git. Successful external source loads with more than 1000 realtime rows update the universe and quote cache. Successful K-line loads with at least 60 rows update `cache/kline/{ticker}.csv`. Dashboard and System Status display data source, data status, raw count, filtered count, cache status, K-line cache hits, K-line failures, load time, and update time. If the final universe has fewer than 1000 rows, the page shows "真实数据不足，仅用于结构验证。"
+The `cache/` directory is ignored by Git. Successful external source loads with more than 1000 realtime rows update the universe and quote cache. Successful K-line loads with at least 60 rows update `cache/kline/{ticker}.csv`. Successful fundamental loads with at least 100 rows update `cache/fundamental/fundamental_latest.csv`. Dashboard and System Status display data source, data status, raw count, filtered count, cache status, K-line cache hits, K-line failures, fundamental source/status, load time, and update time. If the final universe has fewer than 1000 rows, the page shows "真实数据不足，仅用于结构验证。"
 
 Historical K-line performance boundary:
 
@@ -68,7 +89,7 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v6.6.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`; historical K-line loading lives in `data/kline_loader.py`; realtime quote research activation lives in `research/score_activation.py`; real technical indicator research fields live in `technical/indicator_engine.py`; fundamental research fields live in `fundamental/fundamental_engine.py`.
+`legacy_app.py` is not an unused backup. In v6.6.2 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`; historical K-line loading lives in `data/kline_loader.py`; real fundamental data loading lives in `data/fundamental_loader.py`; realtime quote research activation lives in `research/score_activation.py`; real technical indicator research fields live in `technical/indicator_engine.py`; fundamental research fields live in `fundamental/fundamental_engine.py`.
 
 v6.6.0 Fundamental Research Engine:
 
@@ -178,7 +199,7 @@ ui.workstation_ui
               read-only research report preview
 ```
 
-FinScientist v6.4.0 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整选股模型”执行已有研究流水线，并将真实 A 股实时行情字段接入研究评分激活层；失败时会显示原因并使用缓存或 Demo fallback。
+FinScientist v6.6.2 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整选股模型”执行已有研究流水线，并将真实 A 股实时行情、历史 K 线技术指标和基本面数据层接入研究评分激活层；失败时会显示原因并使用缓存或 Demo fallback。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -188,7 +209,7 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：v6.4.0
+当前版本：v6.6.2
 
 V6.2.0 Live Pipeline Runner:
 

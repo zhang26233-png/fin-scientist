@@ -20,16 +20,27 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.6.0
-- CURRENT_STAGE = Fundamental Research Engine
-- NEXT_TARGET = v6.6.1 Real Fundamental Data Integration
+- CURRENT_VERSION = v6.6.2
+- CURRENT_STAGE = Real Fundamental Data Layer
+- NEXT_TARGET = v6.7.0 Capital Flow Engine
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.6.0"`
-- `legacy_app.py`: `APP_VERSION = "v6.6.0"`
-- `README.md`: Current version: v6.6.0
+- `app.py`: `APP_VERSION = "v6.6.2"`
+- `legacy_app.py`: `APP_VERSION = "v6.6.2"`
+- `README.md`: Current version: v6.6.2
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
+
+V6.6.2 adds the Real Fundamental Data Layer. `data/fundamental_loader.py` standardizes fundamental fields from the current realtime DataFrame, EastMoney public endpoints, AkShare fallback, and local cache at `cache/fundamental/fundamental_latest.csv`. It outputs unified PE, PB, PS, market cap, ROE, ROA, margins, revenue growth, profit growth, debt ratio, cash-flow quality, dividend yield, data source, status, warning, and update timestamp fields. `pipeline/live_runner.py` now runs realtime quotes, historical K-line loading, real technical indicators, fundamental data loading, fundamental research scoring, score activation, and UI output. `fundamental/fundamental_engine.py` recalibrates valuation, profitability, growth, and financial-quality scores from real fields. `research/score_activation.py` adds `activated_fundamental_score` and blends it into activated composite scoring with technical, liquidity, and quote-quality context.
+
+V6.6.2 file additions:
+
+- `data/fundamental_loader.py`
+- `tests/test_fundamental_loader.py`
+- Fundamental Data Cache Layer
+- Real Fundamental Data Fields
+
+V6.6.1 prepared the Real Fundamental Data Integration target by separating the v6.6.0 research scoring layer from the data-loading responsibility later completed in v6.6.2.
 
 V6.6.0 adds the Fundamental Research Engine. `fundamental/fundamental_engine.py` creates additive research-only fields for valuation, profitability, growth, financial quality, and `fundamental_research_score`. It can merge caller-provided `fundamental_df` rows by ticker or extract available PE/PB/PS, market cap, margin, growth, debt, cash-flow, and dividend fields already present in the pipeline. `pipeline/live_runner.py` now runs realtime quotes, K-line technical indicators, fundamental research, score activation, then UI output. `research/score_activation.py` can blend `fundamental_research_score`, real technical score, and liquidity into the activated composite score when the new fundamental layer is available. Dashboard, Selection Results, and Research Workstation expose fundamental research fields, while the system remains learning/research-only and does not constitute investment advice.
 
@@ -275,6 +286,7 @@ Generated from the current `strategy/` directory.
 | Web Product Integration | `ui/product_ui.py` | active | Product-level navigation, dashboard, module pages, data-quality status, Chart Center page, Factor Lab page, and empty-state-safe Streamlit rendering |
 | Research Score Activation | `research.score_activation` | active | Additive realtime quote activation fields for research scoring without overwriting old score columns |
 | Fundamental Research Engine | `fundamental/fundamental_engine.py` | active | Additive valuation, profitability, growth, financial quality, and fundamental research score fields |
+| Fundamental Data Layer | `data/fundamental_loader.py` | active | Real fundamental field standardization, public-source fallback, and local CSV cache |
 | Factor Research Lab | `factor/factor_lab.py` | active | Read-only factor dataset builder, z-score normalization, factor grouping, factor warnings, and factor summaries |
 | Factor metrics | `factor/factor_metrics.py` | active | Pearson IC, Rank IC, group returns, and factor effectiveness labels |
 | Factor report | `factor/factor_report.py` | active | Structured neutral factor research report fields |

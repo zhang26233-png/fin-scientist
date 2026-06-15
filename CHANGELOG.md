@@ -2,6 +2,25 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.6.2
+
+- Added Real Fundamental Data Layer.
+- Added `data/fundamental_loader.py` and `tests/test_fundamental_loader.py`.
+- Standardized fields: `ticker`, `name`, `pe_ttm`, `pb`, `ps_ttm`, `market_cap`, `float_market_cap`, `roe`, `roa`, `gross_margin`, `net_margin`, `revenue_growth_yoy`, `net_profit_growth_yoy`, `debt_to_asset`, `operating_cash_flow`, `ocf_to_net_profit`, `dividend_yield`, source/status/warning, and update timestamp.
+- Added fundamental source priority across current realtime/pipeline DataFrame, EastMoney public payloads, AkShare fallback, and local cache.
+- Added cache path `cache/fundamental/fundamental_latest.csv`; successful rows >= 100 write cache, external failures read cache, and missing/corrupt cache returns an empty DataFrame without crashing.
+- Recalibrated `valuation_score`, `profitability_score`, `growth_score`, and `financial_quality_score` to use real PE/PB, ROE/ROA, revenue/profit growth, debt ratio, and cash-flow quality fields.
+- Added `activated_fundamental_score` and updated activated composite scoring to blend activated fundamental, real technical, liquidity, and quote-quality scores.
+- Updated `pipeline/live_runner.py` order to realtime quotes, historical K-line, technical indicators, fundamental data layer, fundamental research layer, score activation, and UI output.
+- Updated Dashboard, Selection Results, System Status, and Research Workstation with fundamental source, status, available count, PE/PB/ROE averages, revenue/profit growth, component scores, warnings, risks, and update time.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, trading logic, buy/sell/hold advice, target prices, position suggestions, return promises, machine-learning prediction, API keys, databases, and vector stores unchanged.
+
+## v6.6.1
+
+- Prepared the Real Fundamental Data Integration target after v6.6.0.
+- Kept the fundamental research scorer separate from public-source data loading so the real data layer could be added as a dedicated module in v6.6.2.
+- No scoring-boundary, trading, API-key, database, or vector-store changes were introduced.
+
 ## v6.6.0
 
 - Added Fundamental Research Engine.

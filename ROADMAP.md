@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v6.6.0.
+Current: v6.6.2.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -231,7 +231,9 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.5.0: Real Technical Indicator Engine completed.
 - v6.5.1: Real Historical K-Line Integration completed.
 - v6.6.0: Fundamental Research Engine completed.
-- Next target: v6.6.1 Real Fundamental Data Integration.
+- v6.6.1: Real Fundamental Data Integration preparation completed.
+- v6.6.2: Real Fundamental Data Layer completed.
+- Next target: v6.7.0 Capital Flow Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -556,6 +558,25 @@ Completed v6.6.0 scope:
 - Added `tests/test_fundamental_engine.py` plus score-activation coverage for fundamental-score fusion.
 - Next target: v6.6.1 Real Fundamental Data Integration.
 - Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `fundamental_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, old scoring functions, stock-selection algorithms, default underlying order, data-source order, and trading logic unchanged.
+
+Completed v6.6.1 scope:
+
+- Prepared the Real Fundamental Data Integration target after v6.6.0 by keeping the fundamental research scorer separate from external/public fundamental data loading.
+- Confirmed the next implementation step should add a dedicated data-layer module rather than embedding data access directly into the scorer.
+- Next target: v6.6.2 Real Fundamental Data Layer.
+- Kept `core/scoring.py`, old scoring functions, selection algorithms, default underlying order, data-source order outside the scoped future fundamental layer, and trading logic unchanged.
+
+Completed v6.6.2 scope:
+
+- Added `data/fundamental_loader.py` and `tests/test_fundamental_loader.py`.
+- Standardized fundamental fields from existing realtime/pipeline DataFrames, EastMoney public endpoint payloads, AkShare fallback, and local cache.
+- Added cache path `cache/fundamental/fundamental_latest.csv`; successful loads with at least 100 rows write cache and external failures can read cache before returning empty data.
+- Updated `fundamental/fundamental_engine.py` with calibrated PE/PB valuation scoring, ROE/ROA profitability scoring, profit/revenue growth scoring, and debt/cash-flow financial-quality scoring.
+- Updated `research/score_activation.py` with `activated_fundamental_score` and the v6.6.2 activated composite formula.
+- Updated `pipeline/live_runner.py` order to realtime quotes, historical K-line, technical indicators, fundamental data layer, fundamental research layer, score activation, and UI output.
+- Updated Dashboard, Selection Results, System Status, and Research Workstation to display fundamental data source, status, availability, PE/PB/ROE, revenue growth, profit growth, component scores, warnings, risks, and update time.
+- Next target: v6.7.0 Capital Flow Engine.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, old scoring functions, stock-selection algorithms, default underlying order, trading logic, API keys, databases, and vector stores unchanged.
 
 Boundary:
 

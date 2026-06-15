@@ -53,7 +53,8 @@ def test_input_object_not_mutated():
 def test_without_fundamental_df_graceful_degrade_from_existing_fields():
     result = build_fundamental_research(_base_quotes())
     assert "fundamental_available" in result.columns
-    assert result.loc[0, "fundamental_data_source"] == "Existing Fields"
+    assert result.loc[0, "fundamental_available"] is False
+    assert result.loc[0, "fundamental_research_score"] == 50
 
 
 def test_fundamental_df_merges_by_ticker():
@@ -71,12 +72,12 @@ def test_pe_pb_ps_valuation_score_correct():
 
 def test_profitability_score_correct():
     result = build_fundamental_research(_full_fundamental(), fundamental_df=_full_fundamental())
-    assert result.loc[0, "profitability_score"] == 100
+    assert result.loc[0, "profitability_score"] == 93.75
 
 
 def test_growth_score_correct():
     result = build_fundamental_research(_full_fundamental(), fundamental_df=_full_fundamental())
-    assert result.loc[0, "growth_score"] == 70
+    assert result.loc[0, "growth_score"] == 69
 
 
 def test_high_debt_generates_risk():
@@ -89,7 +90,7 @@ def test_high_debt_generates_risk():
                 "roe": 8,
                 "revenue_growth_yoy": 5,
                 "net_profit_growth_yoy": 3,
-                "debt_to_asset": 80,
+                "debt_to_asset": 85,
                 "ocf_to_net_profit": 0.8,
             }
         ]
@@ -127,6 +128,30 @@ def test_unavailable_fundamental_uses_neutral_score():
     assert result.loc[0, "fundamental_available"] is False
     assert result.loc[0, "fundamental_research_score"] == 50
     assert "基本面数据不可用，使用中性分" in result.loc[0, "fundamental_warnings"]
+
+
+def test_real_field_calibrated_scores():
+    frame = pd.DataFrame(
+        [
+            {
+                "ticker": "600006",
+                "pe_ttm": 45,
+                "pb": 4,
+                "roe": 16,
+                "roa": 6,
+                "revenue_growth_yoy": 22,
+                "net_profit_growth_yoy": 35,
+                "debt_to_asset": 55,
+                "ocf_to_net_profit": 1.1,
+            }
+        ]
+    )
+    result = build_fundamental_research(frame)
+
+    assert result.loc[0, "valuation_score"] == 45
+    assert result.loc[0, "profitability_score"] == 78.75
+    assert result.loc[0, "growth_score"] == 89
+    assert result.loc[0, "financial_quality_score"] == 85
 
 
 def test_output_order_preserved():

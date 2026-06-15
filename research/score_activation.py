@@ -18,6 +18,7 @@ ACTIVATED_RESEARCH_FIELDS = [
     "momentum_score",
     "price_position_score",
     "activated_technical_score",
+    "activated_fundamental_score",
     "activated_composite_score",
     "activated_selection_score",
     "activated_research_level",
@@ -202,11 +203,27 @@ def _activate_row(row: pd.Series) -> dict[str, Any]:
         activated_technical_score = _clip_score(
             (0.4 * liquidity_score) + (0.4 * momentum_score) + (0.2 * price_position_score)
         )
-    fundamental_research_score = _existing_positive_score(row, "fundamental_research_score")
-    if fundamental_research_score is not None:
+    valuation_score = _existing_positive_score(row, "valuation_score")
+    profitability_score = _existing_positive_score(row, "profitability_score")
+    growth_score = _existing_positive_score(row, "growth_score")
+    financial_quality_score = _existing_positive_score(row, "financial_quality_score")
+    if all(score is not None for score in [valuation_score, profitability_score, growth_score, financial_quality_score]):
+        activated_fundamental_score = _clip_score(
+            (0.30 * valuation_score)
+            + (0.30 * profitability_score)
+            + (0.25 * growth_score)
+            + (0.15 * financial_quality_score)
+        )
+    else:
+        activated_fundamental_score = _existing_positive_score(row, "fundamental_research_score")
+
+    if activated_fundamental_score is not None:
         technical_component = real_technical_score if real_technical_score is not None else activated_technical_score
         activated_composite_score = _clip_score(
-            (0.4 * fundamental_research_score) + (0.4 * technical_component) + (0.2 * liquidity_score)
+            (0.35 * activated_fundamental_score)
+            + (0.35 * technical_component)
+            + (0.20 * liquidity_score)
+            + (0.10 * quote_quality_score)
         )
         reasons.append("基本面研究评分已接入")
         warnings.extend(_as_list(row.get("fundamental_warnings")))
@@ -250,6 +267,7 @@ def _activate_row(row: pd.Series) -> dict[str, Any]:
         "momentum_score": momentum_score,
         "price_position_score": price_position_score,
         "activated_technical_score": activated_technical_score,
+        "activated_fundamental_score": activated_fundamental_score,
         "activated_composite_score": activated_composite_score,
         "activated_selection_score": activated_selection_score,
         "activated_research_level": level,

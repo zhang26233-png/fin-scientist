@@ -21,8 +21,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.6.0"
-PRODUCT_STAGE = "Fundamental Research Engine"
+PRODUCT_VERSION = "v6.6.2"
+PRODUCT_STAGE = "Real Fundamental Data Layer"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -67,6 +67,7 @@ REQUIRED_FIELD_GROUPS = {
         "momentum_score",
         "price_position_score",
         "activated_technical_score",
+        "activated_fundamental_score",
         "activated_composite_score",
         "activated_selection_score",
         "activated_research_bucket",
@@ -91,6 +92,9 @@ REQUIRED_FIELD_GROUPS = {
     "Fundamental Research Engine": [
         "fundamental_available",
         "fundamental_research_score",
+        "fundamental_data_source",
+        "fundamental_data_status",
+        "fundamental_updated_at",
         "valuation_score",
         "profitability_score",
         "growth_score",
@@ -113,6 +117,7 @@ SELECTION_COLUMNS = [
     "latest_price",
     "pct_change",
     "turnover",
+    "activated_fundamental_score",
     "activated_selection_score",
     "activated_research_bucket",
     "activated_research_status",
@@ -144,8 +149,10 @@ SELECTION_COLUMNS = [
     "pe_ttm",
     "pb",
     "roe",
+    "roa",
     "revenue_growth_yoy",
     "net_profit_growth_yoy",
+    "debt_to_asset",
     "fundamental_summary",
     "fundamental_warnings",
 ]
@@ -189,6 +196,9 @@ STOCK_DETAIL_FIELDS = [
     "technical_signal_summary",
     "technical_risk_flags",
     "fundamental_research_score",
+    "fundamental_data_source",
+    "fundamental_data_status",
+    "fundamental_updated_at",
     "valuation_score",
     "profitability_score",
     "growth_score",
@@ -196,8 +206,10 @@ STOCK_DETAIL_FIELDS = [
     "pe_ttm",
     "pb",
     "roe",
+    "roa",
     "revenue_growth_yoy",
     "net_profit_growth_yoy",
+    "debt_to_asset",
     "fundamental_summary",
     "fundamental_strengths",
     "fundamental_risks",
@@ -338,7 +350,10 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         "average_pe_ttm": _metric_value(source, "pe_ttm"),
         "average_pb": _metric_value(source, "pb"),
         "average_roe": _metric_value(source, "roe"),
+        "average_revenue_growth_yoy": _metric_value(source, "revenue_growth_yoy"),
         "average_net_profit_growth_yoy": _metric_value(source, "net_profit_growth_yoy"),
+        "fundamental_data_source": source.attrs.get("fundamental_data_source", "Unavailable") if hasattr(source, "attrs") else "Unavailable",
+        "fundamental_data_status": source.attrs.get("fundamental_data_status", "Unavailable") if hasattr(source, "attrs") else "Unavailable",
         "kline_cache_hits": int(source.attrs.get("kline_cache_hits", 0)) if hasattr(source, "attrs") else 0,
         "kline_failures": int(source.attrs.get("kline_failures", 0)) if hasattr(source, "attrs") else 0,
         "average_risk_score": _metric_value(source, "risk_score"),
@@ -465,10 +480,13 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
         ("技术历史可用数量", summary["technical_history_available_count"], "历史行情可用的研究对象"),
         ("技术风险提示数量", summary["technical_high_risk_count"], "存在技术风险提示的对象"),
         ("平均 fundamental_research_score", summary["average_fundamental_research_score"], "基本面研究分均值"),
+        ("Fundamental Data Source", summary["fundamental_data_source"], "基本面数据来源"),
+        ("Fundamental Status", summary["fundamental_data_status"], "基本面数据状态"),
         ("基本面可用数量", summary["fundamental_available_count"], "基本面字段可用的研究对象"),
         ("平均 PE", summary["average_pe_ttm"], "PE TTM 均值"),
         ("平均 PB", summary["average_pb"], "PB 均值"),
         ("平均 ROE", summary["average_roe"], "ROE 均值"),
+        ("平均营收增速", summary["average_revenue_growth_yoy"], "revenue_growth_yoy 均值"),
         ("平均净利润增速", summary["average_net_profit_growth_yoy"], "net_profit_growth_yoy 均值"),
         ("K线缓存命中", summary["kline_cache_hits"], "cache/kline 命中数量"),
         ("K线加载失败", summary["kline_failures"], "外部源和缓存均不可用数量"),
@@ -598,9 +616,11 @@ def _render_fundamental_research_cards(row: pd.Series) -> None:
         ("财务质量", safe_get(row, "financial_quality_score"), f"现金流质量 {format_value(safe_get(row, 'ocf_to_net_profit'))}"),
         ("基本面研究分", safe_get(row, "fundamental_research_score"), safe_get(row, "fundamental_summary")),
         ("基本面风险提示", safe_get(row, "fundamental_risks"), safe_get(row, "fundamental_warnings")),
+        ("数据来源", safe_get(row, "fundamental_data_source"), safe_get(row, "fundamental_data_status")),
+        ("更新时间", safe_get(row, "fundamental_updated_at"), safe_get(row, "fundamental_data_warning")),
     ]
     columns = st.columns(3)
-    for column, (title, value, caption) in zip(columns * 2, cards):
+    for column, (title, value, caption) in zip(columns * 3, cards):
         with column:
             _render_metric_card(title, value, caption)
 
@@ -719,6 +739,9 @@ def render_system_status_page(df: Any) -> dict[str, Any]:
     kline_loaded = source.attrs.get("kline_loaded", 0) if hasattr(source, "attrs") else 0
     kline_cache_hits = source.attrs.get("kline_cache_hits", 0) if hasattr(source, "attrs") else 0
     kline_failures = source.attrs.get("kline_failures", 0) if hasattr(source, "attrs") else 0
+    fundamental_data_source = source.attrs.get("fundamental_data_source", "Unavailable") if hasattr(source, "attrs") else "Unavailable"
+    fundamental_data_status = source.attrs.get("fundamental_data_status", "Unavailable") if hasattr(source, "attrs") else "Unavailable"
+    fundamental_rows = source.attrs.get("fundamental_rows", 0) if hasattr(source, "attrs") else 0
     _render_page_header("系统状态 / 数据质量", "版本、模块、缺失字段、warnings 和数据源说明")
     modules = list(REQUIRED_FIELD_GROUPS.keys())
     columns = st.columns(4)
@@ -765,6 +788,10 @@ def render_system_status_page(df: Any) -> dict[str, Any]:
         {"item": "K线缓存命中", "value": kline_cache_hits},
         {"item": "K线加载失败", "value": kline_failures},
         {"item": "K线缓存路径", "value": "cache/kline/{ticker}.csv"},
+        {"item": "基本面数据源", "value": fundamental_data_source},
+        {"item": "基本面状态", "value": fundamental_data_status},
+        {"item": "基本面数据行数", "value": fundamental_rows},
+        {"item": "基本面缓存路径", "value": "cache/fundamental/fundamental_latest.csv"},
         {"item": "最近错误", "value": last_error or "—"},
     ]
     st.dataframe(pd.DataFrame(status_rows), hide_index=True, use_container_width=True)

@@ -170,3 +170,55 @@ def test_no_kline_data_does_not_crash(monkeypatch):
 
     assert isinstance(result, pd.DataFrame)
     assert result.attrs["kline_failures"] == 1
+
+
+def test_fundamental_disabled_does_not_call_external_builder(monkeypatch):
+    import pipeline.live_runner as live_runner
+
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: _large_live_universe())
+
+    def existing_only(existing_df=None, tickers=None, **kwargs):
+        assert kwargs.get("use_external") is False
+        return pd.DataFrame([{"ticker": "600000", "pe_ttm": 10, "pb": 1.2, "roe": 18}])
+
+    monkeypatch.setattr(live_runner, "build_fundamental_dataset", existing_only)
+    result = live_runner.run_live_pipeline(kline_enabled=False, fundamental_enabled=False)
+
+    assert result.attrs["fundamental_enabled"] is False
+
+
+def test_fundamental_enabled_passes_fundamental_dataset(monkeypatch):
+    import pipeline.live_runner as live_runner
+
+    captured = {}
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: _large_live_universe())
+
+    def fake_builder(existing_df=None, tickers=None, **kwargs):
+        captured["use_external"] = kwargs.get("use_external")
+        frame = pd.DataFrame(
+            [
+                {
+                    "ticker": "600000",
+                    "pe_ttm": 10,
+                    "pb": 1.2,
+                    "roe": 18,
+                    "revenue_growth_yoy": 12,
+                    "net_profit_growth_yoy": 22,
+                    "debt_to_asset": 45,
+                    "fundamental_data_source": "Test Fundamental",
+                    "fundamental_data_status": "Available",
+                }
+            ]
+        )
+        frame.attrs["fundamental_data_source"] = "Test Fundamental"
+        frame.attrs["fundamental_data_status"] = "Available"
+        frame.attrs["fundamental_rows"] = 1
+        return frame
+
+    monkeypatch.setattr(live_runner, "build_fundamental_dataset", fake_builder)
+    result = live_runner.run_live_pipeline(kline_enabled=False, fundamental_enabled=True)
+
+    assert captured["use_external"] is True
+    assert result.attrs["fundamental_data_source"] == "Test Fundamental"
+    assert "activated_fundamental_score" in result.columns
+    assert result["fundamental_available"].astype(bool).any()
