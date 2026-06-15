@@ -17,8 +17,8 @@ from ui.product_ui import (
 )
 from ui.screening_ui import render_screening_page
 
-APP_VERSION = "v6.3.3"
-APP_STAGE = "Real A-Share Realtime Data Layer"
+APP_VERSION = "v6.3.4"
+APP_STAGE = "Multi Realtime Source Fallback"
 
 # Re-export core functions used by the existing tests and notebooks.
 calculate_indicators = legacy_app.calculate_indicators

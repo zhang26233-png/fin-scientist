@@ -1,14 +1,16 @@
-"""A-share universe loader with strict timeout and fallback behavior."""
+"""A-share universe loader with multi-source realtime fallback."""
 
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Callable
 
 import pandas as pd
 
 from data.eastmoney_loader import load_eastmoney_a_share_spot
+from data.sina_loader import load_sina_a_share_spot
+from data.tencent_loader import load_tencent_a_share_spot
 
 
 OUTPUT_COLUMNS = [
@@ -20,36 +22,43 @@ OUTPUT_COLUMNS = [
     "status",
     "latest_price",
     "pct_change",
+    "change_amount",
     "volume",
     "turnover",
+    "open",
+    "high",
+    "low",
+    "prev_close",
     "data_source",
     "data_status",
+    "data_timestamp",
+    "data_warning",
 ]
 DEFAULT_MIN_LISTING_DAYS = 180
-DEFAULT_TIMEOUT_SECONDS = 30
+DEFAULT_TIMEOUT_SECONDS = 10
 MIN_REAL_UNIVERSE_ROWS = 1000
 
 DEMO_STOCKS = [
-    ("600519", "贵州茅台", "Consumer"),
-    ("300750", "宁德时代", "New Energy"),
-    ("600036", "招商银行", "Financial"),
-    ("601138", "工业富联", "Electronics"),
-    ("300308", "中际旭创", "Communication"),
-    ("300476", "胜宏科技", "Electronics"),
-    ("002594", "比亚迪", "Auto"),
-    ("000333", "美的集团", "Home Appliance"),
-    ("601318", "中国平安", "Financial"),
-    ("000858", "五粮液", "Consumer"),
-    ("300059", "东方财富", "Financial"),
-    ("600030", "中信证券", "Financial"),
-    ("002475", "立讯精密", "Electronics"),
-    ("002415", "海康威视", "Computer"),
-    ("300760", "迈瑞医疗", "Medical"),
-    ("601899", "紫金矿业", "Resource"),
-    ("688256", "寒武纪", "Semiconductor"),
-    ("002230", "科大讯飞", "AI"),
-    ("603501", "韦尔股份", "Semiconductor"),
-    ("601012", "隆基绿能", "New Energy"),
+    ("600519", "Demo 600519", "Consumer"),
+    ("300750", "Demo 300750", "New Energy"),
+    ("600036", "Demo 600036", "Financial"),
+    ("601138", "Demo 601138", "Electronics"),
+    ("300308", "Demo 300308", "Communication"),
+    ("300476", "Demo 300476", "Electronics"),
+    ("002594", "Demo 002594", "Auto"),
+    ("000333", "Demo 000333", "Home Appliance"),
+    ("601318", "Demo 601318", "Financial"),
+    ("000858", "Demo 000858", "Consumer"),
+    ("300059", "Demo 300059", "Financial"),
+    ("600030", "Demo 600030", "Financial"),
+    ("002475", "Demo 002475", "Electronics"),
+    ("002415", "Demo 002415", "Computer"),
+    ("300760", "Demo 300760", "Medical"),
+    ("601899", "Demo 601899", "Resource"),
+    ("688256", "Demo 688256", "Semiconductor"),
+    ("002230", "Demo 002230", "AI"),
+    ("603501", "Demo 603501", "Semiconductor"),
+    ("601012", "Demo 601012", "New Energy"),
 ]
 
 
@@ -59,16 +68,16 @@ def _now_text() -> str:
 
 def _market_from_ticker(ticker: str) -> str:
     if ticker.startswith("688"):
-        return "科创板"
+        return "STAR"
     if ticker.startswith("6"):
-        return "沪市"
+        return "SH"
     if ticker.startswith("300"):
-        return "创业板"
+        return "ChiNext"
     if ticker.startswith(("0", "2")):
-        return "深市"
+        return "SZ"
     if ticker.startswith(("4", "8", "9")):
-        return "北交所"
-    return "A股"
+        return "BSE"
+    return "A-share"
 
 
 def _normalize_ticker(value: Any) -> str | None:
@@ -135,6 +144,7 @@ def _attach_attrs(
     load_time: float = 0.0,
     last_error: str = "",
     filtered_breakdown: dict[str, int] | None = None,
+    source_attempts: list[dict[str, Any]] | None = None,
 ) -> pd.DataFrame:
     frame.attrs["data_source"] = data_source
     frame.attrs["data_status"] = data_status
@@ -146,19 +156,20 @@ def _attach_attrs(
     frame.attrs["updated_at"] = _now_text()
     frame.attrs["last_error"] = last_error
     frame.attrs["filtered_breakdown"] = dict(filtered_breakdown or {})
+    frame.attrs["source_attempts"] = list(source_attempts or [])
     return frame
 
 
-def _call_with_timeout(fetcher, timeout: int) -> pd.DataFrame:
+def _call_with_timeout(fetcher: Callable[[], pd.DataFrame], timeout: int) -> tuple[pd.DataFrame, str]:
     executor = ThreadPoolExecutor(max_workers=1)
     future = executor.submit(fetcher)
     try:
-        return future.result(timeout=timeout)
+        return future.result(timeout=timeout), ""
     except TimeoutError:
         future.cancel()
-        return pd.DataFrame()
-    except Exception:
-        return pd.DataFrame()
+        return pd.DataFrame(), f"timeout after {timeout}s"
+    except Exception as exc:
+        return pd.DataFrame(), repr(exc)
     finally:
         executor.shutdown(wait=False, cancel_futures=True)
 
@@ -169,7 +180,9 @@ def _normalize_source_frame(source: pd.DataFrame, *, data_source: str = "Provide
     rows: list[dict[str, Any]] = []
     for _, row in source.iterrows():
         raw = row.to_dict()
-        ticker = _normalize_ticker(_first_existing(raw, ["ticker", "code", "代码", "证券代码", "symbol"]))
+        ticker = _normalize_ticker(
+            _first_existing(raw, ["ticker", "code", "代码", "证券代码", "symbol", "股票代码"])
+        )
         if not ticker:
             continue
         name = str(_first_existing(raw, ["name", "名称", "证券简称", "股票简称", "code_name"], "")).strip()
@@ -179,14 +192,23 @@ def _normalize_source_frame(source: pd.DataFrame, *, data_source: str = "Provide
                 "name": name,
                 "market": _first_existing(raw, ["market", "市场"], _market_from_ticker(ticker)),
                 "industry": _first_existing(raw, ["industry", "行业", "所属行业"], ""),
-                "list_date": _parse_date(_first_existing(raw, ["list_date", "上市日期", "ipoDate", "ipo_date", "上市时间"])),
+                "list_date": _parse_date(
+                    _first_existing(raw, ["list_date", "上市日期", "ipoDate", "ipo_date", "上市时间"])
+                ),
                 "status": _first_existing(raw, ["status", "状态", "outDate"], "Available"),
                 "latest_price": _first_existing(raw, ["latest_price", "最新价"]),
                 "pct_change": _first_existing(raw, ["pct_change", "涨跌幅"]),
+                "change_amount": _first_existing(raw, ["change_amount", "涨跌额"]),
                 "volume": _first_existing(raw, ["volume", "成交量"]),
                 "turnover": _first_existing(raw, ["turnover", "成交额"]),
+                "open": _first_existing(raw, ["open", "今开"]),
+                "high": _first_existing(raw, ["high", "最高"]),
+                "low": _first_existing(raw, ["low", "最低"]),
+                "prev_close": _first_existing(raw, ["prev_close", "昨收"]),
                 "data_source": _first_existing(raw, ["data_source"], data_source),
                 "data_status": _first_existing(raw, ["data_status"], data_status),
+                "data_timestamp": _first_existing(raw, ["data_timestamp"], _now_text()),
+                "data_warning": _first_existing(raw, ["data_warning"], ""),
             }
         )
     return pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
@@ -231,10 +253,17 @@ def _build_demo_universe(last_error: str = "") -> pd.DataFrame:
             "status": "Available",
             "latest_price": None,
             "pct_change": None,
+            "change_amount": None,
             "volume": None,
             "turnover": None,
+            "open": None,
+            "high": None,
+            "low": None,
+            "prev_close": None,
             "data_source": "Demo",
             "data_status": "Fallback",
+            "data_timestamp": _now_text(),
+            "data_warning": "Demo fallback data; not realtime quotes.",
         }
         for ticker, name, industry in DEMO_STOCKS
     ]
@@ -251,17 +280,21 @@ def _build_demo_universe(last_error: str = "") -> pd.DataFrame:
 
 
 def _fetch_akshare_universe(timeout: int) -> pd.DataFrame:
-    def fetch():
+    def fetch() -> pd.DataFrame:
         import akshare as ak
 
         return ak.stock_zh_a_spot_em()
 
-    raw = _call_with_timeout(fetch, timeout)
-    return _normalize_source_frame(raw, data_source="AkShare", data_status="Live")
+    raw, error = _call_with_timeout(fetch, timeout)
+    frame = _normalize_source_frame(raw, data_source="AkShare", data_status="Live")
+    frame.attrs["data_source"] = "AkShare"
+    frame.attrs["data_status"] = "Live" if len(frame) > MIN_REAL_UNIVERSE_ROWS else "Error"
+    frame.attrs["last_error"] = error or ("" if len(frame) > MIN_REAL_UNIVERSE_ROWS else f"AkShare returned {len(frame)} rows.")
+    return frame
 
 
 def _fetch_baostock_universe(timeout: int) -> pd.DataFrame:
-    def fetch():
+    def fetch() -> pd.DataFrame:
         import baostock as bs
 
         rows = []
@@ -287,8 +320,64 @@ def _fetch_baostock_universe(timeout: int) -> pd.DataFrame:
             except Exception:
                 pass
 
-    raw = _call_with_timeout(fetch, timeout)
-    return _normalize_source_frame(raw, data_source="BaoStock", data_status="Live")
+    raw, error = _call_with_timeout(fetch, timeout)
+    frame = _normalize_source_frame(raw, data_source="BaoStock", data_status="Live")
+    frame.attrs["data_source"] = "BaoStock"
+    frame.attrs["data_status"] = "Live" if len(frame) > MIN_REAL_UNIVERSE_ROWS else "Error"
+    frame.attrs["last_error"] = error or ("" if len(frame) > MIN_REAL_UNIVERSE_ROWS else f"BaoStock returned {len(frame)} rows.")
+    return frame
+
+
+def _attempt_source(name: str, fetcher: Callable[..., pd.DataFrame], timeout: int) -> tuple[pd.DataFrame, dict[str, Any]]:
+    started = datetime.now()
+    try:
+        frame = fetcher(timeout=timeout)
+    except Exception as exc:
+        frame = pd.DataFrame(columns=OUTPUT_COLUMNS)
+        frame.attrs["data_source"] = name
+        frame.attrs["data_status"] = "Error"
+        frame.attrs["last_error"] = repr(exc)
+    rows = len(frame) if isinstance(frame, pd.DataFrame) else 0
+    status = "Live" if rows > MIN_REAL_UNIVERSE_ROWS else "Error"
+    last_error = str(getattr(frame, "attrs", {}).get("last_error", ""))
+    if status != "Live" and not last_error:
+        last_error = f"{name} returned {rows} rows; minimum required is {MIN_REAL_UNIVERSE_ROWS + 1}."
+    attempt = {
+        "data_source": name,
+        "rows": rows,
+        "data_status": status,
+        "last_error": last_error,
+        "load_time": (datetime.now() - started).total_seconds(),
+    }
+    return frame if isinstance(frame, pd.DataFrame) else pd.DataFrame(columns=OUTPUT_COLUMNS), attempt
+
+
+def _load_first_live_source(timeout: int) -> tuple[pd.DataFrame, str, str, list[dict[str, Any]]]:
+    attempts: list[dict[str, Any]] = []
+    sources: list[tuple[str, Callable[..., pd.DataFrame]]] = [
+        ("Tencent Realtime", load_tencent_a_share_spot),
+        ("Sina Realtime", load_sina_a_share_spot),
+        ("EastMoney Direct", load_eastmoney_a_share_spot),
+        ("AkShare", _fetch_akshare_universe),
+        ("BaoStock", _fetch_baostock_universe),
+    ]
+    for index, (name, fetcher) in enumerate(sources):
+        frame, attempt = _attempt_source(name, fetcher, timeout)
+        attempts.append(attempt)
+        if attempt["rows"] > MIN_REAL_UNIVERSE_ROWS:
+            for skipped_name, _ in sources[index + 1 :]:
+                attempts.append(
+                    {
+                        "data_source": skipped_name,
+                        "rows": 0,
+                        "data_status": "Not Tried",
+                        "last_error": f"Skipped because {name} returned live rows.",
+                        "load_time": 0.0,
+                    }
+                )
+            return _normalize_source_frame(frame, data_source=name, data_status="Live"), name, "", attempts
+    last_error = "; ".join(f"{item['data_source']}: {item['last_error'] or item['rows']}" for item in attempts)
+    return pd.DataFrame(columns=OUTPUT_COLUMNS), "Demo", last_error, attempts
 
 
 def load_a_share_universe(
@@ -299,34 +388,22 @@ def load_a_share_universe(
     metadata_df: pd.DataFrame | None = None,
     timeout: int = DEFAULT_TIMEOUT_SECONDS,
 ) -> pd.DataFrame:
-    """Load A-share universe using EastMoney Direct, AkShare, BaoStock, then Demo."""
+    """Load A-share universe using Tencent, Sina, EastMoney, AkShare, BaoStock, then Demo."""
+    _ = metadata_df
     today_value = today or date.today()
     started = datetime.now()
     last_error = ""
+    source_attempts: list[dict[str, Any]] = []
 
     if source_df is not None:
         raw = _normalize_source_frame(source_df, data_source="Provided", data_status="Live")
         data_source = "Provided"
     else:
-        eastmoney = load_eastmoney_a_share_spot(timeout=timeout)
-        if len(eastmoney) > MIN_REAL_UNIVERSE_ROWS:
-            raw = _normalize_source_frame(eastmoney, data_source="EastMoney Direct", data_status="Live")
-            data_source = "EastMoney Direct"
-        else:
-            last_error = eastmoney.attrs.get("last_error", "EastMoney Direct returned too few rows.")
-            akshare = _fetch_akshare_universe(timeout)
-            if len(akshare) > MIN_REAL_UNIVERSE_ROWS:
-                raw = akshare
-                data_source = "AkShare"
-            else:
-                if not last_error:
-                    last_error = "AkShare returned too few rows."
-                baostock = _fetch_baostock_universe(timeout)
-                if len(baostock) > MIN_REAL_UNIVERSE_ROWS:
-                    raw = baostock
-                    data_source = "BaoStock"
-                else:
-                    return _build_demo_universe(last_error=last_error or "All realtime A-share data sources failed.")
+        raw, data_source, last_error, source_attempts = _load_first_live_source(timeout)
+        if raw.empty:
+            demo = _build_demo_universe(last_error=last_error or "All realtime A-share data sources failed.")
+            demo.attrs["source_attempts"] = source_attempts
+            return demo
 
     raw_count = len(raw)
     filtered, breakdown = _apply_filters(raw, today=today_value, min_listing_days=min_listing_days)
@@ -341,6 +418,7 @@ def load_a_share_universe(
         load_time=load_time,
         last_error=last_error,
         filtered_breakdown=breakdown,
+        source_attempts=source_attempts,
     )
 
 

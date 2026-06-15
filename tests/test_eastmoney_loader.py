@@ -173,6 +173,10 @@ def test_a_share_loader_uses_eastmoney_when_large(monkeypatch):
     frame.attrs["last_error"] = ""
     frame.attrs["load_time"] = 0.1
 
+    empty = pd.DataFrame()
+    empty.attrs["last_error"] = "mock empty"
+    monkeypatch.setattr("data.a_share_loader.load_tencent_a_share_spot", lambda timeout=10: empty)
+    monkeypatch.setattr("data.a_share_loader.load_sina_a_share_spot", lambda timeout=10: empty)
     monkeypatch.setattr("data.a_share_loader.load_eastmoney_a_share_spot", lambda timeout=30: frame)
     result = load_a_share_universe(timeout=1)
 

@@ -21,8 +21,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.3.3"
-PRODUCT_STAGE = "Real A-Share Realtime Data Layer"
+PRODUCT_VERSION = "v6.3.4"
+PRODUCT_STAGE = "Multi Realtime Source Fallback"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -496,6 +496,7 @@ def render_system_status_page(df: Any) -> dict[str, Any]:
     load_time = source.attrs.get("load_time", "—") if hasattr(source, "attrs") else "—"
     updated_at = source.attrs.get("updated_at", "—") if hasattr(source, "attrs") else "—"
     last_error = source.attrs.get("last_error", "") if hasattr(source, "attrs") else ""
+    source_attempts = source.attrs.get("source_attempts", []) if hasattr(source, "attrs") else []
     _render_page_header("系统状态 / 数据质量", "版本、模块、缺失字段、warnings 和数据源说明")
     modules = list(REQUIRED_FIELD_GROUPS.keys())
     columns = st.columns(4)
@@ -535,6 +536,12 @@ def render_system_status_page(df: Any) -> dict[str, Any]:
         {"item": "最近错误", "value": last_error or "—"},
     ]
     st.dataframe(pd.DataFrame(status_rows), hide_index=True, use_container_width=True)
+    st.subheader("Realtime source fallback attempts")
+    fallback_rows = source_attempts if isinstance(source_attempts, list) else []
+    if fallback_rows:
+        st.dataframe(pd.DataFrame(fallback_rows), hide_index=True, use_container_width=True)
+    else:
+        st.info("No realtime source attempt metadata is available for the current frame.")
     if is_demo:
         st.warning(source.attrs.get("data_notice", "当前为 Demo 数据，用于展示系统结构；接入真实行情后可替换为真实结果。"))
     st.info(f"当前数据来源：{data_source}；是否 Demo：{is_demo}；样本数量：{len(source)}。所有结果仅供学习和研究，不构成投资建议。")
@@ -548,6 +555,7 @@ def render_system_status_page(df: Any) -> dict[str, Any]:
         "raw_count": raw_count,
         "filtered_count": filtered_count,
         "final_count": final_count,
+        "source_attempts": fallback_rows,
     }
 
 

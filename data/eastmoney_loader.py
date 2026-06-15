@@ -197,7 +197,7 @@ def _extract_diff(payload: Any) -> tuple[list[Any], list[str], bool]:
     return diff, keys, True
 
 
-def load_eastmoney_a_share_spot(timeout: int = 30) -> pd.DataFrame:
+def load_eastmoney_a_share_spot(timeout: int = 10) -> pd.DataFrame:
     """Load realtime A-share quotes directly from EastMoney push2."""
     started = datetime.now()
     rows: list[dict[str, Any]] = []

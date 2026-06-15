@@ -36,7 +36,7 @@ def _run_with_timeout(timeout: int):
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--timeout", type=int, default=30)
+    parser.add_argument("--timeout", type=int, default=10)
     args = parser.parse_args()
 
     frame, elapsed, error = _run_with_timeout(args.timeout)

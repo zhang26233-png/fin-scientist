@@ -13,12 +13,20 @@ import urllib.request
 
 
 HTTP_TARGETS = [
+    "https://web.ifzq.gtimg.cn",
+    "https://qt.gtimg.cn",
+    "https://vip.stock.finance.sina.com.cn",
+    "https://hq.sinajs.cn",
     "https://push2.eastmoney.com",
     "https://quote.eastmoney.com",
     "https://www.baidu.com",
 ]
 
 TCP_TARGETS = [
+    ("web.ifzq.gtimg.cn", 443),
+    ("qt.gtimg.cn", 443),
+    ("vip.stock.finance.sina.com.cn", 443),
+    ("hq.sinajs.cn", 443),
     ("push2.eastmoney.com", 443),
     ("quote.eastmoney.com", 443),
     ("baostock.com", 80),
