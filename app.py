@@ -17,8 +17,8 @@ from ui.product_ui import (
 )
 from ui.screening_ui import render_screening_page
 
-APP_VERSION = "v6.7.0"
-APP_STAGE = "Unified Data Source Center"
+APP_VERSION = "v6.8.0"
+APP_STAGE = "Full Capital Flow Engine"
 
 # Re-export core functions used by the existing tests and notebooks.
 calculate_indicators = legacy_app.calculate_indicators

@@ -2,6 +2,20 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.8.0
+
+- Added Full Capital Flow Engine.
+- Added `capital_flow/__init__.py`, `capital_flow/capital_engine.py`, and `tests/test_capital_engine.py`.
+- Added `build_capital_scores()` with turnover-rate, volume-ratio, main-inflow, northbound, and activity component scores.
+- Added capital-flow research fields: `capital_flow_score`, `capital_flow_rank`, `capital_flow_strength`, `capital_flow_summary`, `capital_flow_warning`, source/status, and update time.
+- Added capital-flow score cache at `cache/capital_flow/capital_score_cache.csv` with automatic recomputation when source inputs change.
+- Updated Data Source Center with Capital Flow Coverage, Capital Flow Rows, Capital Cache Status, and Capital Updated Time.
+- Updated `data/capital_flow_loader.py` to keep the expanded capital-flow field contract while preserving cache fallback.
+- Updated `pipeline/live_runner.py` so capital-flow data enters the Capital Flow Engine before news, industry, research activation, and UI output.
+- Updated `research/score_activation.py` with the v6.8.0 composite formula using activated fundamental, real technical, capital-flow, and news scores when available, with fallback when fields are missing.
+- Updated Product UI Dashboard, Selection Results, and Research Workstation with capital-flow coverage, averages, ranks, strengths, summaries, warnings, source, and update time.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, buy/sell/hold advice, target prices, position suggestions, return promises, machine-learning prediction, API keys, databases, and vector stores unchanged.
+
 ## v6.7.0
 
 - Added Unified Data Source Center.

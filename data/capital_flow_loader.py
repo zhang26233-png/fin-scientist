@@ -34,7 +34,10 @@ CAPITAL_FLOW_COLUMNS = [
     "main_net_inflow_ratio",
     "sector_capital_rank",
     "capital_flow_score",
+    "capital_flow_rank",
     "capital_flow_summary",
+    "capital_flow_strength",
+    "capital_flow_warning",
     "capital_flow_warnings",
     "capital_flow_source",
     "capital_flow_status",
@@ -54,6 +57,7 @@ NUMERIC_COLUMNS = [
     "main_net_inflow_ratio",
     "sector_capital_rank",
     "capital_flow_score",
+    "capital_flow_rank",
 ]
 
 FIELD_ALIASES = {
@@ -214,7 +218,10 @@ def _standardize_frame(source: pd.DataFrame | None, *, data_source: str, data_st
                 "main_net_inflow_ratio": main_net_inflow_ratio,
                 "sector_capital_rank": _to_number(_first_existing(raw, "sector_capital_rank")),
                 "capital_flow_score": flow_score,
+                "capital_flow_rank": _to_number(raw.get("capital_flow_rank")),
                 "capital_flow_summary": raw.get("capital_flow_summary") or "Capital-flow fields are standardized for research review.",
+                "capital_flow_strength": raw.get("capital_flow_strength") or "",
+                "capital_flow_warning": raw.get("capital_flow_warning") or warnings,
                 "capital_flow_warnings": warnings,
                 "capital_flow_source": raw.get("capital_flow_source", data_source),
                 "capital_flow_status": raw.get("capital_flow_status", data_status),

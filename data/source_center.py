@@ -8,6 +8,7 @@ from typing import Any
 
 import pandas as pd
 
+from capital_flow.capital_engine import CAPITAL_SCORE_CACHE_FILE
 from data.capital_flow_loader import CACHE_FILE as CAPITAL_FLOW_CACHE_FILE
 from data.fundamental_loader import CACHE_FILE as FUNDAMENTAL_CACHE_FILE
 from data.industry_loader import CACHE_FILE as INDUSTRY_CACHE_FILE
@@ -24,6 +25,10 @@ SOURCE_STATUS_COLUMNS = [
     "last_updated",
     "last_error",
     "cache_status",
+    "capital_flow_coverage",
+    "capital_flow_rows",
+    "capital_cache_status",
+    "capital_updated_time",
     "priority",
     "used_in_model",
 ]
@@ -65,6 +70,13 @@ def _source_attempt_map(df: pd.DataFrame | None) -> dict[str, dict[str, Any]]:
     return result
 
 
+def _capital_coverage(df: pd.DataFrame) -> float:
+    if df.empty or "capital_flow_score" not in df.columns:
+        return 0.0
+    covered = pd.to_numeric(df["capital_flow_score"], errors="coerce").notna().sum()
+    return round(float(covered) / max(len(df), 1), 4)
+
+
 def _status_row(
     *,
     source_name: str,
@@ -74,6 +86,10 @@ def _status_row(
     last_updated: str = "",
     last_error: str = "",
     cache_status: str = "Missing",
+    capital_flow_coverage: float = 0.0,
+    capital_flow_rows: int = 0,
+    capital_cache_status: str = "",
+    capital_updated_time: str = "",
     priority: int = 0,
     used_in_model: bool = False,
 ) -> dict[str, Any]:
@@ -85,6 +101,10 @@ def _status_row(
         "last_updated": last_updated,
         "last_error": last_error or "",
         "cache_status": cache_status or "Missing",
+        "capital_flow_coverage": float(capital_flow_coverage or 0.0),
+        "capital_flow_rows": int(capital_flow_rows or 0),
+        "capital_cache_status": capital_cache_status or "",
+        "capital_updated_time": capital_updated_time or "",
         "priority": int(priority),
         "used_in_model": bool(used_in_model),
     }
@@ -101,6 +121,13 @@ def build_data_source_status(research_df: pd.DataFrame | None = None) -> pd.Data
     attempts = _source_attempt_map(df)
     cache = cache_metadata()
     updated_at = str(attrs.get("updated_at", ""))
+    capital_rows = int(attrs.get("capital_flow_rows", 0) or 0)
+    capital_updated_at = str(
+        attrs.get("capital_flow_updated_at")
+        or attrs.get("capital_score_cache_updated_at")
+        or updated_at
+    )
+    capital_cache_status = str(attrs.get("capital_score_cache_status") or _cache_status(CAPITAL_SCORE_CACHE_FILE))
 
     realtime_rows = len(df) if not df.empty else 0
     rows = []
@@ -156,8 +183,12 @@ def build_data_source_status(research_df: pd.DataFrame | None = None) -> pd.Data
                 status=str(attrs.get("capital_flow_status", "Unavailable")),
                 rows=int(attrs.get("capital_flow_rows", 0) or 0),
                 last_updated=str(attrs.get("capital_flow_updated_at", updated_at)),
-                last_error=str(attrs.get("capital_flow_warning", "")),
+                last_error=str(attrs.get("capital_flow_warning", attrs.get("capital_flow_warnings", ""))),
                 cache_status=_cache_status(CAPITAL_FLOW_CACHE_FILE),
+                capital_flow_coverage=_capital_coverage(df),
+                capital_flow_rows=capital_rows,
+                capital_cache_status=capital_cache_status,
+                capital_updated_time=capital_updated_at,
                 priority=1,
                 used_in_model="capital_flow_score" in df.columns,
             ),

@@ -10,6 +10,7 @@ import pandas as pd
 
 from backtest.backtest_engine import build_backtest_dataset
 from backtest.backtest_evaluation import build_backtest_evaluation
+from capital_flow.capital_engine import CAPITAL_ENGINE_FIELDS, build_capital_scores
 from data.capital_flow_loader import CAPITAL_FLOW_COLUMNS, build_capital_flow_dataset
 from data.a_share_loader import load_a_share_universe
 from data.fundamental_loader import build_fundamental_dataset
@@ -59,6 +60,7 @@ LIVE_PIPELINE_FIELDS = [
     *REAL_TECHNICAL_INDICATOR_FIELDS,
     *FUNDAMENTAL_RESEARCH_FIELDS,
     *CAPITAL_FLOW_COLUMNS,
+    *CAPITAL_ENGINE_FIELDS,
     *NEWS_COLUMNS,
     *INDUSTRY_COLUMNS,
     *ACTIVATED_RESEARCH_FIELDS,
@@ -384,13 +386,14 @@ def _run_pipeline(
         use_external=bool(capital_flow_enabled),
     )
     with_capital_flow = _merge_optional_layer(with_fundamental_research, capital_flow, CAPITAL_FLOW_COLUMNS)
+    with_capital_scores = build_capital_scores(with_capital_flow, use_cache=True)
     news = build_news_dataset(
-        with_capital_flow,
+        with_capital_scores,
         tickers=news_tickers,
         use_external=bool(news_enabled),
         max_stocks=max_news_stocks,
     )
-    with_news = _merge_optional_layer(with_capital_flow, news, NEWS_COLUMNS)
+    with_news = _merge_optional_layer(with_capital_scores, news, NEWS_COLUMNS)
     industry = build_industry_dataset(
         with_news,
         tickers=industry_tickers,

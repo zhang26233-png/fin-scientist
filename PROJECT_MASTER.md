@@ -20,15 +20,17 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.7.0
-- CURRENT_STAGE = Unified Data Source Center
-- NEXT_TARGET = v6.8.0 Full Capital Flow Engine
+- CURRENT_VERSION = v6.8.0
+- CURRENT_STAGE = Full Capital Flow Engine
+- NEXT_TARGET = v6.9.0 Capital Flow Validation
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.7.0"`
-- `legacy_app.py`: `APP_VERSION = "v6.7.0"`
-- `README.md`: Current version: v6.7.0
+- `app.py`: `APP_VERSION = "v6.8.0"`
+- `legacy_app.py`: `APP_VERSION = "v6.8.0"`
+- `README.md`: Current version: v6.8.0
+
+V6.8.0 adds the Full Capital Flow Engine. New package `capital_flow/` contains `capital_engine.py` with `build_capital_scores()`, which turns standardized capital-flow data into additive research fields for turnover-rate score, volume-ratio score, main-inflow score, northbound score, activity score, `capital_flow_score`, `capital_flow_rank`, `capital_flow_strength`, neutral summary text, warnings, source, status, and update time. The engine writes `cache/capital_flow/capital_score_cache.csv` and recomputes automatically when source inputs change. The Data Source Center now exposes Capital Flow Coverage, Capital Flow Rows, Capital Cache Status, and Capital Updated Time. The live pipeline now runs realtime quotes, K-line, technical indicators, fundamental data, Capital Flow Engine, news, industry, research activation, and UI output. Research activation uses the v6.8.0 composite formula when fundamental, technical, capital-flow, and news fields are available, while keeping fallback behavior when fields are missing. Dashboard, Selection Results, and Research Workstation expose capital-flow coverage, averages, ranks, strengths, summaries, warnings, source, and update time. All outputs remain only for learning and research and do not constitute investment advice.
 
 V6.7.0 adds the Unified Data Source Center plus capital-flow, news-event, and industry/concept data foundations. New modules `data/source_center.py`, `data/capital_flow_loader.py`, `data/news_loader.py`, and `data/industry_loader.py` standardize source status, capital activity, keyword-classified news events, and industry/concept fields with local cache fallback under `cache/source_status/`, `cache/capital_flow/`, `cache/news/`, and `cache/industry/`. `pipeline/live_runner.py` now runs realtime quotes, historical K-line, technical indicators, fundamental data, capital-flow data, news-event data, industry/concept data, score activation, and UI output. `research/score_activation.py` adds activated capital-flow, news, and industry score fields and uses the v6.7.0 composite formula when required inputs are available, while falling back to the v6.6.2 logic when they are not. Product UI adds a Data Source Center page and exposes data-source, capital-flow, news, and industry/concept diagnostics. All outputs remain only for learning and research and do not constitute investment advice.
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation

@@ -22,8 +22,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.7.0"
-PRODUCT_STAGE = "Unified Data Source Center"
+PRODUCT_VERSION = "v6.8.0"
+PRODUCT_STAGE = "Full Capital Flow Engine"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -109,7 +109,7 @@ REQUIRED_FIELD_GROUPS = {
         "fundamental_summary",
         "fundamental_warnings",
     ],
-    "Capital Flow": ["capital_flow_score", "capital_activity_score", "turnover_rate", "volume_ratio", "main_net_inflow"],
+    "Capital Flow": ["capital_flow_score", "capital_flow_strength", "capital_flow_rank", "capital_activity_score", "turnover_rate", "volume_ratio", "main_net_inflow", "capital_flow_warning"],
     "News Event": ["news_event_score", "news_sentiment_label", "news_title", "news_source"],
     "Industry Concept": ["industry", "concepts", "industry_strength_score", "concept_heat_score"],
     "Explainable Selection": ["selection_thesis", "selection_strengths", "selection_risks", "selection_explanation"],
@@ -124,10 +124,16 @@ SELECTION_COLUMNS = [
     "pct_change",
     "turnover",
     "capital_flow_score",
+    "capital_flow_strength",
+    "capital_flow_rank",
     "capital_activity_score",
     "turnover_rate",
     "volume_ratio",
     "main_net_inflow",
+    "main_net_inflow_ratio",
+    "northbound_change",
+    "capital_flow_summary",
+    "capital_flow_warning",
     "news_event_score",
     "news_sentiment_label",
     "news_title",
@@ -233,12 +239,15 @@ STOCK_DETAIL_FIELDS = [
     "fundamental_risks",
     "fundamental_warnings",
     "capital_flow_score",
+    "capital_flow_rank",
+    "capital_flow_strength",
     "capital_activity_score",
     "turnover_rate",
     "volume_ratio",
     "main_net_inflow",
     "main_net_inflow_ratio",
     "capital_flow_summary",
+    "capital_flow_warning",
     "capital_flow_warnings",
     "news_event_score",
     "news_sentiment_label",
@@ -370,6 +379,12 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         else 0
     )
     source_status = build_data_source_status(source)
+    capital_flow_coverage = (
+        int(pd.to_numeric(source["capital_flow_score"], errors="coerce").notna().sum())
+        if "capital_flow_score" in source.columns
+        else 0
+    )
+    capital_strength = source["capital_flow_strength"].fillna("") if "capital_flow_strength" in source.columns else pd.Series([""] * len(source), index=source.index)
     return {
         "total_count": int(len(source)),
         "universe_size": int(source.attrs.get("universe_size", len(source))) if hasattr(source, "attrs") else int(len(source)),
@@ -396,6 +411,12 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         "source_status_count": len(source_status),
         "source_available_count": int(source_status["status"].isin(["Live", "Available", "Cache"]).sum()) if not source_status.empty else 0,
         "average_capital_flow_score": _metric_value(source, "capital_flow_score"),
+        "capital_flow_coverage_count": capital_flow_coverage,
+        "capital_flow_coverage_rate": round(capital_flow_coverage / len(source) * 100, 2) if len(source) else 0,
+        "average_main_net_inflow": _metric_value(source, "main_net_inflow"),
+        "average_northbound_change": _metric_value(source, "northbound_change"),
+        "strong_capital_flow_count": int(capital_strength.isin(["Strong Buy Research", "Strong"]).sum()),
+        "weak_capital_flow_count": int(capital_strength.isin(["Weak", "Very Weak"]).sum()),
         "average_news_event_score": _metric_value(source, "news_event_score"),
         "average_industry_strength_score": _metric_value(source, "industry_strength_score"),
         "average_concept_heat_score": _metric_value(source, "concept_heat_score"),
@@ -533,6 +554,12 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
         ("平均 ROE", summary["average_roe"], "ROE 均值"),
         ("平均营收增速", summary["average_revenue_growth_yoy"], "revenue_growth_yoy 均值"),
         ("平均净利润增速", summary["average_net_profit_growth_yoy"], "net_profit_growth_yoy 均值"),
+        ("平均资金分", summary["average_capital_flow_score"], "capital_flow_score 均值"),
+        ("资金覆盖率", f"{summary['capital_flow_coverage_rate']}%", f"覆盖 {summary['capital_flow_coverage_count']} 个对象"),
+        ("主力净流入均值", summary["average_main_net_inflow"], "main_net_inflow 均值"),
+        ("北向资金均值", summary["average_northbound_change"], "northbound_change 均值"),
+        ("资金强势数量", summary["strong_capital_flow_count"], "Strong / Strong Buy Research"),
+        ("资金弱势数量", summary["weak_capital_flow_count"], "Weak / Very Weak"),
         ("K线缓存命中", summary["kline_cache_hits"], "cache/kline 命中数量"),
         ("K线加载失败", summary["kline_failures"], "外部源和缓存均不可用数量"),
         ("平均 risk_score", summary["average_risk_score"], "风险评分均值"),
@@ -589,9 +616,14 @@ def render_selection_page(df: Any) -> dict[str, pd.DataFrame]:
     source = safe_copy_frame(df)
     _render_page_header("选股结果", "Core、Watch、风险和数据缺失对象分组")
     display_source = source.copy(deep=True)
-    if "activated_selection_score" in display_source.columns:
+    sort_options = ["activated_selection_score", "capital_flow_score", "selection_score"]
+    available_sort_options = [field for field in sort_options if field in display_source.columns]
+    sort_field = available_sort_options[0] if available_sort_options else ""
+    if available_sort_options:
+        sort_field = st.selectbox("结果排序", options=available_sort_options, index=0)
+    if sort_field:
         display_source = display_source.sort_values(
-            by="activated_selection_score",
+            by=sort_field,
             ascending=False,
             kind="mergesort",
         )
@@ -673,20 +705,33 @@ def _render_fundamental_research_cards(row: pd.Series) -> None:
 
 
 def _render_capital_news_industry_cards(row: pd.Series) -> None:
-    st.subheader("资金面 / 新闻事件 / 行业概念")
+    st.subheader("资金研究卡片")
     cards = [
-        ("Capital Flow Score", safe_get(row, "capital_flow_score"), safe_get(row, "capital_flow_summary")),
-        ("Capital Activity", safe_get(row, "capital_activity_score"), f"Turnover rate {format_value(safe_get(row, 'turnover_rate'))} / Volume ratio {format_value(safe_get(row, 'volume_ratio'))}"),
-        ("Main Net Inflow", safe_get(row, "main_net_inflow"), safe_get(row, "main_net_inflow_ratio")),
+        ("资金评分", safe_get(row, "capital_flow_score"), f"Rank {format_value(safe_get(row, 'capital_flow_rank'))}"),
+        ("资金等级", safe_get(row, "capital_flow_strength"), safe_get(row, "capital_flow_status")),
+        ("资金解释", safe_get(row, "capital_flow_summary"), ""),
+        ("资金风险", safe_get(row, "capital_flow_warning"), safe_get(row, "capital_flow_warnings")),
+        ("数据来源", safe_get(row, "capital_flow_source"), safe_get(row, "capital_flow_status")),
+        ("更新时间", safe_get(row, "capital_flow_updated_at"), ""),
+        ("资金活跃度", safe_get(row, "capital_activity_score"), f"Turnover rate {format_value(safe_get(row, 'turnover_rate'))} / Volume ratio {format_value(safe_get(row, 'volume_ratio'))}"),
+        ("主力净流入", safe_get(row, "main_net_inflow"), safe_get(row, "main_net_inflow_ratio")),
+        ("北向变化", safe_get(row, "northbound_change"), safe_get(row, "northbound_hold")),
+    ]
+    columns = st.columns(3)
+    for column, (title, value, caption) in zip(columns * 3, cards):
+        with column:
+            _render_metric_card(title, value, caption)
+    st.subheader("新闻事件 / 行业概念")
+    context_cards = [
         ("News Event Score", safe_get(row, "news_event_score"), safe_get(row, "news_sentiment_label")),
         ("News Title", safe_get(row, "news_title"), safe_get(row, "news_source")),
         ("Industry", safe_get(row, "industry"), safe_get(row, "concepts")),
         ("Industry Strength", safe_get(row, "industry_strength_score"), safe_get(row, "industry_rank")),
         ("Concept Heat", safe_get(row, "concept_heat_score"), safe_get(row, "concept_rank")),
-        ("Data Source Diagnostics", safe_get(row, "capital_flow_source"), f"{format_value(safe_get(row, 'news_source'))} / {format_value(safe_get(row, 'industry_source'))}"),
+        ("Data Source Diagnostics", safe_get(row, "news_source"), safe_get(row, "industry_source")),
     ]
     columns = st.columns(3)
-    for column, (title, value, caption) in zip(columns * 3, cards):
+    for column, (title, value, caption) in zip(columns * 2, context_cards):
         with column:
             _render_metric_card(title, value, caption)
 

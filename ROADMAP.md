@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v6.7.0.
+Current: v6.8.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -234,7 +234,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.6.1: Real Fundamental Data Integration preparation completed.
 - v6.6.2: Real Fundamental Data Layer completed.
 - v6.7.0: Unified Data Source Center completed.
-- Next target: v6.8.0 Full Capital Flow Engine.
+- v6.8.0: Full Capital Flow Engine completed.
+- Next target: v6.9.0 Capital Flow Validation.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -589,6 +590,21 @@ Completed v6.7.0 scope:
 - Updated Product UI with Dashboard data-source overview, Data Source Center page, selection-result fields, workstation cards, and source diagnostics.
 - Next target: v6.8.0 Full Capital Flow Engine.
 - Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and buy/sell/hold advice unchanged.
+
+Completed v6.8.0 scope:
+
+- Added `capital_flow/__init__.py`, `capital_flow/capital_engine.py`, and `tests/test_capital_engine.py`.
+- Added `build_capital_scores()` for turnover-rate, volume-ratio, main-inflow, northbound, and activity scoring.
+- Added full capital-flow research fields: `capital_flow_score`, `capital_flow_rank`, `capital_flow_strength`, `capital_flow_summary`, `capital_flow_warning`, source/status, and update time.
+- Added `cache/capital_flow/capital_score_cache.csv` with signature-based reuse and automatic recomputation when inputs change.
+- Updated Data Source Center with Capital Flow Coverage, Capital Flow Rows, Capital Cache Status, and Capital Updated Time.
+- Updated `pipeline/live_runner.py` so capital-flow data is passed through the Capital Flow Engine before news, industry, research activation, and UI output.
+- Updated `research/score_activation.py` with the v6.8.0 activated composite formula using fundamental, real technical, capital-flow, and news scores when available.
+- Updated Dashboard with average capital-flow score, coverage, main-inflow average, northbound average, strong capital-flow count, and weak capital-flow count.
+- Updated Selection Results with capital-flow score, rank, strength, net inflow, volume ratio, turnover rate, northbound change, summary, warning, and display sorting by capital-flow score.
+- Updated Research Workstation with a dedicated capital-flow research card showing score, strength, explanation, warning, source, and update time.
+- Next target: v6.9.0 Capital Flow Validation.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and operational advice unchanged.
 
 Boundary:
 

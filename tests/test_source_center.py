@@ -26,6 +26,8 @@ def test_source_status_fields_complete():
     frame.attrs["source_attempts"] = [{"data_source": "Tencent Realtime", "rows": 1, "data_status": "Live", "last_error": ""}]
     frame.attrs["capital_flow_status"] = "Available"
     frame.attrs["capital_flow_rows"] = 1
+    frame.attrs["capital_score_cache_status"] = "Saved"
+    frame.attrs["capital_score_cache_updated_at"] = "2026-06-16 10:00:00"
     frame.attrs["news_status"] = "Available"
     frame.attrs["news_rows"] = 1
     frame.attrs["industry_status"] = "Available"
@@ -45,6 +47,11 @@ def test_source_status_fields_complete():
         "Industry",
         "Local Cache",
     }
+    capital = status.loc[status["source_name"] == "Capital Flow"].iloc[0]
+    assert capital["capital_flow_coverage"] == 1.0
+    assert capital["capital_flow_rows"] == 1
+    assert capital["capital_cache_status"] == "Saved"
+    assert capital["capital_updated_time"] == "2026-06-16 10:00:00"
 
 
 def test_source_center_empty_frame_does_not_crash():

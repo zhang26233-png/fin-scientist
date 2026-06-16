@@ -2,7 +2,23 @@
 
 ## Current Version
 
-Current version: v6.7.0
+Current version: v6.8.0
+
+v6.8.0 adds the Full Capital Flow Engine. The project now includes `capital_flow/capital_engine.py`, which converts standardized capital-flow data into research-only component scores, a composite capital-flow score, rank, strength label, summary, warning, source, status, and update time.
+
+Capital Flow Engine:
+
+- `build_capital_scores()` scores turnover rate, volume ratio, main net inflow ratio, northbound change, and existing capital activity.
+- `capital_flow_score` uses 25% turnover-rate score, 20% volume-ratio score, 30% main-inflow score, 15% northbound score, and 10% activity score.
+- `capital_flow_strength` groups scores into Strong Buy Research, Strong, Medium, Weak, and Very Weak research labels.
+- `capital_flow_summary` explains observable capital-flow context such as volume-ratio expansion, main net inflow, northbound change, active turnover, or weak activity.
+- Capital-flow score cache is written to `cache/capital_flow/capital_score_cache.csv`; the engine reuses it only when the source signature is still valid and otherwise recomputes automatically.
+- The Data Source Center exposes Capital Flow Coverage, Capital Flow Rows, Capital Cache Status, and Capital Updated Time for capital-flow diagnostics.
+- `capital_flow_warning` flags low volume ratio, main outflow, northbound reduction, abnormal turnover, and low turnover amount.
+- The live pipeline now runs realtime quotes, K-line, technical indicators, fundamental data, Capital Flow Engine, news, industry, research activation, and UI output.
+- Dashboard, Selection Results, and Research Workstation show capital-flow coverage, average score, net-inflow averages, northbound averages, ranks, strengths, summaries, warnings, source, and update time.
+
+All capital-flow outputs are only for learning and research and do not constitute investment advice.
 
 v6.7.0 adds the Unified Data Source Center plus capital-flow, news-event, and industry/concept data foundations. The project now includes `data/source_center.py`, `data/capital_flow_loader.py`, `data/news_loader.py`, and `data/industry_loader.py`. The live pipeline runs realtime quotes, historical K-line loading, technical indicators, fundamental data, capital-flow data, news-event data, industry/concept data, score activation, and UI output.
 
@@ -107,7 +123,7 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v6.6.2 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`; historical K-line loading lives in `data/kline_loader.py`; real fundamental data loading lives in `data/fundamental_loader.py`; realtime quote research activation lives in `research/score_activation.py`; real technical indicator research fields live in `technical/indicator_engine.py`; fundamental research fields live in `fundamental/fundamental_engine.py`.
+`legacy_app.py` is not an unused backup. In v6.8.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`; historical K-line loading lives in `data/kline_loader.py`; real fundamental data loading lives in `data/fundamental_loader.py`; capital-flow research scoring lives in `capital_flow/capital_engine.py`; realtime quote research activation lives in `research/score_activation.py`; real technical indicator research fields live in `technical/indicator_engine.py`; fundamental research fields live in `fundamental/fundamental_engine.py`.
 
 v6.6.0 Fundamental Research Engine:
 
@@ -217,7 +233,7 @@ ui.workstation_ui
               read-only research report preview
 ```
 
-FinScientist v6.6.2 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整选股模型”执行已有研究流水线，并将真实 A 股实时行情、历史 K 线技术指标和基本面数据层接入研究评分激活层；失败时会显示原因并使用缓存或 Demo fallback。
+FinScientist v6.8.0 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整选股模型”执行已有研究流水线，并将真实 A 股实时行情、历史 K 线技术指标、基本面数据层和资金研究层接入研究评分激活层；失败时会显示原因并使用缓存或 Demo fallback。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -227,7 +243,7 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：v6.6.2
+当前版本：v6.8.0
 
 V6.2.0 Live Pipeline Runner:
 

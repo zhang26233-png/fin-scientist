@@ -228,13 +228,12 @@ def _activate_row(row: pd.Series) -> dict[str, Any]:
         technical_component = real_technical_score if real_technical_score is not None else activated_technical_score
         if activated_capital_flow_score is not None and activated_news_score is not None:
             activated_composite_score = _clip_score(
-                (0.30 * activated_fundamental_score)
+                (0.35 * activated_fundamental_score)
                 + (0.30 * technical_component)
-                + (0.20 * activated_capital_flow_score)
+                + (0.25 * activated_capital_flow_score)
                 + (0.10 * activated_news_score)
-                + (0.10 * quote_quality_score)
             )
-            reasons.append("Capital-flow and news fields are included in activated composite scoring.")
+            reasons.append("Capital-flow and news fields are included in v6.8.0 activated composite scoring.")
         else:
             activated_composite_score = _clip_score(
                 (0.35 * activated_fundamental_score)
