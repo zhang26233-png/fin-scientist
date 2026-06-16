@@ -2,6 +2,19 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.7.0
+
+- Added Unified Data Source Center.
+- Added `data/source_center.py`, `data/capital_flow_loader.py`, `data/news_loader.py`, `data/industry_loader.py`, `tests/test_source_center.py`, `tests/test_capital_flow_loader.py`, `tests/test_news_loader.py`, and `tests/test_industry_loader.py`.
+- Standardized source status fields for realtime quotes, K-line, fundamental, capital-flow, news, industry, and local cache layers.
+- Standardized capital-flow fields including activity score, net inflow fields, rankings, source/status/warnings, and cache fallback.
+- Added news/event fields with simple keyword classification, sentiment labels, event scores, source/status/warnings, and cache fallback.
+- Added industry/concept fields with industry strength, concept heat, rankings, source/status, and cache fallback.
+- Updated `pipeline/live_runner.py` with capital-flow, news, and industry enable switches and max-stock controls.
+- Updated `research/score_activation.py` with activated capital-flow, news, and industry score fields and v6.7.0 composite scoring when inputs are available, with v6.6.2 fallback when unavailable.
+- Updated Product UI with Dashboard data-source overview, a Data Source Center page, selection-result fields, workstation cards, and source diagnostics.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, buy/sell/hold advice, target prices, position suggestions, return promises, machine-learning prediction, API keys, databases, and vector stores unchanged.
+
 ## v6.6.2
 
 - Added Real Fundamental Data Layer.

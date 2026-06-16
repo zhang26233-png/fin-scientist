@@ -10,9 +10,12 @@ import pandas as pd
 
 from backtest.backtest_engine import build_backtest_dataset
 from backtest.backtest_evaluation import build_backtest_evaluation
+from data.capital_flow_loader import CAPITAL_FLOW_COLUMNS, build_capital_flow_dataset
 from data.a_share_loader import load_a_share_universe
 from data.fundamental_loader import build_fundamental_dataset
+from data.industry_loader import INDUSTRY_COLUMNS, build_industry_dataset
 from data.kline_loader import build_price_history_dict
+from data.news_loader import NEWS_COLUMNS, build_news_dataset
 from backtest.return_analysis import build_return_analysis
 from factor.factor_lab import build_factor_dataset
 from fundamental.fundamental_engine import FUNDAMENTAL_RESEARCH_FIELDS, build_fundamental_research
@@ -55,6 +58,9 @@ LIVE_PIPELINE_FIELDS = [
     "factor_effectiveness_label",
     *REAL_TECHNICAL_INDICATOR_FIELDS,
     *FUNDAMENTAL_RESEARCH_FIELDS,
+    *CAPITAL_FLOW_COLUMNS,
+    *NEWS_COLUMNS,
+    *INDUSTRY_COLUMNS,
     *ACTIVATED_RESEARCH_FIELDS,
 ]
 
@@ -208,6 +214,31 @@ def _ensure_live_fields(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
+def _merge_optional_layer(base: pd.DataFrame, layer: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    result = base.copy(deep=True)
+    if layer is None or layer.empty or "ticker" not in result.columns or "ticker" not in layer.columns:
+        for field in columns:
+            if field not in result.columns:
+                result[field] = None
+        return result
+    overlay = layer.drop_duplicates(subset=["ticker"], keep="first").copy(deep=True)
+    value_columns = [field for field in columns if field in overlay.columns and field != "ticker"]
+    merged = result.merge(overlay[["ticker", *value_columns]], on="ticker", how="left", suffixes=("", "_layer"))
+    for field in value_columns:
+        layer_field = f"{field}_layer"
+        if layer_field not in merged.columns:
+            continue
+        if field in result.columns:
+            merged[field] = merged[field].combine_first(merged[layer_field])
+            merged = merged.drop(columns=[layer_field])
+        else:
+            merged = merged.rename(columns={layer_field: field})
+    for field in columns:
+        if field not in merged.columns:
+            merged[field] = None
+    return merged
+
+
 def _select_kline_tickers(df: pd.DataFrame, max_kline_stocks: int) -> list[str]:
     if df.empty or "ticker" not in df.columns or max_kline_stocks <= 0:
         return []
@@ -302,6 +333,12 @@ def _run_pipeline(
     kline_enabled: bool = True,
     max_kline_stocks: int = 200,
     fundamental_enabled: bool = True,
+    capital_flow_enabled: bool = True,
+    news_enabled: bool = True,
+    industry_enabled: bool = True,
+    max_news_stocks: int = 200,
+    max_capital_flow_stocks: int = 500,
+    max_industry_stocks: int | None = None,
 ) -> pd.DataFrame:
     history = _copy_price_history_dict(price_history_dict)
     fundamental = build_fundamental_screening(universe, fundamental_df=fundamental_df)
@@ -335,13 +372,54 @@ def _run_pipeline(
         loaded_fundamentals = pd.concat([fundamental_df, loaded_fundamentals], ignore_index=True)
         loaded_fundamentals.attrs.update(source_attrs)
     with_fundamental_research = build_fundamental_research(with_real_technical, fundamental_df=loaded_fundamentals)
-    result = activate_research_scores(with_fundamental_research)
+
+    tickers = with_fundamental_research["ticker"].astype(str).tolist() if "ticker" in with_fundamental_research.columns else []
+    capital_tickers = tickers[: max(int(max_capital_flow_stocks), 0)] if max_capital_flow_stocks is not None else tickers
+    news_tickers = tickers[: max(int(max_news_stocks), 0)] if max_news_stocks is not None else tickers
+    industry_tickers = tickers[: max(int(max_industry_stocks), 0)] if max_industry_stocks is not None else tickers
+
+    capital_flow = build_capital_flow_dataset(
+        with_fundamental_research,
+        tickers=capital_tickers,
+        use_external=bool(capital_flow_enabled),
+    )
+    with_capital_flow = _merge_optional_layer(with_fundamental_research, capital_flow, CAPITAL_FLOW_COLUMNS)
+    news = build_news_dataset(
+        with_capital_flow,
+        tickers=news_tickers,
+        use_external=bool(news_enabled),
+        max_stocks=max_news_stocks,
+    )
+    with_news = _merge_optional_layer(with_capital_flow, news, NEWS_COLUMNS)
+    industry = build_industry_dataset(
+        with_news,
+        tickers=industry_tickers,
+        use_external=bool(industry_enabled),
+    )
+    with_industry = _merge_optional_layer(with_news, industry, INDUSTRY_COLUMNS)
+
+    result = activate_research_scores(with_industry)
     result.attrs.update(kline_attrs)
     result.attrs["fundamental_enabled"] = bool(fundamental_enabled)
     result.attrs["fundamental_data_source"] = loaded_fundamentals.attrs.get("fundamental_data_source", "Unavailable")
     result.attrs["fundamental_data_status"] = loaded_fundamentals.attrs.get("fundamental_data_status", "Unavailable")
     result.attrs["fundamental_rows"] = int(loaded_fundamentals.attrs.get("fundamental_rows", len(loaded_fundamentals)))
     result.attrs["fundamental_source_attempts"] = list(loaded_fundamentals.attrs.get("fundamental_source_attempts", []))
+    result.attrs["capital_flow_enabled"] = bool(capital_flow_enabled)
+    result.attrs["capital_flow_source"] = capital_flow.attrs.get("capital_flow_source", "Unavailable")
+    result.attrs["capital_flow_status"] = capital_flow.attrs.get("capital_flow_status", "Unavailable")
+    result.attrs["capital_flow_rows"] = int(capital_flow.attrs.get("capital_flow_rows", len(capital_flow)))
+    result.attrs["capital_flow_attempts"] = list(capital_flow.attrs.get("capital_flow_attempts", []))
+    result.attrs["news_enabled"] = bool(news_enabled)
+    result.attrs["news_source"] = news.attrs.get("news_source", "Unavailable")
+    result.attrs["news_status"] = news.attrs.get("news_status", "Unavailable")
+    result.attrs["news_rows"] = int(news.attrs.get("news_rows", len(news)))
+    result.attrs["news_attempts"] = list(news.attrs.get("news_attempts", []))
+    result.attrs["industry_enabled"] = bool(industry_enabled)
+    result.attrs["industry_source"] = industry.attrs.get("industry_source", "Unavailable")
+    result.attrs["industry_status"] = industry.attrs.get("industry_status", "Unavailable")
+    result.attrs["industry_rows"] = int(industry.attrs.get("industry_rows", len(industry)))
+    result.attrs["industry_attempts"] = list(industry.attrs.get("industry_attempts", []))
     return result
 
 
@@ -360,6 +438,12 @@ def run_live_pipeline(
     kline_enabled: bool = True,
     max_kline_stocks: int = 200,
     fundamental_enabled: bool = True,
+    capital_flow_enabled: bool = True,
+    news_enabled: bool = True,
+    industry_enabled: bool = True,
+    max_news_stocks: int = 200,
+    max_capital_flow_stocks: int = 500,
+    max_industry_stocks: int | None = None,
 ) -> pd.DataFrame:
     """Run the full read-only research pipeline for the Streamlit web app.
 
@@ -395,6 +479,12 @@ def run_live_pipeline(
             kline_enabled=kline_enabled,
             max_kline_stocks=max_kline_stocks,
             fundamental_enabled=fundamental_enabled,
+            capital_flow_enabled=capital_flow_enabled,
+            news_enabled=news_enabled,
+            industry_enabled=industry_enabled,
+            max_news_stocks=max_news_stocks,
+            max_capital_flow_stocks=max_capital_flow_stocks,
+            max_industry_stocks=max_industry_stocks,
         )
         if result.empty:
             raise ValueError("Pipeline returned an empty result.")

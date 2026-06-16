@@ -20,15 +20,17 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.6.2
-- CURRENT_STAGE = Real Fundamental Data Layer
-- NEXT_TARGET = v6.7.0 Capital Flow Engine
+- CURRENT_VERSION = v6.7.0
+- CURRENT_STAGE = Unified Data Source Center
+- NEXT_TARGET = v6.8.0 Full Capital Flow Engine
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.6.2"`
-- `legacy_app.py`: `APP_VERSION = "v6.6.2"`
-- `README.md`: Current version: v6.6.2
+- `app.py`: `APP_VERSION = "v6.7.0"`
+- `legacy_app.py`: `APP_VERSION = "v6.7.0"`
+- `README.md`: Current version: v6.7.0
+
+V6.7.0 adds the Unified Data Source Center plus capital-flow, news-event, and industry/concept data foundations. New modules `data/source_center.py`, `data/capital_flow_loader.py`, `data/news_loader.py`, and `data/industry_loader.py` standardize source status, capital activity, keyword-classified news events, and industry/concept fields with local cache fallback under `cache/source_status/`, `cache/capital_flow/`, `cache/news/`, and `cache/industry/`. `pipeline/live_runner.py` now runs realtime quotes, historical K-line, technical indicators, fundamental data, capital-flow data, news-event data, industry/concept data, score activation, and UI output. `research/score_activation.py` adds activated capital-flow, news, and industry score fields and uses the v6.7.0 composite formula when required inputs are available, while falling back to the v6.6.2 logic when they are not. Product UI adds a Data Source Center page and exposes data-source, capital-flow, news, and industry/concept diagnostics. All outputs remain only for learning and research and do not constitute investment advice.
 - `docs/DEV_LOG.md`: V2.0.0 Research Memory Foundation
 
 V6.6.2 adds the Real Fundamental Data Layer. `data/fundamental_loader.py` standardizes fundamental fields from the current realtime DataFrame, EastMoney public endpoints, AkShare fallback, and local cache at `cache/fundamental/fundamental_latest.csv`. It outputs unified PE, PB, PS, market cap, ROE, ROA, margins, revenue growth, profit growth, debt ratio, cash-flow quality, dividend yield, data source, status, warning, and update timestamp fields. `pipeline/live_runner.py` now runs realtime quotes, historical K-line loading, real technical indicators, fundamental data loading, fundamental research scoring, score activation, and UI output. `fundamental/fundamental_engine.py` recalibrates valuation, profitability, growth, and financial-quality scores from real fields. `research/score_activation.py` adds `activated_fundamental_score` and blends it into activated composite scoring with technical, liquidity, and quote-quality context.

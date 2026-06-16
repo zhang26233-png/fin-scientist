@@ -7,6 +7,7 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
+from data.source_center import build_data_source_status
 from factor.factor_lab import DEFAULT_FACTOR_COLUMNS, build_factor_dataset
 from factor.factor_report import build_factor_research_report
 from ui.chart_center import (
@@ -21,8 +22,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.6.2"
-PRODUCT_STAGE = "Real Fundamental Data Layer"
+PRODUCT_VERSION = "v6.7.0"
+PRODUCT_STAGE = "Unified Data Source Center"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -33,6 +34,7 @@ CHART_PAGE = "图表中心"
 FACTOR_PAGE = "因子研究实验室"
 REPORT_PAGE = "研究报告预览"
 SYSTEM_PAGE = "系统状态 / 数据质量"
+DATA_SOURCE_PAGE = "数据源中心"
 SCREENING_PIPELINE_PAGE = "筛选流水线"
 LEGACY_PAGE = "旧版研究工作台"
 
@@ -46,6 +48,7 @@ NAVIGATION_PAGES = [
     FACTOR_PAGE,
     REPORT_PAGE,
     SYSTEM_PAGE,
+    DATA_SOURCE_PAGE,
     SCREENING_PIPELINE_PAGE,
     LEGACY_PAGE,
 ]
@@ -106,6 +109,9 @@ REQUIRED_FIELD_GROUPS = {
         "fundamental_summary",
         "fundamental_warnings",
     ],
+    "Capital Flow": ["capital_flow_score", "capital_activity_score", "turnover_rate", "volume_ratio", "main_net_inflow"],
+    "News Event": ["news_event_score", "news_sentiment_label", "news_title", "news_source"],
+    "Industry Concept": ["industry", "concepts", "industry_strength_score", "concept_heat_score"],
     "Explainable Selection": ["selection_thesis", "selection_strengths", "selection_risks", "selection_explanation"],
     "Factor Research Lab": ["factor_name", "factor_ic", "factor_rank_ic", "factor_effectiveness_label"],
 }
@@ -117,6 +123,18 @@ SELECTION_COLUMNS = [
     "latest_price",
     "pct_change",
     "turnover",
+    "capital_flow_score",
+    "capital_activity_score",
+    "turnover_rate",
+    "volume_ratio",
+    "main_net_inflow",
+    "news_event_score",
+    "news_sentiment_label",
+    "news_title",
+    "industry",
+    "concepts",
+    "industry_strength_score",
+    "concept_heat_score",
     "activated_fundamental_score",
     "activated_selection_score",
     "activated_research_bucket",
@@ -214,6 +232,23 @@ STOCK_DETAIL_FIELDS = [
     "fundamental_strengths",
     "fundamental_risks",
     "fundamental_warnings",
+    "capital_flow_score",
+    "capital_activity_score",
+    "turnover_rate",
+    "volume_ratio",
+    "main_net_inflow",
+    "main_net_inflow_ratio",
+    "capital_flow_summary",
+    "capital_flow_warnings",
+    "news_event_score",
+    "news_sentiment_label",
+    "news_title",
+    "news_summary",
+    "news_warning",
+    "industry",
+    "concepts",
+    "industry_strength_score",
+    "concept_heat_score",
 ]
 
 
@@ -334,6 +369,7 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         if "fundamental_available" in source.columns
         else 0
     )
+    source_status = build_data_source_status(source)
     return {
         "total_count": int(len(source)),
         "universe_size": int(source.attrs.get("universe_size", len(source))) if hasattr(source, "attrs") else int(len(source)),
@@ -354,6 +390,15 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         "average_net_profit_growth_yoy": _metric_value(source, "net_profit_growth_yoy"),
         "fundamental_data_source": source.attrs.get("fundamental_data_source", "Unavailable") if hasattr(source, "attrs") else "Unavailable",
         "fundamental_data_status": source.attrs.get("fundamental_data_status", "Unavailable") if hasattr(source, "attrs") else "Unavailable",
+        "capital_flow_status": source.attrs.get("capital_flow_status", "Unavailable") if hasattr(source, "attrs") else "Unavailable",
+        "news_status": source.attrs.get("news_status", "Unavailable") if hasattr(source, "attrs") else "Unavailable",
+        "industry_status": source.attrs.get("industry_status", "Unavailable") if hasattr(source, "attrs") else "Unavailable",
+        "source_status_count": len(source_status),
+        "source_available_count": int(source_status["status"].isin(["Live", "Available", "Cache"]).sum()) if not source_status.empty else 0,
+        "average_capital_flow_score": _metric_value(source, "capital_flow_score"),
+        "average_news_event_score": _metric_value(source, "news_event_score"),
+        "average_industry_strength_score": _metric_value(source, "industry_strength_score"),
+        "average_concept_heat_score": _metric_value(source, "concept_heat_score"),
         "kline_cache_hits": int(source.attrs.get("kline_cache_hits", 0)) if hasattr(source, "attrs") else 0,
         "kline_failures": int(source.attrs.get("kline_failures", 0)) if hasattr(source, "attrs") else 0,
         "average_risk_score": _metric_value(source, "risk_score"),
@@ -500,6 +545,8 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
         for column, (title, value, caption) in zip(columns, cards[start : start + 5]):
             with column:
                 _render_metric_card(title, value, caption)
+    st.subheader("数据源总览")
+    st.dataframe(build_data_source_status(source), hide_index=True, use_container_width=True)
     if source.empty:
         _render_empty_notice("Dashboard")
     return summary
@@ -625,6 +672,25 @@ def _render_fundamental_research_cards(row: pd.Series) -> None:
             _render_metric_card(title, value, caption)
 
 
+def _render_capital_news_industry_cards(row: pd.Series) -> None:
+    st.subheader("资金面 / 新闻事件 / 行业概念")
+    cards = [
+        ("Capital Flow Score", safe_get(row, "capital_flow_score"), safe_get(row, "capital_flow_summary")),
+        ("Capital Activity", safe_get(row, "capital_activity_score"), f"Turnover rate {format_value(safe_get(row, 'turnover_rate'))} / Volume ratio {format_value(safe_get(row, 'volume_ratio'))}"),
+        ("Main Net Inflow", safe_get(row, "main_net_inflow"), safe_get(row, "main_net_inflow_ratio")),
+        ("News Event Score", safe_get(row, "news_event_score"), safe_get(row, "news_sentiment_label")),
+        ("News Title", safe_get(row, "news_title"), safe_get(row, "news_source")),
+        ("Industry", safe_get(row, "industry"), safe_get(row, "concepts")),
+        ("Industry Strength", safe_get(row, "industry_strength_score"), safe_get(row, "industry_rank")),
+        ("Concept Heat", safe_get(row, "concept_heat_score"), safe_get(row, "concept_rank")),
+        ("Data Source Diagnostics", safe_get(row, "capital_flow_source"), f"{format_value(safe_get(row, 'news_source'))} / {format_value(safe_get(row, 'industry_source'))}"),
+    ]
+    columns = st.columns(3)
+    for column, (title, value, caption) in zip(columns * 3, cards):
+        with column:
+            _render_metric_card(title, value, caption)
+
+
 def render_backtest_page(df: Any) -> pd.DataFrame:
     """Render backtest analysis page."""
     source = safe_copy_frame(df)
@@ -715,6 +781,15 @@ def render_report_preview_page(df: Any) -> str:
     report = build_stock_research_report(row)
     st.text_area("研究报告", value=report, height=420, disabled=True)
     return report
+
+
+def render_data_source_center_page(df: Any) -> pd.DataFrame:
+    """Render the unified data-source center page."""
+    source = safe_copy_frame(df)
+    _render_page_header("数据源中心", "实时行情、K线、基本面、资金面、新闻、行业与缓存状态")
+    status = build_data_source_status(source)
+    st.dataframe(status, hide_index=True, use_container_width=True)
+    return status
 
 
 def render_system_status_page(df: Any) -> dict[str, Any]:
@@ -842,6 +917,8 @@ def render_product_page(page: str, state: dict[str, pd.DataFrame] | None = None)
         return render_report_preview_page(research)
     if page == SYSTEM_PAGE:
         return render_system_status_page(research)
+    if page == DATA_SOURCE_PAGE:
+        return render_data_source_center_page(research)
     return render_dashboard_page(research)
 
 
@@ -856,6 +933,8 @@ def render_research_workstation_product(df: Any) -> dict[str, Any]:
         _render_technical_indicator_cards(source.iloc[0].copy(deep=True))
     if any(field in source.columns for field in ["fundamental_research_score", "valuation_score", "fundamental_risks"]):
         _render_fundamental_research_cards(source.iloc[0].copy(deep=True))
+    if any(field in source.columns for field in ["capital_flow_score", "news_event_score", "industry_strength_score"]):
+        _render_capital_news_industry_cards(source.iloc[0].copy(deep=True))
     return render_research_workstation(source)
 
 
@@ -863,6 +942,7 @@ __all__ = [
     "BACKTEST_PAGE",
     "CHART_PAGE",
     "DASHBOARD_PAGE",
+    "DATA_SOURCE_PAGE",
     "FACTOR_PAGE",
     "LEGACY_PAGE",
     "NAVIGATION_PAGES",
@@ -883,6 +963,7 @@ __all__ = [
     "render_backtest_page",
     "render_chart_center_page",
     "render_dashboard_page",
+    "render_data_source_center_page",
     "render_factor_lab_page",
     "render_product_page",
     "render_report_preview_page",

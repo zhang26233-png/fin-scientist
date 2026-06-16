@@ -19,6 +19,9 @@ ACTIVATED_RESEARCH_FIELDS = [
     "price_position_score",
     "activated_technical_score",
     "activated_fundamental_score",
+    "activated_capital_flow_score",
+    "activated_news_score",
+    "activated_industry_score",
     "activated_composite_score",
     "activated_selection_score",
     "activated_research_level",
@@ -217,14 +220,28 @@ def _activate_row(row: pd.Series) -> dict[str, Any]:
     else:
         activated_fundamental_score = _existing_positive_score(row, "fundamental_research_score")
 
+    activated_capital_flow_score = _existing_positive_score(row, "capital_flow_score")
+    activated_news_score = _existing_positive_score(row, "news_event_score")
+    activated_industry_score = _existing_positive_score(row, "industry_strength_score")
+
     if activated_fundamental_score is not None:
         technical_component = real_technical_score if real_technical_score is not None else activated_technical_score
-        activated_composite_score = _clip_score(
-            (0.35 * activated_fundamental_score)
-            + (0.35 * technical_component)
-            + (0.20 * liquidity_score)
-            + (0.10 * quote_quality_score)
-        )
+        if activated_capital_flow_score is not None and activated_news_score is not None:
+            activated_composite_score = _clip_score(
+                (0.30 * activated_fundamental_score)
+                + (0.30 * technical_component)
+                + (0.20 * activated_capital_flow_score)
+                + (0.10 * activated_news_score)
+                + (0.10 * quote_quality_score)
+            )
+            reasons.append("Capital-flow and news fields are included in activated composite scoring.")
+        else:
+            activated_composite_score = _clip_score(
+                (0.35 * activated_fundamental_score)
+                + (0.35 * technical_component)
+                + (0.20 * liquidity_score)
+                + (0.10 * quote_quality_score)
+            )
         reasons.append("基本面研究评分已接入")
         warnings.extend(_as_list(row.get("fundamental_warnings")))
         warnings.extend(_as_list(row.get("fundamental_risks")))
@@ -268,6 +285,9 @@ def _activate_row(row: pd.Series) -> dict[str, Any]:
         "price_position_score": price_position_score,
         "activated_technical_score": activated_technical_score,
         "activated_fundamental_score": activated_fundamental_score,
+        "activated_capital_flow_score": activated_capital_flow_score,
+        "activated_news_score": activated_news_score,
+        "activated_industry_score": activated_industry_score,
         "activated_composite_score": activated_composite_score,
         "activated_selection_score": activated_selection_score,
         "activated_research_level": level,

@@ -2,7 +2,25 @@
 
 ## Current Version
 
-Current version: v6.6.2
+Current version: v6.7.0
+
+v6.7.0 adds the Unified Data Source Center plus capital-flow, news-event, and industry/concept data foundations. The project now includes `data/source_center.py`, `data/capital_flow_loader.py`, `data/news_loader.py`, and `data/industry_loader.py`. The live pipeline runs realtime quotes, historical K-line loading, technical indicators, fundamental data, capital-flow data, news-event data, industry/concept data, score activation, and UI output.
+
+Unified data-source center:
+
+- Source status covers Tencent Realtime, EastMoney Realtime, Sina Realtime, AkShare Kline, EastMoney Fundamental, Capital Flow, News, Industry, and Local Cache.
+- Status fields include source name, type, status, rows, update time, last error, cache status, priority, and model usage.
+- Dashboard and the Data Source Center page display the same unified source-status table.
+
+Capital-flow, news, industry, and cache fallback:
+
+- Capital-flow fields include turnover activity, turnover rate, volume ratio, net inflow fields, activity score, capital-flow score, source/status/warnings, and update time.
+- News fields include title, time, source, URL, keyword type, simple keyword classification, sentiment label, event score, summary, and warning.
+- Industry fields include industry, concepts, industry strength score, concept heat score, ranks, source/status, and update time.
+- New cache directories are `cache/capital_flow/`, `cache/news/`, `cache/industry/`, and `cache/source_status/`.
+- If external sources fail, loaders read local cache before returning empty standardized frames. Empty frames do not crash the pipeline or UI.
+
+All outputs remain only for learning and research and do not constitute investment advice.
 
 v6.6.2 adds the Real Fundamental Data Layer. The project now includes `data/fundamental_loader.py`, which standardizes real fundamental fields from the current realtime/pipeline DataFrame, EastMoney public payloads, AkShare fallback, and local cache. The live pipeline runs realtime quotes, historical K-line loading, technical indicators, fundamental data loading, fundamental research scoring, score activation, and UI output.
 

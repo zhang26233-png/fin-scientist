@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v6.6.2.
+Current: v6.7.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -233,7 +233,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.6.0: Fundamental Research Engine completed.
 - v6.6.1: Real Fundamental Data Integration preparation completed.
 - v6.6.2: Real Fundamental Data Layer completed.
-- Next target: v6.7.0 Capital Flow Engine.
+- v6.7.0: Unified Data Source Center completed.
+- Next target: v6.8.0 Full Capital Flow Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -577,6 +578,17 @@ Completed v6.6.2 scope:
 - Updated Dashboard, Selection Results, System Status, and Research Workstation to display fundamental data source, status, availability, PE/PB/ROE, revenue growth, profit growth, component scores, warnings, risks, and update time.
 - Next target: v6.7.0 Capital Flow Engine.
 - Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `technical_score`, `composite_score`, `candidate_rank`, `selection_score`, old scoring functions, stock-selection algorithms, default underlying order, trading logic, API keys, databases, and vector stores unchanged.
+
+Completed v6.7.0 scope:
+
+- Added `data/source_center.py`, `data/capital_flow_loader.py`, `data/news_loader.py`, and `data/industry_loader.py`.
+- Added unified data-source status fields for realtime, K-line, fundamental, capital-flow, news, industry, and local cache layers.
+- Added capital-flow standardized fields, news keyword classification and sentiment labels, industry/concept standardized fields, and local cache fallback directories.
+- Updated `pipeline/live_runner.py` sequence to realtime quotes, historical K-line, technical indicators, fundamental data, capital-flow data, news-event data, industry/concept data, score activation, and UI output.
+- Updated `research/score_activation.py` with activated capital-flow, news, and industry score fields and v6.7.0 composite scoring when capital-flow and news inputs are available.
+- Updated Product UI with Dashboard data-source overview, Data Source Center page, selection-result fields, workstation cards, and source diagnostics.
+- Next target: v6.8.0 Full Capital Flow Engine.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and buy/sell/hold advice unchanged.
 
 Boundary:
 

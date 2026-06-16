@@ -222,3 +222,39 @@ def test_fundamental_enabled_passes_fundamental_dataset(monkeypatch):
     assert result.attrs["fundamental_data_source"] == "Test Fundamental"
     assert "activated_fundamental_score" in result.columns
     assert result["fundamental_available"].astype(bool).any()
+
+
+def test_capital_news_industry_disabled_still_runs(monkeypatch):
+    import pipeline.live_runner as live_runner
+
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: _large_live_universe())
+    result = live_runner.run_live_pipeline(
+        kline_enabled=False,
+        fundamental_enabled=False,
+        capital_flow_enabled=False,
+        news_enabled=False,
+        industry_enabled=False,
+    )
+
+    assert isinstance(result, pd.DataFrame)
+    assert result.attrs["capital_flow_enabled"] is False
+    assert result.attrs["news_enabled"] is False
+    assert result.attrs["industry_enabled"] is False
+    assert "capital_flow_score" in result.columns
+    assert "news_event_score" in result.columns
+    assert "industry_strength_score" in result.columns
+
+
+def test_external_capital_news_industry_failure_still_outputs_research_df(monkeypatch):
+    import pipeline.live_runner as live_runner
+
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: _large_live_universe())
+    monkeypatch.setattr(live_runner, "build_capital_flow_dataset", lambda *args, **kwargs: pd.DataFrame())
+    monkeypatch.setattr(live_runner, "build_news_dataset", lambda *args, **kwargs: pd.DataFrame())
+    monkeypatch.setattr(live_runner, "build_industry_dataset", lambda *args, **kwargs: pd.DataFrame())
+
+    result = live_runner.run_live_pipeline(kline_enabled=False, fundamental_enabled=False)
+
+    assert isinstance(result, pd.DataFrame)
+    assert not result.empty
+    assert "activated_selection_score" in result.columns

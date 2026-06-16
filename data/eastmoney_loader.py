@@ -14,7 +14,7 @@ EASTMONEY_ENDPOINTS = [
     "https://82.push2.eastmoney.com/api/qt/clist/get",
 ]
 EASTMONEY_URL = EASTMONEY_ENDPOINTS[0]
-EASTMONEY_FIELDS = "f12,f14,f2,f3,f4,f5,f6,f7,f15,f16,f17,f18"
+EASTMONEY_FIELDS = "f12,f14,f2,f3,f4,f5,f6,f7,f8,f10,f9,f20,f21,f23,f15,f16,f17,f18"
 OUTPUT_COLUMNS = [
     "ticker",
     "name",
@@ -23,6 +23,12 @@ OUTPUT_COLUMNS = [
     "change_amount",
     "volume",
     "turnover",
+    "turnover_rate",
+    "volume_ratio",
+    "market_cap",
+    "float_market_cap",
+    "pe_ttm",
+    "pb",
     "amplitude",
     "high",
     "low",
@@ -169,6 +175,12 @@ def _normalize_row(item: dict[str, Any], timestamp: str) -> tuple[dict[str, Any]
             "change_amount": _to_number(item.get("f4")),
             "volume": _to_number(item.get("f5")),
             "turnover": _to_number(item.get("f6")),
+            "turnover_rate": _to_number(item.get("f8")),
+            "volume_ratio": _to_number(item.get("f10")),
+            "market_cap": _to_number(item.get("f20")),
+            "float_market_cap": _to_number(item.get("f21")),
+            "pe_ttm": _to_number(item.get("f9")),
+            "pb": _to_number(item.get("f23")),
             "amplitude": _to_number(item.get("f7")),
             "high": _to_number(item.get("f15")),
             "low": _to_number(item.get("f16")),
