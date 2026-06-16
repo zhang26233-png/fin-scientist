@@ -20,6 +20,7 @@ from data.news_loader import NEWS_COLUMNS, build_news_dataset
 from backtest.return_analysis import build_return_analysis
 from factor.factor_lab import build_factor_dataset
 from fundamental.fundamental_engine import FUNDAMENTAL_RESEARCH_FIELDS, build_fundamental_research
+from news.event_engine import NEWS_EVENT_FIELDS, build_news_event_scores
 from research.score_activation import ACTIVATED_RESEARCH_FIELDS, activate_research_scores
 from screening.candidate_pool import build_candidate_pool
 from screening.composite_score_engine import build_composite_quant_score
@@ -62,6 +63,7 @@ LIVE_PIPELINE_FIELDS = [
     *CAPITAL_FLOW_COLUMNS,
     *CAPITAL_ENGINE_FIELDS,
     *NEWS_COLUMNS,
+    *NEWS_EVENT_FIELDS,
     *INDUSTRY_COLUMNS,
     *ACTIVATED_RESEARCH_FIELDS,
 ]
@@ -337,10 +339,13 @@ def _run_pipeline(
     fundamental_enabled: bool = True,
     capital_flow_enabled: bool = True,
     news_enabled: bool = True,
+    news_event_enabled: bool = True,
     industry_enabled: bool = True,
-    max_news_stocks: int = 200,
+    max_news_stocks: int = 300,
     max_capital_flow_stocks: int = 500,
     max_industry_stocks: int | None = None,
+    news_lookback_days: int = 7,
+    news_timeout: int = 10,
 ) -> pd.DataFrame:
     history = _copy_price_history_dict(price_history_dict)
     fundamental = build_fundamental_screening(universe, fundamental_df=fundamental_df)
@@ -390,16 +395,19 @@ def _run_pipeline(
     news = build_news_dataset(
         with_capital_scores,
         tickers=news_tickers,
-        use_external=bool(news_enabled),
+        timeout=int(news_timeout),
+        use_external=bool(news_enabled and news_event_enabled),
         max_stocks=max_news_stocks,
     )
     with_news = _merge_optional_layer(with_capital_scores, news, NEWS_COLUMNS)
+    news_events = build_news_event_scores(news, use_cache=True, lookback_days=int(news_lookback_days)) if news_event_enabled else pd.DataFrame()
+    with_news_events = _merge_optional_layer(with_news, news_events, NEWS_EVENT_FIELDS) if news_event_enabled else with_news
     industry = build_industry_dataset(
-        with_news,
+        with_news_events,
         tickers=industry_tickers,
         use_external=bool(industry_enabled),
     )
-    with_industry = _merge_optional_layer(with_news, industry, INDUSTRY_COLUMNS)
+    with_industry = _merge_optional_layer(with_news_events, industry, INDUSTRY_COLUMNS)
 
     result = activate_research_scores(with_industry)
     result.attrs.update(kline_attrs)
@@ -414,9 +422,14 @@ def _run_pipeline(
     result.attrs["capital_flow_rows"] = int(capital_flow.attrs.get("capital_flow_rows", len(capital_flow)))
     result.attrs["capital_flow_attempts"] = list(capital_flow.attrs.get("capital_flow_attempts", []))
     result.attrs["news_enabled"] = bool(news_enabled)
-    result.attrs["news_source"] = news.attrs.get("news_source", "Unavailable")
-    result.attrs["news_status"] = news.attrs.get("news_status", "Unavailable")
-    result.attrs["news_rows"] = int(news.attrs.get("news_rows", len(news)))
+    result.attrs["news_event_enabled"] = bool(news_event_enabled)
+    result.attrs["news_source"] = news_events.attrs.get("news_source", news.attrs.get("news_source", "Unavailable"))
+    result.attrs["news_status"] = news_events.attrs.get("news_status", news.attrs.get("news_status", "Unavailable"))
+    result.attrs["news_rows"] = int(news_events.attrs.get("news_rows", news.attrs.get("news_rows", len(news))))
+    result.attrs["news_warning"] = news_events.attrs.get("news_warning", news.attrs.get("news_warning", ""))
+    result.attrs["news_updated_at"] = news_events.attrs.get("news_updated_at", news.attrs.get("news_updated_at", ""))
+    result.attrs["news_event_cache_status"] = news_events.attrs.get("news_event_cache_status", "")
+    result.attrs["news_event_cache_path"] = news_events.attrs.get("news_event_cache_path", "")
     result.attrs["news_attempts"] = list(news.attrs.get("news_attempts", []))
     result.attrs["industry_enabled"] = bool(industry_enabled)
     result.attrs["industry_source"] = industry.attrs.get("industry_source", "Unavailable")
@@ -443,10 +456,13 @@ def run_live_pipeline(
     fundamental_enabled: bool = True,
     capital_flow_enabled: bool = True,
     news_enabled: bool = True,
+    news_event_enabled: bool = True,
     industry_enabled: bool = True,
-    max_news_stocks: int = 200,
+    max_news_stocks: int = 300,
     max_capital_flow_stocks: int = 500,
     max_industry_stocks: int | None = None,
+    news_lookback_days: int = 7,
+    news_timeout: int = 10,
 ) -> pd.DataFrame:
     """Run the full read-only research pipeline for the Streamlit web app.
 
@@ -484,10 +500,13 @@ def run_live_pipeline(
             fundamental_enabled=fundamental_enabled,
             capital_flow_enabled=capital_flow_enabled,
             news_enabled=news_enabled,
+            news_event_enabled=news_event_enabled,
             industry_enabled=industry_enabled,
             max_news_stocks=max_news_stocks,
             max_capital_flow_stocks=max_capital_flow_stocks,
             max_industry_stocks=max_industry_stocks,
+            news_lookback_days=news_lookback_days,
+            news_timeout=news_timeout,
         )
         if result.empty:
             raise ValueError("Pipeline returned an empty result.")

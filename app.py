@@ -17,8 +17,8 @@ from ui.product_ui import (
 )
 from ui.screening_ui import render_screening_page
 
-APP_VERSION = "v6.8.0"
-APP_STAGE = "Full Capital Flow Engine"
+APP_VERSION = "v6.9.0"
+APP_STAGE = "Full News & Event Research Engine"
 
 # Re-export core functions used by the existing tests and notebooks.
 calculate_indicators = legacy_app.calculate_indicators
@@ -53,6 +53,9 @@ def main():
         st.caption(f"K线数据状态：{'启用' if kline_enabled else '关闭'}；仅对前 {max_kline_stocks} 只生成历史技术指标。")
         fundamental_enabled = st.checkbox("启用真实基本面数据层", value=True)
         st.caption(f"基本面数据层：{'启用' if fundamental_enabled else '关闭'}；外部源失败时读取 cache/fundamental/fundamental_latest.csv。")
+        news_event_enabled = st.checkbox("启用新闻事件研究层", value=True)
+        max_news_stocks = st.selectbox("新闻最大股票数", options=[50, 100, 200, 300], index=3)
+        news_lookback_days = st.selectbox("新闻回看天数", options=[3, 7, 14, 30], index=1)
         if st.button("运行完整选股模型"):
             try:
                 with st.spinner("正在运行 Fin-Scientist 选股流水线..."):
@@ -60,6 +63,9 @@ def main():
                         kline_enabled=kline_enabled,
                         max_kline_stocks=int(max_kline_stocks),
                         fundamental_enabled=fundamental_enabled,
+                        news_event_enabled=news_event_enabled,
+                        max_news_stocks=int(max_news_stocks),
+                        news_lookback_days=int(news_lookback_days),
                     )
                 _store_live_pipeline_result(result_df)
                 if result_df.attrs.get("is_demo"):
@@ -75,6 +81,12 @@ def main():
                     f"基本面状态：{result_df.attrs.get('fundamental_data_source', 'Unavailable')} / "
                     f"{result_df.attrs.get('fundamental_data_status', 'Unavailable')} / "
                     f"rows={result_df.attrs.get('fundamental_rows', 0)}"
+                )
+                st.info(
+                    f"新闻事件状态：{result_df.attrs.get('news_source', 'Unavailable')} / "
+                    f"{result_df.attrs.get('news_status', 'Unavailable')} / "
+                    f"rows={result_df.attrs.get('news_rows', 0)} / "
+                    f"cache={result_df.attrs.get('news_event_cache_status', '')}"
                 )
                 st.success(f"选股流水线已完成，生成 {len(result_df)} 条研究结果。")
             except Exception as exc:

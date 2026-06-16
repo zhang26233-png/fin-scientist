@@ -20,15 +20,17 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.8.0
-- CURRENT_STAGE = Full Capital Flow Engine
-- NEXT_TARGET = v6.9.0 Capital Flow Validation
+- CURRENT_VERSION = v6.9.0
+- CURRENT_STAGE = Full News & Event Research Engine
+- NEXT_TARGET = v7.0.0 Unified Research Ranking Engine
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.8.0"`
-- `legacy_app.py`: `APP_VERSION = "v6.8.0"`
-- `README.md`: Current version: v6.8.0
+- `app.py`: `APP_VERSION = "v6.9.0"`
+- `legacy_app.py`: `APP_VERSION = "v6.9.0"`
+- `README.md`: Current version: v6.9.0
+
+V6.9.0 adds the Full News & Event Research Engine. New package `news/` contains `event_engine.py` with `classify_news_event()` and `build_news_event_scores()`, turning standardized news rows into event type, keywords, sentiment label, heat score, risk score, event score, summary, reason, warning, status, and update time. `data/news_loader.py` remains the source boundary for EastMoney, Sina, AkShare, and local cache fallback under `cache/news/`, while the event engine writes `cache/news/news_event_cache.csv` for scored event rows when enough data is available. The live pipeline now runs realtime quotes, K-line, technical indicators, fundamental data, capital-flow data, News Event Engine, industry, research activation, and UI output. Research activation uses the v6.9.0 formula when fundamental, technical, capital-flow, news, and quote-quality fields are available, while falling back when news fields are missing. Dashboard, Selection Results, Research Workstation, and Data Source Center expose news coverage, average event score, sentiment counts, source status, event details, cache status, and latest update time. All outputs remain only for learning and research and do not constitute investment advice.
 
 V6.8.0 adds the Full Capital Flow Engine. New package `capital_flow/` contains `capital_engine.py` with `build_capital_scores()`, which turns standardized capital-flow data into additive research fields for turnover-rate score, volume-ratio score, main-inflow score, northbound score, activity score, `capital_flow_score`, `capital_flow_rank`, `capital_flow_strength`, neutral summary text, warnings, source, status, and update time. The engine writes `cache/capital_flow/capital_score_cache.csv` and recomputes automatically when source inputs change. The Data Source Center now exposes Capital Flow Coverage, Capital Flow Rows, Capital Cache Status, and Capital Updated Time. The live pipeline now runs realtime quotes, K-line, technical indicators, fundamental data, Capital Flow Engine, news, industry, research activation, and UI output. Research activation uses the v6.8.0 composite formula when fundamental, technical, capital-flow, and news fields are available, while keeping fallback behavior when fields are missing. Dashboard, Selection Results, and Research Workstation expose capital-flow coverage, averages, ranks, strengths, summaries, warnings, source, and update time. All outputs remain only for learning and research and do not constitute investment advice.
 

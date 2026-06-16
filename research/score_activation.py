@@ -221,19 +221,27 @@ def _activate_row(row: pd.Series) -> dict[str, Any]:
         activated_fundamental_score = _existing_positive_score(row, "fundamental_research_score")
 
     activated_capital_flow_score = _existing_positive_score(row, "capital_flow_score")
-    activated_news_score = _existing_positive_score(row, "news_event_score")
+    raw_news_score = _existing_positive_score(row, "news_event_score")
+    activated_news_score = raw_news_score if raw_news_score is not None else 50.0
     activated_industry_score = _existing_positive_score(row, "industry_strength_score")
+    if raw_news_score is not None:
+        reasons.extend(_as_list(row.get("news_reason")))
+        summary = row.get("news_summary")
+        if summary is not None and not pd.isna(summary) and str(summary).strip():
+            reasons.append(str(summary).strip())
+        warnings.extend(_as_list(row.get("news_warning")))
 
     if activated_fundamental_score is not None:
         technical_component = real_technical_score if real_technical_score is not None else activated_technical_score
-        if activated_capital_flow_score is not None and activated_news_score is not None:
+        if activated_capital_flow_score is not None and raw_news_score is not None:
             activated_composite_score = _clip_score(
-                (0.35 * activated_fundamental_score)
+                (0.30 * activated_fundamental_score)
                 + (0.30 * technical_component)
-                + (0.25 * activated_capital_flow_score)
+                + (0.20 * activated_capital_flow_score)
                 + (0.10 * activated_news_score)
+                + (0.10 * quote_quality_score)
             )
-            reasons.append("Capital-flow and news fields are included in v6.8.0 activated composite scoring.")
+            reasons.append("News event fields are included in v6.9.0 activated composite scoring.")
         else:
             activated_composite_score = _clip_score(
                 (0.35 * activated_fundamental_score)

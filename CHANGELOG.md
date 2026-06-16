@@ -2,6 +2,19 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v6.9.0
+
+- Added Full News & Event Research Engine.
+- Added `news/__init__.py`, `news/event_engine.py`, and `tests/test_news_event_engine.py`.
+- Added `classify_news_event()` with deterministic keyword classification for positive, neutral, negative, and unknown news events.
+- Added `build_news_event_scores()` with news heat, risk, event score, summary, reason, warning, status, and update time fields.
+- Updated `data/news_loader.py` to keep EastMoney, Sina, AkShare, and local `cache/news/` fallback as the news source boundary.
+- Added scored event cache at `cache/news/news_event_cache.csv`, written only when enough event rows are available and safely bypassed when unavailable.
+- Updated `pipeline/live_runner.py` so the News Event Engine runs after capital-flow data and before industry, research activation, and UI output.
+- Updated `research/score_activation.py` with the v6.9.0 composite formula using activated fundamental, real technical, capital-flow, activated news, and quote-quality scores when available, with fallback when news fields are missing.
+- Updated Product UI Dashboard, Selection Results, Research Workstation, and Data Source Center with news coverage, average event score, sentiment counts, event details, warnings, source status, cache status, and update time.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, target prices, position suggestions, return promises, machine-learning prediction, API keys, databases, and vector stores unchanged.
+
 ## v6.8.0
 
 - Added Full Capital Flow Engine.

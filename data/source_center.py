@@ -15,6 +15,7 @@ from data.industry_loader import CACHE_FILE as INDUSTRY_CACHE_FILE
 from data.kline_loader import KLINE_CACHE_DIR
 from data.local_cache import A_SHARE_QUOTES_CACHE, A_SHARE_UNIVERSE_CACHE, cache_metadata
 from data.news_loader import CACHE_FILE as NEWS_CACHE_FILE
+from news.event_engine import NEWS_EVENT_CACHE_FILE
 
 
 SOURCE_STATUS_COLUMNS = [
@@ -29,6 +30,11 @@ SOURCE_STATUS_COLUMNS = [
     "capital_flow_rows",
     "capital_cache_status",
     "capital_updated_time",
+    "news_source_status",
+    "news_rows",
+    "news_cache_status",
+    "news_updated_time",
+    "news_last_error",
     "priority",
     "used_in_model",
 ]
@@ -77,6 +83,17 @@ def _capital_coverage(df: pd.DataFrame) -> float:
     return round(float(covered) / max(len(df), 1), 4)
 
 
+def _news_rows(df: pd.DataFrame, attrs: dict[str, Any]) -> int:
+    if attrs.get("news_rows") is not None:
+        try:
+            return int(attrs.get("news_rows") or 0)
+        except (TypeError, ValueError):
+            pass
+    if df.empty or "news_event_score" not in df.columns:
+        return 0
+    return int(pd.to_numeric(df["news_event_score"], errors="coerce").notna().sum())
+
+
 def _status_row(
     *,
     source_name: str,
@@ -90,6 +107,11 @@ def _status_row(
     capital_flow_rows: int = 0,
     capital_cache_status: str = "",
     capital_updated_time: str = "",
+    news_source_status: str = "",
+    news_rows: int = 0,
+    news_cache_status: str = "",
+    news_updated_time: str = "",
+    news_last_error: str = "",
     priority: int = 0,
     used_in_model: bool = False,
 ) -> dict[str, Any]:
@@ -105,6 +127,11 @@ def _status_row(
         "capital_flow_rows": int(capital_flow_rows or 0),
         "capital_cache_status": capital_cache_status or "",
         "capital_updated_time": capital_updated_time or "",
+        "news_source_status": news_source_status or "",
+        "news_rows": int(news_rows or 0),
+        "news_cache_status": news_cache_status or "",
+        "news_updated_time": news_updated_time or "",
+        "news_last_error": news_last_error or "",
         "priority": int(priority),
         "used_in_model": bool(used_in_model),
     }
@@ -128,6 +155,19 @@ def build_data_source_status(research_df: pd.DataFrame | None = None) -> pd.Data
         or updated_at
     )
     capital_cache_status = str(attrs.get("capital_score_cache_status") or _cache_status(CAPITAL_SCORE_CACHE_FILE))
+    news_rows = _news_rows(df, attrs)
+    news_updated_at = str(
+        attrs.get("news_updated_at")
+        or attrs.get("news_event_cache_updated_at")
+        or updated_at
+    )
+    news_cache_status = str(
+        attrs.get("news_event_cache_status")
+        or attrs.get("cache_status")
+        or _cache_status(NEWS_EVENT_CACHE_FILE)
+        or _cache_status(NEWS_CACHE_FILE)
+    )
+    news_last_error = str(attrs.get("news_warning", ""))
 
     realtime_rows = len(df) if not df.empty else 0
     rows = []
@@ -198,8 +238,13 @@ def build_data_source_status(research_df: pd.DataFrame | None = None) -> pd.Data
                 status=str(attrs.get("news_status", "Unavailable")),
                 rows=int(attrs.get("news_rows", 0) or 0),
                 last_updated=str(attrs.get("news_updated_at", updated_at)),
-                last_error=str(attrs.get("news_warning", "")),
+                last_error=news_last_error,
                 cache_status=_cache_status(NEWS_CACHE_FILE),
+                news_source_status=str(attrs.get("news_status", "Unavailable")),
+                news_rows=news_rows,
+                news_cache_status=news_cache_status,
+                news_updated_time=news_updated_at,
+                news_last_error=news_last_error,
                 priority=1,
                 used_in_model="news_event_score" in df.columns,
             ),

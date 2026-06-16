@@ -258,3 +258,53 @@ def test_external_capital_news_industry_failure_still_outputs_research_df(monkey
     assert isinstance(result, pd.DataFrame)
     assert not result.empty
     assert "activated_selection_score" in result.columns
+
+
+def test_news_event_disabled_keeps_pipeline_running(monkeypatch):
+    import pipeline.live_runner as live_runner
+
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: _large_live_universe())
+    result = live_runner.run_live_pipeline(kline_enabled=False, fundamental_enabled=False, news_event_enabled=False)
+
+    assert isinstance(result, pd.DataFrame)
+    assert result.attrs["news_event_enabled"] is False
+    assert "news_event_score" in result.columns
+
+
+def test_news_event_enabled_generates_score(monkeypatch):
+    import pipeline.live_runner as live_runner
+
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: _large_live_universe())
+
+    def fake_news(*args, **kwargs):
+        frame = pd.DataFrame([{"ticker": "600000", "news_title": "公司AI算力订单增长", "news_time": "2026-06-16"}])
+        frame.attrs["news_source"] = "Test News"
+        frame.attrs["news_status"] = "Available"
+        frame.attrs["news_rows"] = 1
+        return frame
+
+    monkeypatch.setattr(live_runner, "build_news_dataset", fake_news)
+    result = live_runner.run_live_pipeline(kline_enabled=False, fundamental_enabled=False, news_event_enabled=True)
+
+    row = result[result["ticker"].astype(str).eq("600000")].iloc[0]
+    assert row["news_event_score"] >= 70
+    assert result.attrs["news_status"] == "Available"
+
+
+def test_news_source_failure_does_not_block_research_df(monkeypatch):
+    import pipeline.live_runner as live_runner
+
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: _large_live_universe())
+
+    empty = pd.DataFrame()
+    empty.attrs["news_source"] = "Test News"
+    empty.attrs["news_status"] = "Error"
+    empty.attrs["news_rows"] = 0
+    empty.attrs["news_warning"] = "source failed"
+    monkeypatch.setattr(live_runner, "build_news_dataset", lambda *args, **kwargs: empty)
+
+    result = live_runner.run_live_pipeline(kline_enabled=False, fundamental_enabled=False, news_event_enabled=True)
+
+    assert isinstance(result, pd.DataFrame)
+    assert not result.empty
+    assert "activated_selection_score" in result.columns

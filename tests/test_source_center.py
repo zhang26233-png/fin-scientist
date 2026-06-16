@@ -30,6 +30,9 @@ def test_source_status_fields_complete():
     frame.attrs["capital_score_cache_updated_at"] = "2026-06-16 10:00:00"
     frame.attrs["news_status"] = "Available"
     frame.attrs["news_rows"] = 1
+    frame.attrs["news_warning"] = ""
+    frame.attrs["news_updated_at"] = "2026-06-16 11:00:00"
+    frame.attrs["news_event_cache_status"] = "Saved"
     frame.attrs["industry_status"] = "Available"
     frame.attrs["industry_rows"] = 1
 
@@ -52,6 +55,12 @@ def test_source_status_fields_complete():
     assert capital["capital_flow_rows"] == 1
     assert capital["capital_cache_status"] == "Saved"
     assert capital["capital_updated_time"] == "2026-06-16 10:00:00"
+    news = status.loc[status["source_name"] == "News"].iloc[0]
+    assert news["news_source_status"] == "Available"
+    assert news["news_rows"] == 1
+    assert news["news_cache_status"] == "Saved"
+    assert news["news_updated_time"] == "2026-06-16 11:00:00"
+    assert news["news_last_error"] == ""
 
 
 def test_source_center_empty_frame_does_not_crash():

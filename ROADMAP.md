@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v6.8.0.
+Current: v6.9.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -235,7 +235,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.6.2: Real Fundamental Data Layer completed.
 - v6.7.0: Unified Data Source Center completed.
 - v6.8.0: Full Capital Flow Engine completed.
-- Next target: v6.9.0 Capital Flow Validation.
+- v6.9.0: Full News & Event Research Engine completed.
+- Next target: v7.0.0 Unified Research Ranking Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -604,6 +605,19 @@ Completed v6.8.0 scope:
 - Updated Selection Results with capital-flow score, rank, strength, net inflow, volume ratio, turnover rate, northbound change, summary, warning, and display sorting by capital-flow score.
 - Updated Research Workstation with a dedicated capital-flow research card showing score, strength, explanation, warning, source, and update time.
 - Next target: v6.9.0 Capital Flow Validation.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and operational advice unchanged.
+
+Completed v6.9.0 scope:
+
+- Added `news/__init__.py`, `news/event_engine.py`, and `tests/test_news_event_engine.py`.
+- Added `classify_news_event()` for positive, neutral, negative, and unknown event classification from deterministic keyword rules.
+- Added `build_news_event_scores()` for `news_heat_score`, `news_risk_score`, `news_event_score`, `news_summary`, `news_reason`, `news_warning`, status, and update time.
+- Updated `data/news_loader.py` to keep EastMoney, Sina, AkShare, and local `cache/news/` source fallback separate from event scoring.
+- Added `cache/news/news_event_cache.csv` for scored event rows when enough data is available, with safe empty fallback when cache is unavailable.
+- Updated `pipeline/live_runner.py` so the News Event Engine runs after capital-flow data and before industry, research activation, and UI output.
+- Updated `research/score_activation.py` with the v6.9.0 activated composite formula using fundamental, real technical, capital-flow, activated news, and quote-quality scores when available.
+- Updated Dashboard, Selection Results, Research Workstation, and Data Source Center with news coverage, average event score, sentiment counts, source status, event details, warnings, cache status, and update time.
+- Next target: v7.0.0 Unified Research Ranking Engine.
 - Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and operational advice unchanged.
 
 Boundary:

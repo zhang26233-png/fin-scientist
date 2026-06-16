@@ -2,7 +2,36 @@
 
 ## Current Version
 
-Current version: v6.8.0
+Current version: v6.9.0
+
+v6.9.0 adds the Full News & Event Research Engine. The project now includes `news/event_engine.py`, which converts standardized news rows into research-only event classification, sentiment labels, heat score, risk score, event score, summary, reason, warning, source/status, and update time.
+
+News source strategy:
+
+1. EastMoney news/announcements.
+2. Sina finance news.
+3. AkShare news interface when available locally.
+4. Local cache under `cache/news/`.
+5. Safe standardized empty DataFrame when sources and cache are unavailable.
+
+Event classification uses deterministic keyword rules through `classify_news_event(title, content=None)`:
+
+- Positive examples include performance growth, repurchase, holder increase, major contracts, orders, capacity expansion, policy support, financing progress, product launch, AI, computing power, semiconductors, robotics, low-altitude economy, new energy, and defense industry.
+- Negative examples include performance loss, larger losses, holder reduction, investigation, regulatory penalty, inquiry letter, debt default, litigation, goodwill impairment, delisting risk, safety accident, executive departure, and large unlocks.
+- Neutral examples include announcements, research visits, meetings, daily operations, industry news, and unrecognized events.
+
+News scoring:
+
+- `news_heat_score` starts from 50 and rises for hot industry keywords or multiple same-day news rows for the same ticker.
+- `news_risk_score` starts from 50 and is reduced for negative keywords, with severe regulatory or delisting-related events capped in the lower range.
+- `news_event_score` is constrained to 0-100, with Positive generally 70-90, Neutral 45-60, Negative 10-40, and Unknown 50.
+
+News cache and degradation:
+
+- Raw standardized news continues to use `cache/news/news_latest.csv`.
+- Scored event rows use `cache/news/news_event_cache.csv` and are written only when at least 10 rows are available.
+- External source failure reads cache first; unavailable cache returns a standard empty table and never blocks the Pipeline or UI.
+- All news/event outputs are only for learning and research and do not constitute investment advice.
 
 v6.8.0 adds the Full Capital Flow Engine. The project now includes `capital_flow/capital_engine.py`, which converts standardized capital-flow data into research-only component scores, a composite capital-flow score, rank, strength label, summary, warning, source, status, and update time.
 
@@ -123,7 +152,7 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v6.8.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`; historical K-line loading lives in `data/kline_loader.py`; real fundamental data loading lives in `data/fundamental_loader.py`; capital-flow research scoring lives in `capital_flow/capital_engine.py`; realtime quote research activation lives in `research/score_activation.py`; real technical indicator research fields live in `technical/indicator_engine.py`; fundamental research fields live in `fundamental/fundamental_engine.py`.
+`legacy_app.py` is not an unused backup. In v6.9.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`; historical K-line loading lives in `data/kline_loader.py`; real fundamental data loading lives in `data/fundamental_loader.py`; capital-flow research scoring lives in `capital_flow/capital_engine.py`; news/event research scoring lives in `news/event_engine.py`; realtime quote research activation lives in `research/score_activation.py`; real technical indicator research fields live in `technical/indicator_engine.py`; fundamental research fields live in `fundamental/fundamental_engine.py`.
 
 v6.6.0 Fundamental Research Engine:
 
@@ -233,7 +262,7 @@ ui.workstation_ui
               read-only research report preview
 ```
 
-FinScientist v6.8.0 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整选股模型”执行已有研究流水线，并将真实 A 股实时行情、历史 K 线技术指标、基本面数据层和资金研究层接入研究评分激活层；失败时会显示原因并使用缓存或 Demo fallback。
+FinScientist v6.9.0 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整选股模型”执行已有研究流水线，并将真实 A 股实时行情、历史 K 线技术指标、基本面数据层、资金研究层和新闻事件研究层接入研究评分激活层；失败时会显示原因并使用缓存或 Demo fallback。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -243,7 +272,7 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：v6.8.0
+当前版本：v6.9.0
 
 V6.2.0 Live Pipeline Runner:
 

@@ -22,8 +22,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.8.0"
-PRODUCT_STAGE = "Full Capital Flow Engine"
+PRODUCT_VERSION = "v6.9.0"
+PRODUCT_STAGE = "Full News & Event Research Engine"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -110,7 +110,7 @@ REQUIRED_FIELD_GROUPS = {
         "fundamental_warnings",
     ],
     "Capital Flow": ["capital_flow_score", "capital_flow_strength", "capital_flow_rank", "capital_activity_score", "turnover_rate", "volume_ratio", "main_net_inflow", "capital_flow_warning"],
-    "News Event": ["news_event_score", "news_sentiment_label", "news_title", "news_source"],
+    "News Event": ["news_event_score", "news_heat_score", "news_risk_score", "news_sentiment_label", "news_type", "news_keywords", "news_title", "news_source", "news_reason", "news_warning"],
     "Industry Concept": ["industry", "concepts", "industry_strength_score", "concept_heat_score"],
     "Explainable Selection": ["selection_thesis", "selection_strengths", "selection_risks", "selection_explanation"],
     "Factor Research Lab": ["factor_name", "factor_ic", "factor_rank_ic", "factor_effectiveness_label"],
@@ -136,7 +136,13 @@ SELECTION_COLUMNS = [
     "capital_flow_warning",
     "news_event_score",
     "news_sentiment_label",
+    "news_type",
+    "news_keywords",
     "news_title",
+    "news_source",
+    "news_time",
+    "news_summary",
+    "news_warning",
     "industry",
     "concepts",
     "industry_strength_score",
@@ -251,9 +257,18 @@ STOCK_DETAIL_FIELDS = [
     "capital_flow_warnings",
     "news_event_score",
     "news_sentiment_label",
+    "news_type",
+    "news_keywords",
     "news_title",
+    "news_source",
+    "news_time",
     "news_summary",
+    "news_reason",
     "news_warning",
+    "news_heat_score",
+    "news_risk_score",
+    "news_status",
+    "news_updated_at",
     "industry",
     "concepts",
     "industry_strength_score",
@@ -385,6 +400,8 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         else 0
     )
     capital_strength = source["capital_flow_strength"].fillna("") if "capital_flow_strength" in source.columns else pd.Series([""] * len(source), index=source.index)
+    news_score = pd.to_numeric(source["news_event_score"], errors="coerce") if "news_event_score" in source.columns else pd.Series(dtype=float)
+    news_sentiment = source["news_sentiment_label"].fillna("") if "news_sentiment_label" in source.columns else pd.Series([""] * len(source), index=source.index)
     return {
         "total_count": int(len(source)),
         "universe_size": int(source.attrs.get("universe_size", len(source))) if hasattr(source, "attrs") else int(len(source)),
@@ -418,6 +435,11 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         "strong_capital_flow_count": int(capital_strength.isin(["Strong Buy Research", "Strong"]).sum()),
         "weak_capital_flow_count": int(capital_strength.isin(["Weak", "Very Weak"]).sum()),
         "average_news_event_score": _metric_value(source, "news_event_score"),
+        "news_coverage_count": int(news_score.notna().sum()) if len(news_score) else 0,
+        "positive_news_count": int(news_sentiment.eq("Positive").sum()),
+        "negative_news_count": int(news_sentiment.eq("Negative").sum()),
+        "news_source_status": source.attrs.get("news_status", "Unavailable") if hasattr(source, "attrs") else "Unavailable",
+        "news_latest_updated_at": source.attrs.get("news_updated_at", "") if hasattr(source, "attrs") else "",
         "average_industry_strength_score": _metric_value(source, "industry_strength_score"),
         "average_concept_heat_score": _metric_value(source, "concept_heat_score"),
         "kline_cache_hits": int(source.attrs.get("kline_cache_hits", 0)) if hasattr(source, "attrs") else 0,
@@ -560,6 +582,11 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
         ("北向资金均值", summary["average_northbound_change"], "northbound_change 均值"),
         ("资金强势数量", summary["strong_capital_flow_count"], "Strong / Strong Buy Research"),
         ("资金弱势数量", summary["weak_capital_flow_count"], "Weak / Very Weak"),
+        ("新闻覆盖数量", summary["news_coverage_count"], "news_event_score 可用数量"),
+        ("平均 news_event_score", summary["average_news_event_score"], "新闻事件分均值"),
+        ("正面新闻数量", summary["positive_news_count"], "Positive 标签数量"),
+        ("负面新闻数量", summary["negative_news_count"], "Negative 标签数量"),
+        ("新闻源状态", summary["news_source_status"], f"最近更新 {summary['news_latest_updated_at'] or 'N/A'}"),
         ("K线缓存命中", summary["kline_cache_hits"], "cache/kline 命中数量"),
         ("K线加载失败", summary["kline_failures"], "外部源和缓存均不可用数量"),
         ("平均 risk_score", summary["average_risk_score"], "风险评分均值"),
@@ -616,7 +643,7 @@ def render_selection_page(df: Any) -> dict[str, pd.DataFrame]:
     source = safe_copy_frame(df)
     _render_page_header("选股结果", "Core、Watch、风险和数据缺失对象分组")
     display_source = source.copy(deep=True)
-    sort_options = ["activated_selection_score", "capital_flow_score", "selection_score"]
+    sort_options = ["activated_selection_score", "capital_flow_score", "news_event_score", "selection_score"]
     available_sort_options = [field for field in sort_options if field in display_source.columns]
     sort_field = available_sort_options[0] if available_sort_options else ""
     if available_sort_options:
@@ -722,13 +749,27 @@ def _render_capital_news_industry_cards(row: pd.Series) -> None:
         with column:
             _render_metric_card(title, value, caption)
     st.subheader("新闻事件 / 行业概念")
+    st.subheader("新闻事件卡片")
+    news_cards = [
+        ("最新新闻标题", safe_get(row, "news_title"), safe_get(row, "news_url")),
+        ("新闻来源", safe_get(row, "news_source"), safe_get(row, "news_status")),
+        ("发布时间", safe_get(row, "news_time"), safe_get(row, "news_updated_at")),
+        ("情绪标签", safe_get(row, "news_sentiment_label"), safe_get(row, "news_type")),
+        ("关键词", safe_get(row, "news_keywords"), ""),
+        ("新闻事件分", safe_get(row, "news_event_score"), f"Heat {format_value(safe_get(row, 'news_heat_score'))} / Risk {format_value(safe_get(row, 'news_risk_score'))}"),
+        ("新闻解释", safe_get(row, "news_summary"), safe_get(row, "news_reason")),
+        ("风险提示", safe_get(row, "news_warning"), ""),
+    ]
+    columns = st.columns(4)
+    for column, (title, value, caption) in zip(columns * 2, news_cards):
+        with column:
+            _render_metric_card(title, value, caption)
+    st.subheader("行业概念")
     context_cards = [
-        ("News Event Score", safe_get(row, "news_event_score"), safe_get(row, "news_sentiment_label")),
-        ("News Title", safe_get(row, "news_title"), safe_get(row, "news_source")),
         ("Industry", safe_get(row, "industry"), safe_get(row, "concepts")),
         ("Industry Strength", safe_get(row, "industry_strength_score"), safe_get(row, "industry_rank")),
         ("Concept Heat", safe_get(row, "concept_heat_score"), safe_get(row, "concept_rank")),
-        ("Data Source Diagnostics", safe_get(row, "news_source"), safe_get(row, "industry_source")),
+        ("Data Source Diagnostics", safe_get(row, "industry_source"), safe_get(row, "industry_status")),
     ]
     columns = st.columns(3)
     for column, (title, value, caption) in zip(columns * 2, context_cards):
