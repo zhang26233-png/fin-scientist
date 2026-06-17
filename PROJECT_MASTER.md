@@ -20,15 +20,17 @@
 
 ## Version State
 
-- CURRENT_VERSION = v7.0.0
-- CURRENT_STAGE = Research Pipeline Scheduler
+- CURRENT_VERSION = v7.0.1
+- CURRENT_STAGE = System Audit Release Candidate
 - NEXT_TARGET = v7.1.0 Unified Research Ranking Engine
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v7.0.0"`
-- `legacy_app.py`: `APP_VERSION = "v7.0.0"`
-- `README.md`: Current version: v7.0.0
+- `app.py`: `APP_VERSION = "v7.0.1"`
+- `legacy_app.py`: `APP_VERSION = "v7.0.1"`
+- `README.md`: Current version: v7.0.1
+
+V7.0.1 adds the System Audit Release Candidate layer. New package `audit/` contains `system_audit.py`, `module_audit.py`, `ui_audit.py`, and `release_report.py`. The audit checks data, research, scoring, scheduler, cache, and UI readiness without adding new data sources or changing scoring logic. It validates module importability, callable boundaries, pipeline wiring, UI wiring, required final research fields, Scheduler stages, Core Research / Watch Research / Excluded / Low Priority output counts, data-source status, and Release Candidate readiness. It writes `cache/audit/latest_system_audit.csv`, `cache/audit/latest_pipeline_audit.csv`, and `cache/audit/latest_release_report.md`. Product UI adds the "系统验收 / Release Check" page and a sidebar "运行系统验收" button. Dashboard shows System Status and Research Result Status. All outputs remain only for learning and research and do not constitute investment advice.
 
 V7.0.0 adds the Research Pipeline Scheduler. New modules `pipeline/scheduler.py`, `pipeline/stage_selector.py`, and `pipeline/runtime_monitor.py` split the live A-share research run into four bounded stages: full-market quick scan, technical candidate filtering, research scoring, and deep event review. The default web run now uses Scheduler mode, while `use_scheduler=False` keeps Legacy Full Run available. Scheduler output adds `research_bucket`, `research_rank`, `research_pipeline_stage`, `research_selected_reason`, `research_exclude_reason`, and `research_scheduler_warning`. Final labels are research-only: Core Research, Watch Research, and Excluded / Low Priority. Successful scheduled runs write `cache/scheduler/latest_scheduler_report.csv` and `cache/scheduler/latest_research_result.csv`; failed scheduled runs can display the latest cached result with the warning "本次运行失败，展示最近一次结果". Dashboard, Selection Results, Research Workstation, Data Source Center, and the Scheduler Pipeline page expose stage rows, runtime, status, warnings, final research layers, and data-source diagnostics. All outputs remain only for learning and research and do not constitute investment advice.
 

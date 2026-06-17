@@ -2,6 +2,19 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v7.0.1
+
+- Added System Audit & Release Candidate checks.
+- Added `audit/system_audit.py`, `audit/module_audit.py`, `audit/ui_audit.py`, `audit/release_report.py`, `tests/test_system_audit.py`, `tests/test_module_audit.py`, and `tests/test_release_report.py`.
+- Added module audit fields for importability, callable status, Pipeline connection, UI connection, required fields, sample rows, errors, and notes.
+- Added data-field audit for final research output fields including quote, technical, fundamental, capital-flow, news, industry, activated composite, and Scheduler research fields.
+- Added Pipeline audit for the four Scheduler stages and Core Research / Watch Research / Excluded / Low Priority result availability.
+- Added UI audit for Dashboard, Selection Results, Research Workstation, and Data Source Center readiness.
+- Added Release Report output at `cache/audit/latest_release_report.md` plus CSV audit caches under `cache/audit/`.
+- Added Product UI page "系统验收 / Release Check" and sidebar button "运行系统验收".
+- Updated Dashboard with System Status and Research Result Status.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, buy/sell/hold advice, target prices, position suggestions, return promises, machine-learning prediction, API keys, databases, and vector stores unchanged.
+
 ## v7.0.0
 
 - Added Research Pipeline Scheduler.

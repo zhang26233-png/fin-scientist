@@ -65,7 +65,11 @@ def _quality_available(df: pd.DataFrame) -> pd.Series:
     unavailable = pd.Series(False, index=df.index)
     for field in status_fields:
         if field in df.columns:
-            unavailable = unavailable | _text(df[field], df.index).str.contains("Error|Unavailable|Suspended", case=False, regex=True)
+            unavailable = unavailable | _text(df[field], df.index).str.contains(
+                "Error|Unavailable|Suspended|退市|停牌",
+                case=False,
+                regex=True,
+            )
     quote_quality = _num(df.get("quote_quality_score"), df.index)
     if "quote_quality_score" in df.columns:
         unavailable = unavailable | quote_quality.lt(20).fillna(False)

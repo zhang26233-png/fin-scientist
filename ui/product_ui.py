@@ -7,6 +7,7 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
+from audit.release_report import RELEASE_REPORT_CACHE, build_release_report
 from data.source_center import build_data_source_status
 from factor.factor_lab import DEFAULT_FACTOR_COLUMNS, build_factor_dataset
 from factor.factor_report import build_factor_research_report
@@ -22,8 +23,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v7.0.0"
-PRODUCT_STAGE = "Research Pipeline Scheduler"
+PRODUCT_VERSION = "v7.0.1"
+PRODUCT_STAGE = "System Audit Release Candidate"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -36,6 +37,7 @@ REPORT_PAGE = "研究报告预览"
 SYSTEM_PAGE = "系统状态 / 数据质量"
 DATA_SOURCE_PAGE = "数据源中心"
 SCREENING_PIPELINE_PAGE = "筛选流水线"
+RELEASE_CHECK_PAGE = "系统验收 / Release Check"
 LEGACY_PAGE = "旧版研究工作台"
 
 NAVIGATION_PAGES = [
@@ -50,6 +52,7 @@ NAVIGATION_PAGES = [
     SYSTEM_PAGE,
     DATA_SOURCE_PAGE,
     SCREENING_PIPELINE_PAGE,
+    RELEASE_CHECK_PAGE,
     LEGACY_PAGE,
 ]
 
@@ -400,6 +403,16 @@ def _slowest_scheduler_stage(df: pd.DataFrame) -> str:
     return f"{report.loc[idx, 'stage_name']} ({round(float(seconds.loc[idx]), 2)}s)"
 
 
+def _current_audit_status() -> tuple[str, str]:
+    audit = st.session_state.get("audit_report", {})
+    release = st.session_state.get("release_report", {})
+    if isinstance(release, dict) and release:
+        return str(release.get("system_status", "WARN")), str(release.get("research_result_status", "Partial"))
+    if isinstance(audit, dict) and audit:
+        return str(audit.get("system_status", "WARN")), str(audit.get("research_result_status", "Partial"))
+    return "WARN", "Unavailable"
+
+
 def build_dashboard_summary(df: Any) -> dict[str, Any]:
     """Build product dashboard metrics from the current research frame."""
     source = safe_copy_frame(df)
@@ -450,6 +463,8 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         "scheduler_total_seconds": source.attrs.get("scheduler_total_seconds", 0) if hasattr(source, "attrs") else 0,
         "scheduler_status": source.attrs.get("scheduler_status", "") if hasattr(source, "attrs") else "",
         "slowest_stage": _slowest_scheduler_stage(source),
+        "system_status": _current_audit_status()[0],
+        "research_result_status": _current_audit_status()[1],
         "average_selection_score": _metric_value(source, selection_score_field) if selection_score_field else None,
         "average_composite_score": _metric_value(source, composite_score_field) if composite_score_field else None,
         "average_real_technical_score": _metric_value(source, "real_technical_score"),
@@ -596,6 +611,8 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
     if summary["universe_size"] < 1000:
         st.error("真实数据不足，仅用于结构验证。所有结果仅供学习和研究，不构成投资建议。")
     cards = [
+        ("System Status", summary["system_status"], "PASS / WARN / FAIL"),
+        ("Research Result Status", summary["research_result_status"], "Available / Partial / Unavailable"),
         ("Run Mode", summary["pipeline_mode"], "Scheduler / Legacy Full Run"),
         ("Stage 1 Output", summary["scheduler_stage1_rows"], "Full-market quick scan output"),
         ("Stage 2 Output", summary["scheduler_stage2_rows"], "Technical candidate output"),
@@ -950,6 +967,50 @@ def render_scheduler_pipeline_page(df: Any) -> pd.DataFrame:
     return report
 
 
+def render_release_check_page(df: Any) -> dict[str, Any]:
+    """Render system audit and release-candidate diagnostics."""
+    source = safe_copy_frame(df)
+    _render_page_header("系统验收 / Release Check", "模块、Pipeline、UI、数据源与 Release Candidate 状态验收")
+    report = st.session_state.get("release_report")
+    if not isinstance(report, dict):
+        report = build_release_report(source)
+        st.session_state["release_report"] = report
+        st.session_state["audit_report"] = report
+    system_status = str(report.get("system_status", "WARN"))
+    result_status = str(report.get("research_result_status", "Unavailable"))
+    rc_ready = bool(report.get("release_candidate_ready", False))
+    columns = st.columns(3)
+    with columns[0]:
+        _render_metric_card("System Status", system_status, "PASS / WARN / FAIL")
+    with columns[1]:
+        _render_metric_card("Research Result Status", result_status, "Available / Partial / Unavailable")
+    with columns[2]:
+        _render_metric_card("Release Candidate", "YES" if rc_ready else "NO", "仅供学习和研究，不构成投资建议")
+
+    st.subheader("模块验收表")
+    st.dataframe(report.get("module_audit", pd.DataFrame()), hide_index=True, use_container_width=True)
+    st.subheader("Pipeline阶段表")
+    st.dataframe(report.get("pipeline_audit", pd.DataFrame()), hide_index=True, use_container_width=True)
+    st.subheader("UI接入表")
+    st.dataframe(report.get("ui_audit", pd.DataFrame()), hide_index=True, use_container_width=True)
+    st.subheader("数据源状态表")
+    st.dataframe(report.get("data_source_status", build_data_source_status(source)), hide_index=True, use_container_width=True)
+
+    if system_status == "PASS" and result_status == "Available":
+        st.success("当前系统验收通过，研究结果可用。所有结果仅供学习和研究，不构成投资建议。")
+    elif system_status == "FAIL" or result_status == "Unavailable":
+        st.error("当前系统存在阻断项或研究结果不可用。请查看验收表和已知问题。")
+    else:
+        st.warning("当前系统可用于候选 Release 验收，但仍存在 WARN 项需要持续观察。")
+
+    markdown = str(report.get("release_report_markdown", ""))
+    if not markdown and RELEASE_REPORT_CACHE.exists():
+        markdown = RELEASE_REPORT_CACHE.read_text(encoding="utf-8")
+    st.subheader("最新 Release Report 预览")
+    st.text_area("latest_release_report.md", value=markdown, height=420, disabled=True)
+    return report
+
+
 def render_data_source_center_page(df: Any) -> pd.DataFrame:
     """Render the unified data-source center page."""
     source = safe_copy_frame(df)
@@ -1099,6 +1160,8 @@ def render_product_page(page: str, state: dict[str, pd.DataFrame] | None = None)
         return render_data_source_center_page(research)
     if page == SCREENING_PIPELINE_PAGE:
         return render_scheduler_pipeline_page(research)
+    if page == RELEASE_CHECK_PAGE:
+        return render_release_check_page(research)
     return render_dashboard_page(research)
 
 
@@ -1138,6 +1201,7 @@ __all__ = [
     "PRODUCT_STAGE",
     "PRODUCT_VERSION",
     "REPORT_PAGE",
+    "RELEASE_CHECK_PAGE",
     "SCREENING_PIPELINE_PAGE",
     "SELECTION_PAGE",
     "SYSTEM_PAGE",
@@ -1157,6 +1221,7 @@ __all__ = [
     "render_product_page",
     "render_report_preview_page",
     "render_research_workstation_product",
+    "render_release_check_page",
     "render_scheduler_pipeline_page",
     "render_selection_page",
     "render_stock_workstation_page",

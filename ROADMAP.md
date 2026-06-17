@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v7.0.0.
+Current: v7.0.1.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -237,6 +237,7 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.8.0: Full Capital Flow Engine completed.
 - v6.9.0: Full News & Event Research Engine completed.
 - v7.0.0: Research Pipeline Scheduler completed.
+- v7.0.1: System Audit Release Candidate completed.
 - Next target: v7.1.0 Unified Research Ranking Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
@@ -630,6 +631,16 @@ Completed v7.0.0 scope:
 - Added scheduler caches at `cache/scheduler/latest_scheduler_report.csv` and `cache/scheduler/latest_research_result.csv`.
 - Updated the live runner so Scheduler mode is the default and Legacy Full Run remains available with `use_scheduler=False`.
 - Updated Dashboard, Selection Results, Research Workstation, Data Source Center, and Scheduler Pipeline page to display scheduler diagnostics and final research layers.
+- Next target: v7.1.0 Unified Research Ranking Engine.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and buy/sell/hold advice unchanged.
+
+Completed v7.0.1 scope:
+
+- Added `audit/system_audit.py`, `audit/module_audit.py`, `audit/ui_audit.py`, and `audit/release_report.py`.
+- Added system checks for module importability, callable boundaries, Pipeline wiring, UI wiring, final research fields, Scheduler stages, data-source status, cache output, and Release Candidate readiness.
+- Added `cache/audit/latest_system_audit.csv`, `cache/audit/latest_pipeline_audit.csv`, and `cache/audit/latest_release_report.md` runtime outputs.
+- Added the Product UI page "系统验收 / Release Check" and sidebar action "运行系统验收".
+- Dashboard now shows System Status and Research Result Status.
 - Next target: v7.1.0 Unified Research Ranking Engine.
 - Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and buy/sell/hold advice unchanged.
 

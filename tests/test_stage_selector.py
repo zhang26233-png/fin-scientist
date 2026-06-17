@@ -38,6 +38,21 @@ def test_stage1_filters_chinese_status_rows():
     assert result["ticker"].tolist() == ["000001"]
 
 
+def test_stage1_filters_chinese_status_rows():
+    df = pd.DataFrame(
+        [
+            {"ticker": "000001", "name": "正常股份", "latest_price": 10, "turnover": 100_000_000, "data_status": "Live"},
+            {"ticker": "000002", "name": "退市整理", "latest_price": 10, "turnover": 100_000_000, "data_status": "Live"},
+            {"ticker": "000003", "name": "停牌股份", "latest_price": 10, "turnover": 100_000_000, "status": "停牌"},
+            {"ticker": "000004", "name": "布尔股份", "latest_price": 10, "turnover": 100_000_000, "is_suspended": "是"},
+        ]
+    )
+
+    result = select_stage1_candidates(df, limit=10)
+
+    assert result["ticker"].tolist() == ["000001"]
+
+
 def test_stage1_sorts_by_liquidity():
     df = pd.DataFrame(
         [
