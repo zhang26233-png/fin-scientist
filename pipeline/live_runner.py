@@ -21,6 +21,8 @@ from backtest.return_analysis import build_return_analysis
 from factor.factor_lab import build_factor_dataset
 from fundamental.fundamental_engine import FUNDAMENTAL_RESEARCH_FIELDS, build_fundamental_research
 from news.event_engine import NEWS_EVENT_FIELDS, build_news_event_scores
+from pipeline.scheduler import load_scheduler_cache, run_scheduled_pipeline
+from pipeline.stage_selector import SCHEDULER_FIELDS
 from research.score_activation import ACTIVATED_RESEARCH_FIELDS, activate_research_scores
 from screening.candidate_pool import build_candidate_pool
 from screening.composite_score_engine import build_composite_quant_score
@@ -66,6 +68,7 @@ LIVE_PIPELINE_FIELDS = [
     *NEWS_EVENT_FIELDS,
     *INDUSTRY_COLUMNS,
     *ACTIVATED_RESEARCH_FIELDS,
+    *SCHEDULER_FIELDS,
 ]
 
 DEMO_NOTICE = "当前为 Demo 数据，用于展示系统结构；接入真实行情后可替换为真实结果。"
@@ -450,6 +453,12 @@ def _build_demo_result(max_stocks: int | None = None) -> pd.DataFrame:
 def run_live_pipeline(
     max_stocks: int | None = None,
     use_sample_if_no_data: bool = True,
+    use_scheduler: bool = True,
+    stage1_limit: int = 800,
+    stage2_limit: int = 300,
+    stage3_limit: int = 100,
+    core_limit: int = 20,
+    watch_limit: int = 50,
     price_history_dict: dict[str, pd.DataFrame] | None = None,
     kline_enabled: bool = True,
     max_kline_stocks: int = 200,
@@ -470,6 +479,7 @@ def run_live_pipeline(
     research DataFrame when the live Universe/data chain is unavailable.
     """
     histories = _copy_price_history_dict(price_history_dict)
+    scheduler_started = False
     try:
         universe = load_a_share_universe()
         universe = _copy_frame(universe)
@@ -477,6 +487,8 @@ def run_live_pipeline(
             universe = universe.head(int(max_stocks)).copy(deep=True)
         source_attrs = dict(universe.attrs)
         if universe.empty:
+            if use_sample_if_no_data:
+                return _build_demo_result(max_stocks=max_stocks)
             raise ValueError("A-share Universe is empty.")
         if source_attrs.get("data_status") not in {"Live", "Cache"} or len(universe) <= 1000:
             demo = _build_demo_result(max_stocks=max_stocks)
@@ -491,27 +503,55 @@ def run_live_pipeline(
             f"原始股票：{universe.attrs.get('raw_count', len(universe))}；"
             f"过滤后：{len(universe)}。"
         )
-        result = _run_pipeline(
-            universe,
-            fundamental_df=None,
-            price_history_dict=histories,
-            kline_enabled=kline_enabled,
-            max_kline_stocks=max_kline_stocks,
-            fundamental_enabled=fundamental_enabled,
-            capital_flow_enabled=capital_flow_enabled,
-            news_enabled=news_enabled,
-            news_event_enabled=news_event_enabled,
-            industry_enabled=industry_enabled,
-            max_news_stocks=max_news_stocks,
-            max_capital_flow_stocks=max_capital_flow_stocks,
-            max_industry_stocks=max_industry_stocks,
-            news_lookback_days=news_lookback_days,
-            news_timeout=news_timeout,
-        )
+        if use_scheduler:
+            scheduler_started = True
+            result = run_scheduled_pipeline(
+                universe,
+                stage1_limit=stage1_limit,
+                stage2_limit=stage2_limit,
+                stage3_limit=stage3_limit,
+                core_limit=core_limit,
+                watch_limit=watch_limit,
+                enable_kline=kline_enabled,
+                enable_fundamental=fundamental_enabled,
+                enable_capital_flow=capital_flow_enabled,
+                enable_news=bool(news_enabled and news_event_enabled),
+                enable_industry=industry_enabled,
+                max_kline_stocks=max_kline_stocks,
+            )
+        else:
+            result = _run_pipeline(
+                universe,
+                fundamental_df=None,
+                price_history_dict=histories,
+                kline_enabled=kline_enabled,
+                max_kline_stocks=max_kline_stocks,
+                fundamental_enabled=fundamental_enabled,
+                capital_flow_enabled=capital_flow_enabled,
+                news_enabled=news_enabled,
+                news_event_enabled=news_event_enabled,
+                industry_enabled=industry_enabled,
+                max_news_stocks=max_news_stocks,
+                max_capital_flow_stocks=max_capital_flow_stocks,
+                max_industry_stocks=max_industry_stocks,
+                news_lookback_days=news_lookback_days,
+                news_timeout=news_timeout,
+            )
         if result.empty:
             raise ValueError("Pipeline returned an empty result.")
-        return _finalize(result, is_demo=False, source=source_attrs.get("data_source", "A-share Universe"), source_attrs=source_attrs)
+        finalized = _finalize(result, is_demo=False, source=source_attrs.get("data_source", "A-share Universe"), source_attrs=source_attrs)
+        finalized.attrs["pipeline_mode"] = "Scheduler" if use_scheduler else "Legacy Full Run"
+        return finalized
     except Exception as exc:
+        if use_scheduler and scheduler_started:
+            cached_result, cached_report = load_scheduler_cache()
+            if not cached_result.empty:
+                cached_result.attrs["pipeline_mode"] = "Scheduler"
+                cached_result.attrs["scheduler_status"] = "Cache Fallback"
+                cached_result.attrs["scheduler_report_df"] = cached_report
+                cached_result.attrs["data_notice"] = "本次运行失败，展示最近一次结果"
+                cached_result.attrs["last_error"] = str(exc)
+                return _finalize(cached_result, is_demo=False, source="Scheduler Cache", message="本次运行失败，展示最近一次结果")
         if not use_sample_if_no_data:
             return _finalize(pd.DataFrame(), is_demo=False, source="Unavailable", message=f"Live pipeline failed: {exc}")
         return _build_demo_result(max_stocks=max_stocks)

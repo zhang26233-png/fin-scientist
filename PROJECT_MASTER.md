@@ -20,15 +20,17 @@
 
 ## Version State
 
-- CURRENT_VERSION = v6.9.0
-- CURRENT_STAGE = Full News & Event Research Engine
-- NEXT_TARGET = v7.0.0 Unified Research Ranking Engine
+- CURRENT_VERSION = v7.0.0
+- CURRENT_STAGE = Research Pipeline Scheduler
+- NEXT_TARGET = v7.1.0 Unified Research Ranking Engine
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v6.9.0"`
-- `legacy_app.py`: `APP_VERSION = "v6.9.0"`
-- `README.md`: Current version: v6.9.0
+- `app.py`: `APP_VERSION = "v7.0.0"`
+- `legacy_app.py`: `APP_VERSION = "v7.0.0"`
+- `README.md`: Current version: v7.0.0
+
+V7.0.0 adds the Research Pipeline Scheduler. New modules `pipeline/scheduler.py`, `pipeline/stage_selector.py`, and `pipeline/runtime_monitor.py` split the live A-share research run into four bounded stages: full-market quick scan, technical candidate filtering, research scoring, and deep event review. The default web run now uses Scheduler mode, while `use_scheduler=False` keeps Legacy Full Run available. Scheduler output adds `research_bucket`, `research_rank`, `research_pipeline_stage`, `research_selected_reason`, `research_exclude_reason`, and `research_scheduler_warning`. Final labels are research-only: Core Research, Watch Research, and Excluded / Low Priority. Successful scheduled runs write `cache/scheduler/latest_scheduler_report.csv` and `cache/scheduler/latest_research_result.csv`; failed scheduled runs can display the latest cached result with the warning "本次运行失败，展示最近一次结果". Dashboard, Selection Results, Research Workstation, Data Source Center, and the Scheduler Pipeline page expose stage rows, runtime, status, warnings, final research layers, and data-source diagnostics. All outputs remain only for learning and research and do not constitute investment advice.
 
 V6.9.0 adds the Full News & Event Research Engine. New package `news/` contains `event_engine.py` with `classify_news_event()` and `build_news_event_scores()`, turning standardized news rows into event type, keywords, sentiment label, heat score, risk score, event score, summary, reason, warning, status, and update time. `data/news_loader.py` remains the source boundary for EastMoney, Sina, AkShare, and local cache fallback under `cache/news/`, while the event engine writes `cache/news/news_event_cache.csv` for scored event rows when enough data is available. The live pipeline now runs realtime quotes, K-line, technical indicators, fundamental data, capital-flow data, News Event Engine, industry, research activation, and UI output. Research activation uses the v6.9.0 formula when fundamental, technical, capital-flow, news, and quote-quality fields are available, while falling back when news fields are missing. Dashboard, Selection Results, Research Workstation, and Data Source Center expose news coverage, average event score, sentiment counts, source status, event details, cache status, and latest update time. All outputs remain only for learning and research and do not constitute investment advice.
 

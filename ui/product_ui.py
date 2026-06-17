@@ -22,8 +22,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v6.9.0"
-PRODUCT_STAGE = "Full News & Event Research Engine"
+PRODUCT_VERSION = "v7.0.0"
+PRODUCT_STAGE = "Research Pipeline Scheduler"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -120,29 +120,39 @@ UNIVERSE_COLUMNS = ["ticker", "name", "market", "industry", "list_date", "status
 SELECTION_COLUMNS = [
     "ticker",
     "name",
+    "research_bucket",
+    "research_rank",
+    "activated_composite_score",
+    "fundamental_research_score",
+    "real_technical_score",
+    "capital_flow_score",
+    "news_event_score",
     "latest_price",
     "pct_change",
     "turnover",
-    "capital_flow_score",
+    "turnover_rate",
+    "volume_ratio",
+    "pe_ttm",
+    "pb",
+    "roe",
+    "revenue_growth_yoy",
+    "net_profit_growth_yoy",
+    "capital_flow_summary",
+    "news_summary",
+    "research_selected_reason",
+    "research_exclude_reason",
+    "research_scheduler_warning",
     "capital_flow_strength",
     "capital_flow_rank",
     "capital_activity_score",
-    "turnover_rate",
-    "volume_ratio",
     "main_net_inflow",
     "main_net_inflow_ratio",
     "northbound_change",
-    "capital_flow_summary",
     "capital_flow_warning",
-    "news_event_score",
     "news_sentiment_label",
     "news_type",
     "news_keywords",
     "news_title",
-    "news_source",
-    "news_time",
-    "news_summary",
-    "news_warning",
     "industry",
     "concepts",
     "industry_strength_score",
@@ -201,6 +211,13 @@ BACKTEST_COLUMNS = [
 STOCK_DETAIL_FIELDS = [
     "ticker",
     "name",
+    "research_bucket",
+    "research_rank",
+    "research_pipeline_stage",
+    "research_selected_reason",
+    "research_exclude_reason",
+    "research_scheduler_warning",
+    "activated_composite_score",
     "fundamental_score",
     "technical_score",
     "composite_score",
@@ -365,10 +382,28 @@ def _first_available_field(df: pd.DataFrame, fields: list[str]) -> str | None:
     return None
 
 
+def _scheduler_report_frame(df: pd.DataFrame) -> pd.DataFrame:
+    report = getattr(df, "attrs", {}).get("scheduler_report_df") if isinstance(df, pd.DataFrame) else None
+    if isinstance(report, pd.DataFrame):
+        return report.copy(deep=True)
+    return pd.DataFrame()
+
+
+def _slowest_scheduler_stage(df: pd.DataFrame) -> str:
+    report = _scheduler_report_frame(df)
+    if report.empty or "stage_seconds" not in report.columns or "stage_name" not in report.columns:
+        return ""
+    seconds = pd.to_numeric(report["stage_seconds"], errors="coerce")
+    if seconds.dropna().empty:
+        return ""
+    idx = seconds.idxmax()
+    return f"{report.loc[idx, 'stage_name']} ({round(float(seconds.loc[idx]), 2)}s)"
+
+
 def build_dashboard_summary(df: Any) -> dict[str, Any]:
     """Build product dashboard metrics from the current research frame."""
     source = safe_copy_frame(df)
-    bucket_field = _first_available_field(source, ["activated_research_bucket", "selection_bucket"])
+    bucket_field = _first_available_field(source, ["research_bucket", "activated_research_bucket", "selection_bucket"])
     selection_score_field = _first_available_field(source, ["activated_selection_score", "selection_score"])
     composite_score_field = _first_available_field(source, ["activated_composite_score", "composite_score"])
     if source.empty:
@@ -405,9 +440,16 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
     return {
         "total_count": int(len(source)),
         "universe_size": int(source.attrs.get("universe_size", len(source))) if hasattr(source, "attrs") else int(len(source)),
-        "core_count": int(bucket.eq("Core").sum()),
-        "watch_count": int(bucket.eq("Watch").sum()),
-        "exclude_count": int(bucket.isin(["Exclude", "Excluded"]).sum()),
+        "core_count": int(bucket.isin(["Core", "Core Research"]).sum()),
+        "watch_count": int(bucket.isin(["Watch", "Watch Research"]).sum()),
+        "exclude_count": int(bucket.isin(["Exclude", "Excluded", "Excluded / Low Priority"]).sum()),
+        "pipeline_mode": source.attrs.get("pipeline_mode", "Scheduler") if hasattr(source, "attrs") else "Scheduler",
+        "scheduler_stage1_rows": int(source.attrs.get("scheduler_stage1_rows", 0)) if hasattr(source, "attrs") else 0,
+        "scheduler_stage2_rows": int(source.attrs.get("scheduler_stage2_rows", 0)) if hasattr(source, "attrs") else 0,
+        "scheduler_stage3_rows": int(source.attrs.get("scheduler_stage3_rows", 0)) if hasattr(source, "attrs") else 0,
+        "scheduler_total_seconds": source.attrs.get("scheduler_total_seconds", 0) if hasattr(source, "attrs") else 0,
+        "scheduler_status": source.attrs.get("scheduler_status", "") if hasattr(source, "attrs") else "",
+        "slowest_stage": _slowest_scheduler_stage(source),
         "average_selection_score": _metric_value(source, selection_score_field) if selection_score_field else None,
         "average_composite_score": _metric_value(source, composite_score_field) if composite_score_field else None,
         "average_real_technical_score": _metric_value(source, "real_technical_score"),
@@ -483,9 +525,9 @@ def find_missing_fields(df: Any) -> dict[str, list[str]]:
 
 def _format_display_table(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     source = safe_copy_frame(df)
-    available = [column for column in columns if column in source.columns]
+    available = list(dict.fromkeys(column for column in columns if column in source.columns))
     if not available:
-        return pd.DataFrame(columns=columns)
+        return pd.DataFrame(columns=list(dict.fromkeys(columns)))
     display = source[available].copy(deep=True)
     for column in display.columns:
         display[column] = display[column].map(lambda value, field=column: format_value(value, field))
@@ -554,6 +596,11 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
     if summary["universe_size"] < 1000:
         st.error("真实数据不足，仅用于结构验证。所有结果仅供学习和研究，不构成投资建议。")
     cards = [
+        ("Run Mode", summary["pipeline_mode"], "Scheduler / Legacy Full Run"),
+        ("Stage 1 Output", summary["scheduler_stage1_rows"], "Full-market quick scan output"),
+        ("Stage 2 Output", summary["scheduler_stage2_rows"], "Technical candidate output"),
+        ("Stage 3 Output", summary["scheduler_stage3_rows"], "Research candidate output"),
+        ("Total Seconds", summary["scheduler_total_seconds"], f"Slowest: {summary['slowest_stage'] or 'N/A'}"),
         ("Universe Size", summary["universe_size"], "Current A-share universe size"),
         ("Raw Count", raw_count, "Realtime/cache raw rows"),
         ("Filtered Count", filtered_count, "Filtered rows removed"),
@@ -643,25 +690,36 @@ def render_selection_page(df: Any) -> dict[str, pd.DataFrame]:
     source = safe_copy_frame(df)
     _render_page_header("选股结果", "Core、Watch、风险和数据缺失对象分组")
     display_source = source.copy(deep=True)
-    sort_options = ["activated_selection_score", "capital_flow_score", "news_event_score", "selection_score"]
+    sort_options = [
+        "research_bucket",
+        "activated_composite_score",
+        "capital_flow_score",
+        "real_technical_score",
+        "fundamental_research_score",
+        "activated_selection_score",
+        "news_event_score",
+        "selection_score",
+    ]
     available_sort_options = [field for field in sort_options if field in display_source.columns]
     sort_field = available_sort_options[0] if available_sort_options else ""
     if available_sort_options:
         sort_field = st.selectbox("结果排序", options=available_sort_options, index=0)
-    if sort_field:
+    if sort_field and sort_field != "research_bucket":
         display_source = display_source.sort_values(
             by=sort_field,
             ascending=False,
             kind="mergesort",
         )
+    elif sort_field == "research_bucket" and "research_rank" in display_source.columns:
+        display_source = display_source.sort_values(by="research_rank", ascending=True, kind="mergesort")
     table = _render_table(display_source, SELECTION_COLUMNS, "Stock Selection")
-    bucket_field = _first_available_field(source, ["activated_research_bucket", "selection_bucket"])
+    bucket_field = _first_available_field(source, ["research_bucket", "activated_research_bucket", "selection_bucket"])
     bucket = source[bucket_field] if bucket_field else pd.Series([""] * len(source), index=source.index)
     risk = source["risk_level"] if "risk_level" in source.columns else pd.Series([""] * len(source), index=source.index)
     warnings = collect_warning_fields(source)
     sections = {
-        "top_core": source[bucket.eq("Core")].copy(deep=True),
-        "top_watch": source[bucket.eq("Watch")].copy(deep=True),
+        "top_core": source[bucket.isin(["Core", "Core Research"])].copy(deep=True),
+        "top_watch": source[bucket.isin(["Watch", "Watch Research"])].copy(deep=True),
         "risk_objects": source[risk.eq("High")].copy(deep=True),
         "missing_data": source.iloc[0:0].copy(deep=True),
     }
@@ -684,6 +742,14 @@ def render_stock_workstation_page(df: Any) -> dict[str, Any]:
     ticker_options = [str(value) for value in source.get("ticker", pd.Series(range(len(source)))).fillna("").tolist()]
     selected = st.selectbox("选择股票", options=ticker_options)
     row = source[source["ticker"].astype(str).eq(selected)].iloc[0] if "ticker" in source.columns else source.iloc[0]
+    columns = st.columns(4)
+    for column, field in zip(columns, ["research_bucket", "research_rank", "activated_composite_score", "research_pipeline_stage"]):
+        with column:
+            _render_metric_card(field, safe_get(row, field), "Scheduler research layer")
+    st.info(
+        f"Selected reason: {format_value(safe_get(row, 'research_selected_reason'))} | "
+        f"Exclude reason: {format_value(safe_get(row, 'research_exclude_reason'))}"
+    )
     columns = st.columns(4)
     for column, field in zip(columns, ["ticker", "name", "selection_score", "selection_bucket"]):
         with column:
@@ -869,11 +935,37 @@ def render_report_preview_page(df: Any) -> str:
     return report
 
 
+def render_scheduler_pipeline_page(df: Any) -> pd.DataFrame:
+    """Render the v7 scheduled pipeline stage report."""
+    source = safe_copy_frame(df)
+    _render_page_header("筛选流水线", "Scheduler stage report; results are only for learning and research, not investment advice")
+    report = _scheduler_report_frame(source)
+    if report.empty:
+        _render_empty_notice("Scheduler Pipeline")
+        report = pd.DataFrame(
+            columns=["stage_name", "stage_input_rows", "stage_output_rows", "stage_seconds", "stage_status", "stage_warning"]
+        )
+    columns = ["stage_name", "stage_input_rows", "stage_output_rows", "stage_seconds", "stage_status", "stage_warning"]
+    st.dataframe(_format_display_table(report, columns), hide_index=True, use_container_width=True)
+    return report
+
+
 def render_data_source_center_page(df: Any) -> pd.DataFrame:
     """Render the unified data-source center page."""
     source = safe_copy_frame(df)
     _render_page_header("数据源中心", "实时行情、K线、基本面、资金面、新闻、行业与缓存状态")
     status = build_data_source_status(source)
+    st.subheader("Scheduler Status")
+    scheduler_rows = [
+        {"item": "Scheduler Status", "value": source.attrs.get("scheduler_status", "") if hasattr(source, "attrs") else ""},
+        {"item": "Scheduler Run Time", "value": source.attrs.get("scheduler_total_seconds", "") if hasattr(source, "attrs") else ""},
+        {"item": "Scheduler Mode", "value": source.attrs.get("pipeline_mode", "") if hasattr(source, "attrs") else ""},
+    ]
+    st.dataframe(pd.DataFrame(scheduler_rows), hide_index=True, use_container_width=True)
+    report = _scheduler_report_frame(source)
+    if not report.empty:
+        st.subheader("Scheduler Stage Report")
+        st.dataframe(report, hide_index=True, use_container_width=True)
     st.dataframe(status, hide_index=True, use_container_width=True)
     return status
 
@@ -1005,6 +1097,8 @@ def render_product_page(page: str, state: dict[str, pd.DataFrame] | None = None)
         return render_system_status_page(research)
     if page == DATA_SOURCE_PAGE:
         return render_data_source_center_page(research)
+    if page == SCREENING_PIPELINE_PAGE:
+        return render_scheduler_pipeline_page(research)
     return render_dashboard_page(research)
 
 
@@ -1015,6 +1109,15 @@ def render_research_workstation_product(df: Any) -> dict[str, Any]:
         _render_page_header("个股研究工作台", "Research Workstation 页面框架")
         _render_empty_notice("Research Workstation")
         return {"metrics": {}, "selected_row": None, "compare": pd.DataFrame(), "charts": {}, "factor_lab": {}, "pipeline": [], "report": ""}
+    row = source.iloc[0].copy(deep=True)
+    columns = st.columns(4)
+    for column, field in zip(columns, ["research_bucket", "research_rank", "activated_composite_score", "research_pipeline_stage"]):
+        with column:
+            _render_metric_card(field, safe_get(row, field), "Scheduler research layer")
+    st.info(
+        f"Selected reason: {format_value(safe_get(row, 'research_selected_reason'))} | "
+        f"Exclude reason: {format_value(safe_get(row, 'research_exclude_reason'))}"
+    )
     if any(field in source.columns for field in ["real_technical_score", "technical_trend_score", "technical_risk_flags"]):
         _render_technical_indicator_cards(source.iloc[0].copy(deep=True))
     if any(field in source.columns for field in ["fundamental_research_score", "valuation_score", "fundamental_risks"]):
@@ -1054,6 +1157,7 @@ __all__ = [
     "render_product_page",
     "render_report_preview_page",
     "render_research_workstation_product",
+    "render_scheduler_pipeline_page",
     "render_selection_page",
     "render_stock_workstation_page",
     "render_system_status_page",

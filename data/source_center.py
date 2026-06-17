@@ -35,6 +35,9 @@ SOURCE_STATUS_COLUMNS = [
     "news_cache_status",
     "news_updated_time",
     "news_last_error",
+    "scheduler_status",
+    "scheduler_run_time",
+    "scheduler_stage_report",
     "priority",
     "used_in_model",
 ]
@@ -112,6 +115,9 @@ def _status_row(
     news_cache_status: str = "",
     news_updated_time: str = "",
     news_last_error: str = "",
+    scheduler_status: str = "",
+    scheduler_run_time: Any = "",
+    scheduler_stage_report: str = "",
     priority: int = 0,
     used_in_model: bool = False,
 ) -> dict[str, Any]:
@@ -132,6 +138,9 @@ def _status_row(
         "news_cache_status": news_cache_status or "",
         "news_updated_time": news_updated_time or "",
         "news_last_error": news_last_error or "",
+        "scheduler_status": scheduler_status or "",
+        "scheduler_run_time": scheduler_run_time,
+        "scheduler_stage_report": scheduler_stage_report or "",
         "priority": int(priority),
         "used_in_model": bool(used_in_model),
     }
@@ -168,6 +177,13 @@ def build_data_source_status(research_df: pd.DataFrame | None = None) -> pd.Data
         or _cache_status(NEWS_CACHE_FILE)
     )
     news_last_error = str(attrs.get("news_warning", ""))
+    scheduler_report = attrs.get("scheduler_report_df")
+    scheduler_stage_report = ""
+    if isinstance(scheduler_report, pd.DataFrame) and not scheduler_report.empty:
+        scheduler_stage_report = " | ".join(
+            f"{row.get('stage_name')}: {row.get('stage_output_rows')} rows/{row.get('stage_seconds')}s"
+            for _, row in scheduler_report.iterrows()
+        )
 
     realtime_rows = len(df) if not df.empty else 0
     rows = []
@@ -269,6 +285,19 @@ def build_data_source_status(research_df: pd.DataFrame | None = None) -> pd.Data
                 cache_status=str(cache.get("cache_status", "Missing")),
                 priority=9,
                 used_in_model=attrs.get("data_source") == "Local Cache",
+            ),
+            _status_row(
+                source_name="Scheduler",
+                source_type="Pipeline Scheduler",
+                status=str(attrs.get("scheduler_status", "Unavailable")),
+                rows=len(df),
+                last_updated=updated_at,
+                cache_status=str(attrs.get("scheduler_cache_status", "")),
+                scheduler_status=str(attrs.get("scheduler_status", "Unavailable")),
+                scheduler_run_time=attrs.get("scheduler_total_seconds", ""),
+                scheduler_stage_report=scheduler_stage_report,
+                priority=1,
+                used_in_model=attrs.get("pipeline_mode") == "Scheduler",
             ),
         ]
     )

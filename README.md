@@ -2,7 +2,24 @@
 
 ## Current Version
 
-Current version: v6.9.0
+Current version: v7.0.0
+
+v7.0.0 adds the Research Pipeline Scheduler. The default full web run no longer applies every heavy module to the whole market. It now runs a staged research pipeline:
+
+1. Stage 1 full-market quick scan: realtime quote, liquidity, turnover, price change, volume ratio, and data quality.
+2. Stage 2 technical filtering: bounded K-line and technical research indicators for the Stage 1 output.
+3. Stage 3 research scoring: bounded fundamental, capital-flow, industry/concept, and activation scoring.
+4. Stage 4 deep event review: bounded news/event research and final composite review.
+
+The final output uses research-only layers:
+
+- Core Research: highest-ranked research objects with usable data quality and final score above the Core threshold.
+- Watch Research: objects worth continued observation or verification.
+- Excluded / Low Priority: objects with insufficient score, unavailable data, high risk flags, or rank outside the active research window.
+
+Scheduler diagnostics are shown in the Dashboard, Selection Results, Research Workstation, Data Source Center, and the Scheduler Pipeline page. Successful scheduled runs write `cache/scheduler/latest_scheduler_report.csv` and `cache/scheduler/latest_research_result.csv`. If a scheduled run fails, the app can display the latest cached result and warns: "本次运行失败，展示最近一次结果".
+
+This project is only for learning and research and does not constitute investment advice.
 
 v6.9.0 adds the Full News & Event Research Engine. The project now includes `news/event_engine.py`, which converts standardized news rows into research-only event classification, sentiment labels, heat score, risk score, event score, summary, reason, warning, source/status, and update time.
 
@@ -152,7 +169,7 @@ app.py     Main Streamlit entrypoint and page navigation
 legacy_app.py  Compatibility layer / legacy core logic carrier
 ```
 
-`legacy_app.py` is not an unused backup. In v6.9.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; screening pipeline rendering remains in `ui/screening_ui.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`; historical K-line loading lives in `data/kline_loader.py`; real fundamental data loading lives in `data/fundamental_loader.py`; capital-flow research scoring lives in `capital_flow/capital_engine.py`; news/event research scoring lives in `news/event_engine.py`; realtime quote research activation lives in `research/score_activation.py`; real technical indicator research fields live in `technical/indicator_engine.py`; fundamental research fields live in `fundamental/fundamental_engine.py`.
+`legacy_app.py` is not an unused backup. In v7.0.0 it remains the explicit compatibility layer for the old research workbench, the legacy screening renderer, and network-adjacent fetch orchestration that has not yet been migrated. Product navigation lives in `ui/product_ui.py`; Scheduler execution lives in `pipeline/scheduler.py`; one-click web pipeline execution lives in `pipeline/live_runner.py`; realtime A-share source loading lives in `data/tencent_loader.py`, `data/sina_loader.py`, `data/eastmoney_loader.py`, `data/local_cache.py`, and `data/a_share_loader.py`; historical K-line loading lives in `data/kline_loader.py`; real fundamental data loading lives in `data/fundamental_loader.py`; capital-flow research scoring lives in `capital_flow/capital_engine.py`; news/event research scoring lives in `news/event_engine.py`; realtime quote research activation lives in `research/score_activation.py`; real technical indicator research fields live in `technical/indicator_engine.py`; fundamental research fields live in `fundamental/fundamental_engine.py`.
 
 v6.6.0 Fundamental Research Engine:
 
@@ -262,7 +279,7 @@ ui.workstation_ui
               read-only research report preview
 ```
 
-FinScientist v6.9.0 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整选股模型”执行已有研究流水线，并将真实 A 股实时行情、历史 K 线技术指标、基本面数据层、资金研究层和新闻事件研究层接入研究评分激活层；失败时会显示原因并使用缓存或 Demo fallback。
+FinScientist v7.0.0 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整选股模型”执行 Scheduler 分层研究流水线，并将真实 A 股实时行情、历史 K 线技术指标、基本面数据层、资金研究层和新闻事件研究层接入研究评分激活层；失败时会显示原因并使用缓存或 Demo fallback。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -272,7 +289,7 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：v6.9.0
+当前版本：v7.0.0
 
 V6.2.0 Live Pipeline Runner:
 

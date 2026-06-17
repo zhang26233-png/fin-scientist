@@ -17,8 +17,8 @@ from ui.product_ui import (
 )
 from ui.screening_ui import render_screening_page
 
-APP_VERSION = "v6.9.0"
-APP_STAGE = "Full News & Event Research Engine"
+APP_VERSION = "v7.0.0"
+APP_STAGE = "Research Pipeline Scheduler"
 
 # Re-export core functions used by the existing tests and notebooks.
 calculate_indicators = legacy_app.calculate_indicators
@@ -60,6 +60,7 @@ def main():
             try:
                 with st.spinner("正在运行 Fin-Scientist 选股流水线..."):
                     result_df = run_live_pipeline(
+                        use_scheduler=True,
                         kline_enabled=kline_enabled,
                         max_kline_stocks=int(max_kline_stocks),
                         fundamental_enabled=fundamental_enabled,
@@ -94,9 +95,7 @@ def main():
         page = st.radio("平台导航", options=get_navigation_pages(), index=0)
         st.caption("所有页面仅用于学习和研究，不构成投资建议。")
 
-    if page == SCREENING_PIPELINE_PAGE:
-        render_screening_page()
-    elif page == LEGACY_PAGE:
+    if page == LEGACY_PAGE:
         legacy_app.render_legacy_workbench()
     else:
         render_product_page(page)

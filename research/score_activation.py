@@ -24,6 +24,7 @@ ACTIVATED_RESEARCH_FIELDS = [
     "activated_industry_score",
     "activated_composite_score",
     "activated_selection_score",
+    "scheduler_ready_score",
     "activated_research_level",
     "activated_research_bucket",
     "activated_research_status",
@@ -162,6 +163,14 @@ def _existing_positive_score(row: pd.Series, field: str) -> float | None:
     return _clip_score(value)
 
 
+def _score_or_neutral(row: pd.Series, field: str, warnings: list[str]) -> float:
+    score = _existing_positive_score(row, field)
+    if score is None:
+        warnings.append(f"{field} missing; scheduler activation used neutral score 50.")
+        return 50.0
+    return score
+
+
 def _as_list(value: Any) -> list[str]:
     if value is None:
         return []
@@ -220,10 +229,13 @@ def _activate_row(row: pd.Series) -> dict[str, Any]:
     else:
         activated_fundamental_score = _existing_positive_score(row, "fundamental_research_score")
 
-    activated_capital_flow_score = _existing_positive_score(row, "capital_flow_score")
+    if activated_fundamental_score is None:
+        activated_fundamental_score = _score_or_neutral(row, "activated_fundamental_score", warnings)
+
+    activated_capital_flow_score = _score_or_neutral(row, "capital_flow_score", warnings)
     raw_news_score = _existing_positive_score(row, "news_event_score")
-    activated_news_score = raw_news_score if raw_news_score is not None else 50.0
-    activated_industry_score = _existing_positive_score(row, "industry_strength_score")
+    activated_news_score = raw_news_score if raw_news_score is not None else _score_or_neutral(row, "activated_news_score", warnings)
+    activated_industry_score = _score_or_neutral(row, "industry_strength_score", warnings)
     if raw_news_score is not None:
         reasons.extend(_as_list(row.get("news_reason")))
         summary = row.get("news_summary")
@@ -233,22 +245,15 @@ def _activate_row(row: pd.Series) -> dict[str, Any]:
 
     if activated_fundamental_score is not None:
         technical_component = real_technical_score if real_technical_score is not None else activated_technical_score
-        if activated_capital_flow_score is not None and raw_news_score is not None:
-            activated_composite_score = _clip_score(
-                (0.30 * activated_fundamental_score)
-                + (0.30 * technical_component)
-                + (0.20 * activated_capital_flow_score)
-                + (0.10 * activated_news_score)
-                + (0.10 * quote_quality_score)
-            )
+        activated_composite_score = _clip_score(
+            (0.30 * activated_fundamental_score)
+            + (0.30 * technical_component)
+            + (0.25 * activated_capital_flow_score)
+            + (0.10 * activated_news_score)
+            + (0.05 * quote_quality_score)
+        )
+        if raw_news_score is not None:
             reasons.append("News event fields are included in v6.9.0 activated composite scoring.")
-        else:
-            activated_composite_score = _clip_score(
-                (0.35 * activated_fundamental_score)
-                + (0.35 * technical_component)
-                + (0.20 * liquidity_score)
-                + (0.10 * quote_quality_score)
-            )
         reasons.append("基本面研究评分已接入")
         warnings.extend(_as_list(row.get("fundamental_warnings")))
         warnings.extend(_as_list(row.get("fundamental_risks")))
@@ -278,6 +283,13 @@ def _activate_row(row: pd.Series) -> dict[str, Any]:
             activated_selection_score -= 10
             warnings.append("risk_score 高于 70，研究评分已扣分")
     activated_selection_score = _clip_score(activated_selection_score)
+    scheduler_ready_score = _clip_score(
+        (0.25 * quote_quality_score)
+        + (0.25 * liquidity_score)
+        + (0.20 * activated_technical_score)
+        + (0.15 * activated_fundamental_score)
+        + (0.15 * activated_capital_flow_score)
+    )
 
     if not quote_available:
         warnings.append("实时行情字段不足，研究评分激活不完整")
@@ -297,6 +309,7 @@ def _activate_row(row: pd.Series) -> dict[str, Any]:
         "activated_industry_score": activated_industry_score,
         "activated_composite_score": activated_composite_score,
         "activated_selection_score": activated_selection_score,
+        "scheduler_ready_score": scheduler_ready_score,
         "activated_research_level": level,
         "activated_research_bucket": bucket,
         "activated_research_status": status,

@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v6.9.0.
+Current: v7.0.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -236,7 +236,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.7.0: Unified Data Source Center completed.
 - v6.8.0: Full Capital Flow Engine completed.
 - v6.9.0: Full News & Event Research Engine completed.
-- Next target: v7.0.0 Unified Research Ranking Engine.
+- v7.0.0: Research Pipeline Scheduler completed.
+- Next target: v7.1.0 Unified Research Ranking Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -619,6 +620,18 @@ Completed v6.9.0 scope:
 - Updated Dashboard, Selection Results, Research Workstation, and Data Source Center with news coverage, average event score, sentiment counts, source status, event details, warnings, cache status, and update time.
 - Next target: v7.0.0 Unified Research Ranking Engine.
 - Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and operational advice unchanged.
+
+Completed v7.0.0 scope:
+
+- Added `pipeline/scheduler.py`, `pipeline/stage_selector.py`, and `pipeline/runtime_monitor.py`.
+- Added four-stage scheduling: full-market quick scan, technical filtering, research scoring, and deep event review.
+- Added Core Research, Watch Research, and Excluded / Low Priority final research layers.
+- Added scheduler report fields for run id, stage rows, stage seconds, status, warning, and data-source summary.
+- Added scheduler caches at `cache/scheduler/latest_scheduler_report.csv` and `cache/scheduler/latest_research_result.csv`.
+- Updated the live runner so Scheduler mode is the default and Legacy Full Run remains available with `use_scheduler=False`.
+- Updated Dashboard, Selection Results, Research Workstation, Data Source Center, and Scheduler Pipeline page to display scheduler diagnostics and final research layers.
+- Next target: v7.1.0 Unified Research Ranking Engine.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and buy/sell/hold advice unchanged.
 
 Boundary:
 

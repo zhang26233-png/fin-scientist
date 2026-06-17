@@ -1,0 +1,130 @@
+import importlib
+
+import pandas as pd
+
+from pipeline.runtime_monitor import SCHEDULER_REPORT_COLUMNS
+from pipeline.scheduler import run_scheduled_pipeline
+
+
+def _universe(rows=8):
+    return pd.DataFrame(
+        [
+            {
+                "ticker": f"00000{i}",
+                "name": f"Name {i}",
+                "latest_price": 10 + i,
+                "pct_change": i,
+                "volume": 1_000_000 + i,
+                "turnover": 100_000_000 + i * 10_000_000,
+                "turnover_rate": 1 + i,
+                "volume_ratio": 1 + i / 10,
+                "open": 10,
+                "high": 12,
+                "low": 9,
+                "prev_close": 10,
+                "data_status": "Live",
+            }
+            for i in range(rows)
+        ]
+    )
+
+
+def _fake_full_run(source, **kwargs):
+    result = source.copy(deep=True)
+    if "real_technical_score" not in result.columns:
+        result["real_technical_score"] = range(60, 60 + len(result))
+    result["fundamental_research_score"] = range(55, 55 + len(result))
+    result["capital_flow_score"] = range(56, 56 + len(result))
+    result["news_event_score"] = 60
+    result["quote_quality_score"] = 80
+    result["activated_composite_score"] = (
+        result["fundamental_research_score"] * 0.3
+        + result["real_technical_score"] * 0.3
+        + result["capital_flow_score"] * 0.25
+        + result["news_event_score"] * 0.1
+        + result["quote_quality_score"] * 0.05
+    )
+    return result
+
+
+def test_scheduler_importable():
+    assert importlib.import_module("pipeline.scheduler")
+
+
+def test_empty_data_does_not_crash():
+    result = run_scheduled_pipeline(pd.DataFrame())
+
+    assert isinstance(result, pd.DataFrame)
+    assert result.empty
+    assert "scheduler_report_df" in result.attrs
+
+
+def test_four_stage_rows_decrease(monkeypatch):
+    import pipeline.scheduler as scheduler
+
+    monkeypatch.setattr(scheduler, "_scheduled_full_run", _fake_full_run)
+    result = scheduler.run_scheduled_pipeline(_universe(10), stage1_limit=8, stage2_limit=5, stage3_limit=3, core_limit=1, watch_limit=1)
+    report = result.attrs["scheduler_report_df"]
+
+    assert report["stage_output_rows"].tolist() == [8, 5, 3, 3]
+
+
+def test_stage_failure_can_degrade(monkeypatch):
+    import pipeline.scheduler as scheduler
+
+    def fail_once(source, **kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(scheduler, "_scheduled_full_run", fail_once)
+    result = scheduler.run_scheduled_pipeline(_universe(5), stage1_limit=5, stage2_limit=3, stage3_limit=2)
+    report = result.attrs["scheduler_report_df"]
+
+    assert isinstance(result, pd.DataFrame)
+    assert "Warning" in report["stage_status"].tolist()
+
+
+def test_use_scheduler_true_returns_research_df(monkeypatch):
+    import pipeline.live_runner as live_runner
+
+    frame = _universe(1002)
+    frame.attrs["data_source"] = "Tencent Realtime"
+    frame.attrs["data_status"] = "Live"
+    frame.attrs["raw_count"] = 1002
+    frame.attrs["final_count"] = 1002
+    monkeypatch.setattr(live_runner, "load_a_share_universe", lambda: frame)
+
+    def fake_scheduler(universe, **kwargs):
+        result = universe.head(2).copy(deep=True)
+        result["research_bucket"] = ["Core Research", "Watch Research"]
+        result["research_rank"] = [1, 2]
+        report = pd.DataFrame(columns=SCHEDULER_REPORT_COLUMNS)
+        result.attrs["scheduler_report_df"] = report
+        return result
+
+    monkeypatch.setattr(live_runner, "run_scheduled_pipeline", fake_scheduler)
+    result = live_runner.run_live_pipeline(use_scheduler=True)
+
+    assert isinstance(result, pd.DataFrame)
+    assert result.attrs["pipeline_mode"] == "Scheduler"
+    assert "research_bucket" in result.columns
+
+
+def test_scheduler_report_fields_complete(monkeypatch):
+    import pipeline.scheduler as scheduler
+
+    monkeypatch.setattr(scheduler, "_scheduled_full_run", _fake_full_run)
+    result = scheduler.run_scheduled_pipeline(_universe(6), stage1_limit=5, stage2_limit=4, stage3_limit=3)
+    report = result.attrs["scheduler_report_df"]
+
+    assert list(report.columns) == SCHEDULER_REPORT_COLUMNS
+
+
+def test_does_not_mutate_input(monkeypatch):
+    import pipeline.scheduler as scheduler
+
+    monkeypatch.setattr(scheduler, "_scheduled_full_run", _fake_full_run)
+    source = _universe(6)
+    original = source.copy(deep=True)
+    scheduler.run_scheduled_pipeline(source, stage1_limit=5, stage2_limit=4, stage3_limit=3)
+
+    pd.testing.assert_frame_equal(source, original)

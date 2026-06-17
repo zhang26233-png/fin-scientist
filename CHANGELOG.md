@@ -2,6 +2,20 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v7.0.0
+
+- Added Research Pipeline Scheduler.
+- Added `pipeline/scheduler.py`, `pipeline/stage_selector.py`, `pipeline/runtime_monitor.py`, `tests/test_pipeline_scheduler.py`, `tests/test_stage_selector.py`, and `tests/test_runtime_monitor.py`.
+- Split default live execution into four bounded stages: full-market quick scan, technical candidate filtering, research scoring, and deep event review.
+- Added final research-only layers: Core Research, Watch Research, and Excluded / Low Priority.
+- Added scheduler fields: `research_bucket`, `research_rank`, `research_pipeline_stage`, `research_selected_reason`, `research_exclude_reason`, and `research_scheduler_warning`.
+- Added runtime report output with stage input rows, output rows, seconds, status, warning, and data-source summary.
+- Added scheduler caches at `cache/scheduler/latest_scheduler_report.csv` and `cache/scheduler/latest_research_result.csv`, with cache fallback when a scheduled run fails.
+- Updated `pipeline/live_runner.py` so `use_scheduler=True` is the default and `use_scheduler=False` keeps Legacy Full Run available.
+- Updated `research/score_activation.py` with neutral missing-field fallbacks and `scheduler_ready_score`.
+- Updated Product UI Dashboard, Scheduler Pipeline page, Selection Results, Research Workstation, and Data Source Center with scheduler diagnostics and final research layers.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, buy/sell/hold advice, target prices, position suggestions, return promises, machine-learning prediction, API keys, databases, and vector stores unchanged.
+
 ## v6.9.0
 
 - Added Full News & Event Research Engine.
