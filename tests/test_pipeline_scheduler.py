@@ -126,9 +126,41 @@ def test_scheduler_report_includes_final_bucket_summary(monkeypatch):
     result = scheduler.run_scheduled_pipeline(_universe(10), stage1_limit=8, stage2_limit=6, stage3_limit=5)
     report = result.attrs["scheduler_report_df"]
 
+    assert int(report["rows"].iloc[0]) == len(result)
     assert int(report["final_rows"].iloc[0]) == len(result)
     assert int(report["core_count"].iloc[0]) == int(result["research_bucket"].eq("Core Research").sum())
     assert "bucket_distribution" in report.columns
+
+
+def test_scheduler_result_cache_contains_final_bucket_fields(monkeypatch, tmp_path):
+    import pipeline.scheduler as scheduler
+
+    monkeypatch.setattr(scheduler, "_scheduled_full_run", _fake_full_run)
+    monkeypatch.setattr(scheduler, "SCHEDULER_CACHE_DIR", tmp_path)
+    monkeypatch.setattr(scheduler, "SCHEDULER_RESULT_CACHE", tmp_path / "latest_research_result.csv")
+    monkeypatch.setattr(scheduler, "SCHEDULER_REPORT_CACHE", tmp_path / "latest_scheduler_report.csv")
+    scheduler.run_scheduled_pipeline(_universe(10), stage1_limit=8, stage2_limit=6, stage3_limit=5)
+
+    cached = pd.read_csv(tmp_path / "latest_research_result.csv", dtype={"ticker": str})
+
+    assert {"research_rank", "research_score", "research_bucket", "bucket_generation_reason"}.issubset(cached.columns)
+    assert cached["research_bucket"].notna().any()
+
+
+def test_scheduler_cache_invalidates_missing_bucket(monkeypatch, tmp_path):
+    import pipeline.scheduler as scheduler
+
+    result_path = tmp_path / "latest_research_result.csv"
+    report_path = tmp_path / "latest_scheduler_report.csv"
+    pd.DataFrame({"ticker": ["000001"], "name": ["Name"]}).to_csv(result_path, index=False)
+    pd.DataFrame(columns=SCHEDULER_REPORT_COLUMNS).to_csv(report_path, index=False)
+    monkeypatch.setattr(scheduler, "SCHEDULER_RESULT_CACHE", result_path)
+    monkeypatch.setattr(scheduler, "SCHEDULER_REPORT_CACHE", report_path)
+
+    result, report = scheduler.load_scheduler_cache()
+
+    assert result.empty
+    assert report.empty
 
 
 def test_does_not_mutate_input(monkeypatch):
@@ -166,8 +198,14 @@ def test_core_tab_not_empty(monkeypatch):
     monkeypatch.setattr(product_ui, "_render_table", lambda frame, columns, label: frame.copy(deep=True))
     monkeypatch.setattr(product_ui.st, "selectbox", lambda label, options, index=0: options[index])
     monkeypatch.setattr(product_ui.st, "tabs", lambda labels: [DummyTab() for _ in labels])
+    monkeypatch.setattr(product_ui.st, "columns", lambda count: [DummyTab() for _ in range(count)])
     monkeypatch.setattr(product_ui.st, "error", lambda message: None)
+    metric_cards = []
+    monkeypatch.setattr(product_ui, "_render_metric_card", lambda title, value, caption: metric_cards.append((title, value, caption)))
 
     result = product_ui.render_selection_page(df)
 
     assert not result["top_core"].empty
+    assert ("Core数量", 1, "research_bucket") in metric_cards
+    assert ("Watch数量", 1, "research_bucket") in metric_cards
+    assert ("Excluded数量", 1, "research_bucket") in metric_cards

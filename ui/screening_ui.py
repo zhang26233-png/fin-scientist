@@ -188,7 +188,7 @@ CANDIDATE_POOL_COLUMNS = [
     "ticker",
     "name",
     "candidate_pool",
-    "candidate_rank",
+    "research_rank",
     "candidate_level",
     "candidate_status",
     "candidate_reasons",

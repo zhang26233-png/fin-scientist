@@ -2,6 +2,18 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v7.0.4 Scheduler Final Fix
+
+- Added `audit/research_result_audit.py` to check `latest_research_result.csv` existence, row count, required final fields, and bucket distribution.
+- Added `audit/scheduler_bucket_audit.py` to count Core Research, Watch Research, and Excluded / Low Priority rows.
+- Added final `bucket_generation_reason` output with `Absolute Threshold` or `Relative Ranking Fallback`.
+- Tightened Core=0 relative-ranking fallback to top 10% Core Research, 10%-30% Watch Research, and the rest Excluded / Low Priority.
+- Invalidated old Scheduler result caches that are missing required final bucket/rank/score fields.
+- Updated Scheduler report rows with a `rows` alias alongside final bucket and score summary fields.
+- Updated Dashboard and Selection Results to show Core Count, Watch Count, and Excluded Count from `research_bucket`.
+- Added tests for research-result audit, Scheduler bucket audit, bucket fallback, cache invalidation, final cache persistence, and UI count display.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `selection_score`, `candidate_rank`, research scoring formulas, data sources, factors, pages, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and buy/sell/hold advice unchanged.
+
 ## v7.0.3 Research Result Calibration & Bucket Fix
 
 - Fixed final Scheduler bucketing so valid non-empty `research_df` results do not collapse entirely into Excluded / Low Priority.

@@ -26,6 +26,7 @@ from capital_flow.capital_engine import CAPITAL_ENGINE_FIELDS
 SCHEDULER_CACHE_DIR = Path("cache/scheduler")
 SCHEDULER_REPORT_CACHE = SCHEDULER_CACHE_DIR / "latest_scheduler_report.csv"
 SCHEDULER_RESULT_CACHE = SCHEDULER_CACHE_DIR / "latest_research_result.csv"
+REQUIRED_RESULT_CACHE_FIELDS = ["ticker", "name", "activated_composite_score", "research_rank", "research_score", "research_bucket"]
 
 
 def _copy(df: pd.DataFrame | None) -> pd.DataFrame:
@@ -57,6 +58,7 @@ def _final_summary(df: pd.DataFrame) -> dict[str, object]:
     score = pd.to_numeric(source["activated_composite_score"], errors="coerce") if "activated_composite_score" in source.columns else pd.Series(dtype=float)
     distribution = bucket.value_counts().to_dict() if len(bucket) else {}
     return {
+        "rows": int(len(source)),
         "final_rows": int(len(source)),
         "core_count": int(bucket.eq("Core Research").sum()) if len(bucket) else 0,
         "watch_count": int(bucket.eq("Watch Research").sum()) if len(bucket) else 0,
@@ -95,13 +97,19 @@ def load_scheduler_cache() -> tuple[pd.DataFrame, pd.DataFrame]:
     """Load the latest scheduler result and report cache if available."""
     result = pd.DataFrame()
     report = pd.DataFrame(columns=SCHEDULER_REPORT_COLUMNS)
+    cache_valid = True
     try:
         if SCHEDULER_RESULT_CACHE.exists():
             result = pd.read_csv(SCHEDULER_RESULT_CACHE, dtype={"ticker": str})
+            missing = [field for field in REQUIRED_RESULT_CACHE_FIELDS if field not in result.columns]
+            if missing:
+                result = pd.DataFrame()
+                cache_valid = False
     except Exception:
         result = pd.DataFrame()
+        cache_valid = False
     try:
-        if SCHEDULER_REPORT_CACHE.exists():
+        if cache_valid and SCHEDULER_REPORT_CACHE.exists():
             report = pd.read_csv(SCHEDULER_REPORT_CACHE)
     except Exception:
         report = pd.DataFrame(columns=SCHEDULER_REPORT_COLUMNS)

@@ -2,7 +2,18 @@
 
 ## Current Version
 
-Current version: v7.0.3
+Current version: v7.0.4
+
+v7.0.4 adds the Scheduler Final Fix for the Research Result -> Bucket -> UI chain. It does not add features, data sources, factors, pages, or scoring formula changes.
+
+- `latest_research_result.csv` is audited for existence, rows, required final fields, and bucket distribution.
+- Scheduler bucket audit counts Core Research, Watch Research, and Excluded / Low Priority rows.
+- Final output includes `research_rank`, `research_score`, `research_bucket`, and `bucket_generation_reason`.
+- If Core is zero, relative-ranking fallback assigns top 10% to Core Research, 10%-30% to Watch Research, and the rest to Excluded / Low Priority.
+- Old Scheduler caches missing final bucket/rank/score fields are invalidated instead of displayed.
+- Dashboard and Selection Results display Core Count, Watch Count, and Excluded Count from `research_bucket`.
+
+All outputs remain only for learning and research and do not constitute investment advice.
 
 v7.0.3 adds Research Result Calibration & Bucket Fix. The Scheduler final result now uses one unified `research_bucket` field with only three labels:
 
@@ -317,7 +328,7 @@ ui.workstation_ui
               read-only research report preview
 ```
 
-FinScientist v7.0.3 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整研究流水线”执行 Scheduler 分层研究流水线，并支持点击“运行系统验收”生成 Release Candidate 验收报告；失败时会显示原因并使用缓存或 Demo fallback。
+FinScientist v7.0.4 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整研究流水线”执行 Scheduler 分层研究流水线，并支持点击“运行系统验收”生成 Release Candidate 验收报告；失败时会显示原因并使用缓存或 Demo fallback。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -327,7 +338,7 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：v7.0.3
+当前版本：v7.0.4
 
 V6.2.0 Live Pipeline Runner:
 

@@ -20,14 +20,16 @@
 
 ## Version State
 
-- CURRENT_VERSION = v7.0.3
-- CURRENT_STAGE = Research Result Calibration
+- CURRENT_VERSION = v7.0.4
+- CURRENT_STAGE = Scheduler Final Fix
 - NEXT_TARGET = v7.1.0 Unified Research Ranking Engine
 
 Version evidence from current files:
 
-- `ui/product_ui.py`: `PRODUCT_VERSION = "v7.0.3"`
-- `README.md`: Current version: v7.0.3
+- `ui/product_ui.py`: `PRODUCT_VERSION = "v7.0.4"`
+- `README.md`: Current version: v7.0.4
+
+V7.0.4 fixes the Scheduler final result chain from persisted research result to bucket audit to UI display. It adds `audit/research_result_audit.py` and `audit/scheduler_bucket_audit.py` for checking `cache/scheduler/latest_research_result.csv`, required final fields, bucket distribution, and Core / Watch / Excluded counts. `assign_final_buckets()` now writes `bucket_generation_reason` into the final DataFrame and uses a stricter Core=0 relative-ranking fallback: top 10% Core Research, 10%-30% Watch Research, and the rest Excluded / Low Priority. Scheduler cache loading now invalidates old result caches missing final bucket/rank/score fields. Dashboard and Selection Results expose Core Count, Watch Count, and Excluded Count from `research_bucket`. This version does not add data sources, factors, pages, research scoring formula changes, or trading outputs.
 
 V7.0.3 calibrates the final Scheduler research result layer. `assign_final_buckets()` now ranks by `activated_composite_score` descending, fills missing activated scores from fundamental, real technical, capital-flow, news-event, and quote-quality fallback scores, and emits unified `research_bucket`, `research_rank`, `research_score`, selected/excluded reasons, and scheduler warnings. Core Research uses rank plus a 55 score threshold, Watch Research uses the next rank window or a 50 score threshold, and severe data-quality rows remain Excluded / Low Priority. If the absolute Core threshold is too strict, relative-ranking fallback generates Core Research rows and records the warning. Product UI defaults the selection page to Core + Watch, fixes Top Core / Top Watch / Exclude tabs, and Dashboard exposes Core, Watch, Exclude, max/min/mean activated composite score. Scheduler reports now include final row count, bucket counts, score summary, and bucket distribution. Real data audit adds checks for non-empty research rows, non-empty scores, non-empty buckets, Core + Watch availability, Core empty failure, and Watch empty warning. All outputs remain only for learning and research and do not constitute investment advice.
 

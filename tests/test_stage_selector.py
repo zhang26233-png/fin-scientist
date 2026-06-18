@@ -134,7 +134,8 @@ def test_equal_scores_generate_core_and_watch():
     result = assign_final_buckets(df)
 
     assert int(result["research_bucket"].eq("Core Research").sum()) == 20
-    assert int(result["research_bucket"].eq("Watch Research").sum()) > 0
+    assert int(result["research_bucket"].eq("Watch Research").sum()) == 50
+    assert int(result["research_bucket"].eq("Excluded / Low Priority").sum()) == 30
 
 
 def test_score_above_55_below_70_can_be_core():
@@ -185,5 +186,5 @@ def test_neutral_scores_use_relative_ranking_fallback():
 
     result = assign_final_buckets(df, core_limit=10, watch_limit=10)
 
-    assert int(result["research_bucket"].eq("Core Research").sum()) == 10
+    assert int(result["research_bucket"].eq("Core Research").sum()) == 3
     assert result["research_scheduler_warning"].str.contains("relative ranking fallback", case=False).any()

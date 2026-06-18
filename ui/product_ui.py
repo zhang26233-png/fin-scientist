@@ -23,8 +23,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v7.0.3"
-PRODUCT_STAGE = "Research Result Calibration"
+PRODUCT_VERSION = "v7.0.4"
+PRODUCT_STAGE = "Scheduler Final Fix"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -61,7 +61,7 @@ REQUIRED_FIELD_GROUPS = {
     "Fundamental": ["fundamental_score", "fundamental_level", "fundamental_screening_status"],
     "Technical": ["technical_score", "technical_level", "technical_screening_status"],
     "Composite": ["composite_score", "composite_level", "composite_screening_status"],
-    "Candidate Pool": ["candidate_pool", "candidate_rank", "candidate_status"],
+    "Candidate Pool": ["candidate_pool", "research_rank", "candidate_status"],
     "Backtest Foundation": ["backtest_available", "backtest_status"],
     "Return Analysis": ["period_return", "annualized_return", "volatility", "max_drawdown", "win_rate"],
     "Backtest Evaluation": ["risk_score", "risk_level", "return_risk_ratio", "performance_label"],
@@ -125,7 +125,9 @@ SELECTION_COLUMNS = [
     "name",
     "research_bucket",
     "research_rank",
+    "research_score",
     "activated_composite_score",
+    "bucket_generation_reason",
     "fundamental_research_score",
     "real_technical_score",
     "capital_flow_score",
@@ -640,9 +642,9 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
         ("Filtered Count", filtered_count, "Filtered rows removed"),
         ("Cache Status", cache_status, f"Updated: {cache_updated_at or '—'}"),
         ("总股票数", summary["total_count"], "当前研究样本数量"),
-        ("Core 数量", summary["core_count"], "核心研究对象"),
-        ("Watch 数量", summary["watch_count"], "观察研究对象"),
-        ("Exclude 数量", summary["exclude_count"], "排除或不可用对象"),
+        ("Core Count", summary["core_count"], "Core Research rows"),
+        ("Watch Count", summary["watch_count"], "Watch Research rows"),
+        ("Excluded Count", summary["exclude_count"], "Excluded / Low Priority rows"),
         ("平均 activated_selection_score", summary["average_selection_score"], "激活后的研究分数均值"),
         ("平均 activated_composite_score", summary["average_composite_score"], "激活后的综合研究分数均值"),
         ("最高 activated_composite_score", summary["max_activated_composite_score"], "当前结果最高综合研究分"),
@@ -727,6 +729,12 @@ def render_selection_page(df: Any) -> dict[str, pd.DataFrame]:
     source = safe_copy_frame(df)
     _render_page_header("选股结果", "Core、Watch、风险和数据缺失对象分组")
     bucket = source["research_bucket"].fillna("") if "research_bucket" in source.columns else pd.Series([""] * len(source), index=source.index)
+    core_count = int(bucket.eq("Core Research").sum())
+    watch_count = int(bucket.eq("Watch Research").sum())
+    exclude_count = int(bucket.eq("Excluded / Low Priority").sum())
+    for column, (title, value) in zip(st.columns(3), [("Core数量", core_count), ("Watch数量", watch_count), ("Excluded数量", exclude_count)]):
+        with column:
+            _render_metric_card(title, value, "research_bucket")
     default_mask = bucket.isin(["Core Research", "Watch Research"])
     display_source = source[default_mask].copy(deep=True) if default_mask.any() else source.copy(deep=True)
     sort_options = [

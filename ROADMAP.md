@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v7.0.3.
+Current: v7.0.4.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -239,6 +239,7 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v7.0.0: Research Pipeline Scheduler completed.
 - v7.0.1: System Audit Release Candidate completed.
 - v7.0.3: Research Result Calibration & Bucket Fix completed.
+- v7.0.4: Scheduler Final Fix completed.
 - Next target: v7.1.0 Unified Research Ranking Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
@@ -655,6 +656,16 @@ Completed v7.0.3 scope:
 - Updated Dashboard and Scheduler reports with final bucket counts and activated composite score max/min/mean.
 - Added real research-result data audit checks for rows, scores, buckets, Core + Watch availability, Core empty failure, and Watch empty warning.
 - Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and buy/sell/hold advice unchanged.
+
+Completed v7.0.4 scope:
+
+- Added research-result cache audit for `latest_research_result.csv` existence, rows, required final fields, and bucket distribution.
+- Added Scheduler bucket audit for Core Research, Watch Research, and Excluded / Low Priority counts.
+- Added `bucket_generation_reason` to final Scheduler output and persisted cache rows.
+- Tightened Core=0 fallback to top 10% Core, 10%-30% Watch, and the rest Excluded / Low Priority.
+- Invalidated old Scheduler result caches when required final bucket/rank/score fields are missing.
+- Updated Dashboard and Selection Results count cards to display Core Count, Watch Count, and Excluded Count from `research_bucket`.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `selection_score`, `candidate_rank`, scoring formulas, data sources, factors, pages, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and buy/sell/hold advice unchanged.
 
 Boundary:
 
