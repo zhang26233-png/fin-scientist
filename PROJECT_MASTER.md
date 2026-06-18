@@ -20,14 +20,16 @@
 
 ## Version State
 
-- CURRENT_VERSION = v7.0.4
-- CURRENT_STAGE = Scheduler Final Fix
-- NEXT_TARGET = v7.1.0 Unified Research Ranking Engine
+- CURRENT_VERSION = v7.1.0
+- CURRENT_STAGE = Unified Research Ranking Engine
+- NEXT_TARGET = v7.1.x Unified Ranking Validation
 
 Version evidence from current files:
 
-- `ui/product_ui.py`: `PRODUCT_VERSION = "v7.0.4"`
-- `README.md`: Current version: v7.0.4
+- `ui/product_ui.py`: `PRODUCT_VERSION = "v7.1.0"`
+- `README.md`: Current version: v7.1.0
+
+V7.1.0 adds the Unified Research Ranking Engine. New `research/unified_ranking_engine.py` produces `unified_research_score` from real technical, capital-flow, fundamental, industry, and news scores with contribution fields for each dimension. Fundamental, news, and industry layers now add research reasons so neutral defaults are explainable instead of silently flattening ranking. Scheduler final rank, score, and buckets use `unified_research_score`; Product UI exposes the unified score, contribution fields, score distribution metrics, and a research explanation card. This version keeps existing data sources, pages, trading boundaries, and protected legacy scoring fields unchanged.
 
 V7.0.4 fixes the Scheduler final result chain from persisted research result to bucket audit to UI display. It adds `audit/research_result_audit.py` and `audit/scheduler_bucket_audit.py` for checking `cache/scheduler/latest_research_result.csv`, required final fields, bucket distribution, and Core / Watch / Excluded counts. `assign_final_buckets()` now writes `bucket_generation_reason` into the final DataFrame and uses a stricter Core=0 relative-ranking fallback: top 10% Core Research, 10%-30% Watch Research, and the rest Excluded / Low Priority. Scheduler cache loading now invalidates old result caches missing final bucket/rank/score fields. Dashboard and Selection Results expose Core Count, Watch Count, and Excluded Count from `research_bucket`. This version does not add data sources, factors, pages, research scoring formula changes, or trading outputs.
 

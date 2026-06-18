@@ -164,6 +164,22 @@ def test_missing_activated_score_uses_fallback_score():
     assert result["activated_composite_score"].tolist()[0] == 80
 
 
+def test_unified_research_score_controls_final_rank_when_present():
+    df = pd.DataFrame(
+        {
+            "ticker": ["activated_high", "unified_high"],
+            "activated_composite_score": [90, 60],
+            "unified_research_score": [55, 80],
+            "quote_quality_score": [80, 80],
+        }
+    )
+
+    result = assign_final_buckets(df, core_limit=1, watch_limit=1)
+
+    assert result["ticker"].tolist()[0] == "unified_high"
+    assert result["research_score"].tolist()[0] == 80
+
+
 def test_research_bucket_only_contains_legal_values():
     df = pd.DataFrame({"ticker": ["a", "b", "c"], "activated_composite_score": [80, 55, 10], "quote_quality_score": [80, 80, 80]})
 

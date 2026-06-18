@@ -2,6 +2,16 @@
 
 > Permanent changelog for the project memory system. All entries describe learning and research features only and do not constitute investment advice.
 
+## v7.1.0 Unified Research Ranking Engine
+
+- Added `research/unified_ranking_engine.py` to generate `unified_research_score` and contribution fields for technical, capital, fundamental, industry, and news dimensions.
+- Added `research/research_explainer.py` to produce research-only summaries and five-dimension explanations.
+- Updated Scheduler final ranking, `research_rank`, `research_score`, Core Research, Watch Research, and Excluded / Low Priority to use `unified_research_score`.
+- Enhanced fundamental, news, and industry research layers with deterministic reasons and score variation from existing fields.
+- Updated Product UI Dashboard, Selection Results, and Research Workstation to show unified score metrics, contribution fields, and explanation cards.
+- Added tests for unified ranking, research explanation, Scheduler unified ranking, news event weights, and industry research scoring.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `selection_score`, `candidate_rank`, data sources, pages, trading logic, API keys, databases, vector stores, target prices, return promises, and buy/sell/hold advice unchanged.
+
 ## v7.0.4 Scheduler Final Fix
 
 - Added `audit/research_result_audit.py` to check `latest_research_result.csv` existence, row count, required final fields, and bucket distribution.

@@ -37,6 +37,16 @@ NEWS_EVENT_FIELDS = [
 ]
 
 POSITIVE_KEYWORDS = [
+    "订单",
+    "中标",
+    "业绩预增",
+    "回购",
+    "增持",
+    "突破",
+    "算力",
+    "AI",
+    "军工",
+    "国产替代",
     "业绩预增",
     "净利润增长",
     "营收增长",
@@ -60,6 +70,12 @@ POSITIVE_KEYWORDS = [
 ]
 
 NEGATIVE_KEYWORDS = [
+    "减持",
+    "诉讼",
+    "处罚",
+    "亏损",
+    "退市",
+    "风险提示",
     "业绩预亏",
     "亏损扩大",
     "减持",
@@ -87,6 +103,29 @@ def _now_text() -> str:
 
 def _clip(value: float) -> float:
     return round(max(0.0, min(100.0, float(value))), 2)
+
+
+POSITIVE_EVENT_WEIGHTS = {
+    "订单": 5,
+    "中标": 6,
+    "业绩预增": 8,
+    "回购": 5,
+    "增持": 5,
+    "突破": 4,
+    "算力": 4,
+    "AI": 4,
+    "军工": 4,
+    "国产替代": 5,
+}
+
+NEGATIVE_EVENT_WEIGHTS = {
+    "减持": 6,
+    "诉讼": 8,
+    "处罚": 10,
+    "亏损": 8,
+    "退市": 15,
+    "风险提示": 10,
+}
 
 
 def _normalize_ticker(value: Any) -> str:
@@ -185,6 +224,7 @@ def _parse_time(value: Any) -> datetime | None:
 def _heat_score(keywords: list[str], same_day_count: int) -> float:
     score = 50.0
     hot_hits = [keyword for keyword in keywords if keyword in HOT_INDUSTRY_KEYWORDS]
+    hot_hits.extend(keyword for keyword in keywords if keyword in {"AI", "算力", "军工", "国产替代"})
     if len(hot_hits) >= 2:
         score += 20
     elif hot_hits:
@@ -199,7 +239,7 @@ def _heat_score(keywords: list[str], same_day_count: int) -> float:
 
 
 def _risk_score(sentiment: str, keywords: list[str]) -> float:
-    if any(keyword in keywords for keyword in SEVERE_RISK_KEYWORDS):
+    if any(keyword in keywords for keyword in SEVERE_RISK_KEYWORDS) or any(keyword in keywords for keyword in {"退市", "风险提示"}):
         return 20.0
     if sentiment == "Negative":
         hit_count = sum(1 for keyword in keywords if keyword in NEGATIVE_KEYWORDS)
@@ -208,12 +248,14 @@ def _risk_score(sentiment: str, keywords: list[str]) -> float:
 
 
 def _event_score(sentiment: str, heat_score: float, risk_score: float, keywords: list[str]) -> float:
+    positive_bonus = sum(POSITIVE_EVENT_WEIGHTS.get(keyword, 0) for keyword in keywords)
+    negative_penalty = sum(NEGATIVE_EVENT_WEIGHTS.get(keyword, 0) for keyword in keywords)
     if sentiment == "Positive":
-        return _clip(70 + min(20, max(0, heat_score - 50) * 0.5))
+        return _clip(70 + min(20, max(0, heat_score - 50) * 0.5) + min(12, positive_bonus))
     if sentiment == "Negative":
-        if any(keyword in keywords for keyword in SEVERE_RISK_KEYWORDS):
+        if any(keyword in keywords for keyword in SEVERE_RISK_KEYWORDS) or any(keyword in keywords for keyword in {"退市", "风险提示"}):
             return _clip(min(30, risk_score + 5))
-        return _clip(max(10, min(40, risk_score)))
+        return _clip(max(10, min(40, risk_score - min(15, negative_penalty))))
     if sentiment == "Neutral":
         return _clip(50 + min(10, max(0, heat_score - 50) * 0.25))
     return 50.0

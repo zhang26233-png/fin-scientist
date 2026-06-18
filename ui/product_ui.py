@@ -23,8 +23,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v7.0.4"
-PRODUCT_STAGE = "Scheduler Final Fix"
+PRODUCT_VERSION = "v7.1.0"
+PRODUCT_STAGE = "Unified Research Ranking Engine"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -126,12 +126,21 @@ SELECTION_COLUMNS = [
     "research_bucket",
     "research_rank",
     "research_score",
+    "unified_research_score",
+    "research_summary",
+    "technical_contribution",
+    "capital_contribution",
+    "fundamental_contribution",
+    "industry_contribution",
+    "news_contribution",
     "activated_composite_score",
     "bucket_generation_reason",
     "fundamental_research_score",
     "real_technical_score",
     "capital_flow_score",
     "news_event_score",
+    "industry_score",
+    "industry_reason",
     "latest_price",
     "pct_change",
     "turnover",
@@ -147,6 +156,11 @@ SELECTION_COLUMNS = [
     "research_selected_reason",
     "research_exclude_reason",
     "research_scheduler_warning",
+    "technical_research_explanation",
+    "capital_research_explanation",
+    "fundamental_research_explanation",
+    "news_research_explanation",
+    "industry_research_explanation",
     "capital_flow_strength",
     "capital_flow_rank",
     "capital_activity_score",
@@ -222,6 +236,13 @@ STOCK_DETAIL_FIELDS = [
     "research_selected_reason",
     "research_exclude_reason",
     "research_scheduler_warning",
+    "unified_research_score",
+    "research_summary",
+    "technical_contribution",
+    "capital_contribution",
+    "fundamental_contribution",
+    "industry_contribution",
+    "news_contribution",
     "activated_composite_score",
     "fundamental_score",
     "technical_score",
@@ -486,6 +507,9 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         "max_activated_composite_score": _metric_max(source, "activated_composite_score"),
         "min_activated_composite_score": _metric_min(source, "activated_composite_score"),
         "mean_activated_composite_score": _metric_value(source, "activated_composite_score"),
+        "max_unified_research_score": _metric_max(source, "unified_research_score"),
+        "min_unified_research_score": _metric_min(source, "unified_research_score"),
+        "mean_unified_research_score": _metric_value(source, "unified_research_score"),
         "average_real_technical_score": _metric_value(source, "real_technical_score"),
         "technical_history_available_count": technical_history_count,
         "technical_high_risk_count": technical_high_risk_count,
@@ -516,6 +540,7 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         "negative_news_count": int(news_sentiment.eq("Negative").sum()),
         "news_source_status": source.attrs.get("news_status", "Unavailable") if hasattr(source, "attrs") else "Unavailable",
         "news_latest_updated_at": source.attrs.get("news_updated_at", "") if hasattr(source, "attrs") else "",
+        "average_industry_score": _metric_value(source, "industry_score"),
         "average_industry_strength_score": _metric_value(source, "industry_strength_score"),
         "average_concept_heat_score": _metric_value(source, "concept_heat_score"),
         "kline_cache_hits": int(source.attrs.get("kline_cache_hits", 0)) if hasattr(source, "attrs") else 0,
@@ -645,6 +670,14 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
         ("Core Count", summary["core_count"], "Core Research rows"),
         ("Watch Count", summary["watch_count"], "Watch Research rows"),
         ("Excluded Count", summary["exclude_count"], "Excluded / Low Priority rows"),
+        ("最高综合评分", summary["max_unified_research_score"], "unified_research_score max"),
+        ("最低综合评分", summary["min_unified_research_score"], "unified_research_score min"),
+        ("平均综合评分", summary["mean_unified_research_score"], "unified_research_score mean"),
+        ("平均技术分", summary["average_real_technical_score"], "real_technical_score mean"),
+        ("平均资金分", summary["average_capital_flow_score"], "capital_flow_score mean"),
+        ("平均基本面分", summary["average_fundamental_research_score"], "fundamental_research_score mean"),
+        ("平均新闻分", summary["average_news_event_score"], "news_event_score mean"),
+        ("平均行业分", summary["average_industry_score"], "industry_score mean"),
         ("平均 activated_selection_score", summary["average_selection_score"], "激活后的研究分数均值"),
         ("平均 activated_composite_score", summary["average_composite_score"], "激活后的综合研究分数均值"),
         ("最高 activated_composite_score", summary["max_activated_composite_score"], "当前结果最高综合研究分"),
@@ -738,6 +771,8 @@ def render_selection_page(df: Any) -> dict[str, pd.DataFrame]:
     default_mask = bucket.isin(["Core Research", "Watch Research"])
     display_source = source[default_mask].copy(deep=True) if default_mask.any() else source.copy(deep=True)
     sort_options = [
+        "unified_research_score",
+        "research_rank",
         "research_bucket",
         "activated_composite_score",
         "capital_flow_score",
@@ -751,7 +786,9 @@ def render_selection_page(df: Any) -> dict[str, pd.DataFrame]:
     sort_field = available_sort_options[0] if available_sort_options else ""
     if available_sort_options:
         sort_field = st.selectbox("结果排序", options=available_sort_options, index=0)
-    if sort_field and sort_field != "research_bucket":
+    if sort_field == "research_rank":
+        display_source = display_source.sort_values(by="research_rank", ascending=True, kind="mergesort")
+    elif sort_field and sort_field != "research_bucket":
         display_source = display_source.sort_values(
             by=sort_field,
             ascending=False,
@@ -789,13 +826,16 @@ def render_stock_workstation_page(df: Any) -> dict[str, Any]:
     selected = st.selectbox("选择股票", options=ticker_options)
     row = source[source["ticker"].astype(str).eq(selected)].iloc[0] if "ticker" in source.columns else source.iloc[0]
     columns = st.columns(4)
-    for column, field in zip(columns, ["research_bucket", "research_rank", "activated_composite_score", "research_pipeline_stage"]):
+    for column, field in zip(columns, ["research_bucket", "research_rank", "unified_research_score", "research_pipeline_stage"]):
         with column:
             _render_metric_card(field, safe_get(row, field), "Scheduler research layer")
     st.info(
         f"Selected reason: {format_value(safe_get(row, 'research_selected_reason'))} | "
         f"Exclude reason: {format_value(safe_get(row, 'research_exclude_reason'))}"
     )
+    if "research_summary" in source.columns:
+        st.subheader("研究解释卡")
+        st.write(format_value(safe_get(row, "research_summary")))
     columns = st.columns(4)
     for column, field in zip(columns, ["ticker", "name", "selection_score", "selection_bucket"]):
         with column:
@@ -1203,13 +1243,39 @@ def render_research_workstation_product(df: Any) -> dict[str, Any]:
         return {"metrics": {}, "selected_row": None, "compare": pd.DataFrame(), "charts": {}, "factor_lab": {}, "pipeline": [], "report": ""}
     row = source.iloc[0].copy(deep=True)
     columns = st.columns(4)
-    for column, field in zip(columns, ["research_bucket", "research_rank", "activated_composite_score", "research_pipeline_stage"]):
+    for column, field in zip(columns, ["research_bucket", "research_rank", "unified_research_score", "research_pipeline_stage"]):
         with column:
             _render_metric_card(field, safe_get(row, field), "Scheduler research layer")
     st.info(
         f"Selected reason: {format_value(safe_get(row, 'research_selected_reason'))} | "
         f"Exclude reason: {format_value(safe_get(row, 'research_exclude_reason'))}"
     )
+    if any(
+        field in source.columns
+        for field in [
+            "research_summary",
+            "technical_research_explanation",
+            "capital_research_explanation",
+            "fundamental_research_explanation",
+            "news_research_explanation",
+            "industry_research_explanation",
+        ]
+    ):
+        st.subheader("研究解释卡")
+        st.write(format_value(safe_get(row, "research_summary")))
+        explanation_columns = st.columns(5)
+        for column, field in zip(
+            explanation_columns,
+            [
+                "technical_research_explanation",
+                "capital_research_explanation",
+                "fundamental_research_explanation",
+                "news_research_explanation",
+                "industry_research_explanation",
+            ],
+        ):
+            with column:
+                _render_metric_card(field, safe_get(row, field), "仅供学习和研究")
     if any(field in source.columns for field in ["real_technical_score", "technical_trend_score", "technical_risk_flags"]):
         _render_technical_indicator_cards(source.iloc[0].copy(deep=True))
     if any(field in source.columns for field in ["fundamental_research_score", "valuation_score", "fundamental_risks"]):

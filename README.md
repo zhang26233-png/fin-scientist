@@ -2,7 +2,30 @@
 
 ## Current Version
 
-Current version: v7.0.4
+Current version: v7.1.0
+
+v7.1.0 adds the Unified Research Ranking Engine. It keeps the existing data sources and pages, and does not add trading advice, target prices, return promises, API keys, databases, or automatic trading.
+
+Final Scheduler ranking now uses `unified_research_score`:
+
+```text
+0.30 * real_technical_score
++ 0.25 * capital_flow_score
++ 0.20 * fundamental_research_score
++ 0.15 * industry_score
++ 0.10 * news_event_score
+```
+
+The final result also includes:
+
+- `technical_contribution`
+- `capital_contribution`
+- `fundamental_contribution`
+- `industry_contribution`
+- `news_contribution`
+- `research_summary`
+
+Core Research, Watch Research, and Excluded / Low Priority are assigned from the unified score and `research_rank`. Missing component scores still use neutral 50 so incomplete upstream data does not crash the UI. Fundamental, news, and industry layers now emit reason fields so neutral defaults are visible during research review.
 
 v7.0.4 adds the Scheduler Final Fix for the Research Result -> Bucket -> UI chain. It does not add features, data sources, factors, pages, or scoring formula changes.
 
@@ -328,7 +351,7 @@ ui.workstation_ui
               read-only research report preview
 ```
 
-FinScientist v7.0.4 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整研究流水线”执行 Scheduler 分层研究流水线，并支持点击“运行系统验收”生成 Release Candidate 验收报告；失败时会显示原因并使用缓存或 Demo fallback。
+FinScientist v7.1.0 是一个模块化 Streamlit 金融研究学习原型。当前网页入口已支持点击“运行完整研究流水线”执行 Scheduler 分层研究流水线，并支持点击“运行系统验收”生成 Release Candidate 验收报告；失败时会显示原因并使用缓存或 Demo fallback。
 
 当前版本不调用 OpenAI API，不使用数据库，不执行真实交易操作。所有结果仅用于学习演示，不构成投资建议。
 
@@ -338,7 +361,7 @@ FinScientist 是学习与研究工具，用于演示多市场行情分析、技�
 
 ## 当前版本
 
-当前版本：v7.0.4
+当前版本：v7.1.0
 
 V6.2.0 Live Pipeline Runner:
 

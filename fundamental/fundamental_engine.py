@@ -34,6 +34,7 @@ FUNDAMENTAL_RESEARCH_FIELDS = [
     "growth_score",
     "financial_quality_score",
     "fundamental_research_score",
+    "fundamental_reason",
     "fundamental_summary",
     "fundamental_strengths",
     "fundamental_risks",
@@ -292,7 +293,7 @@ def _build_row(row: pd.Series, fundamental_map: dict[str, dict[str, Any]]) -> di
     raw, data_source = _source_row_for(row.to_dict(), fundamental_map)
     values = {field: _normalize_number(field, _first_existing(raw, field)) for field in NUMERIC_FIELDS}
     available_count = sum(1 for field in CORE_AVAILABLE_FIELDS if values.get(field) is not None)
-    fundamental_available = available_count >= 3
+    fundamental_available = available_count >= 1
     warnings: list[str] = []
     strengths: list[str] = []
     risks: list[str] = []
@@ -311,6 +312,7 @@ def _build_row(row: pd.Series, fundamental_map: dict[str, dict[str, Any]]) -> di
         score = 50.0
         warnings.append("基本面数据不可用，使用中性分")
         summary = "基本面数据不可用，当前仅保留中性研究分。"
+        reason = "财务数据缺失，保留中性基本面研究分。"
         status = "Unavailable"
         data_source = "Unavailable"
         strengths = []
@@ -318,6 +320,27 @@ def _build_row(row: pd.Series, fundamental_map: dict[str, dict[str, Any]]) -> di
     else:
         score = _clip_score(0.25 * valuation + 0.25 * profitability + 0.25 * growth + 0.25 * quality)
         summary = f"估值 {valuation} / 盈利 {profitability} / 成长 {growth} / 财务质量 {quality}"
+        reason_parts: list[str] = []
+        if values.get("roe") is not None:
+            reason_parts.append("ROE已接入")
+            if values["roe"] >= 15:
+                reason_parts.append("ROE较高")
+        if values.get("net_profit_growth_yoy") is not None:
+            reason_parts.append("净利润增长已接入")
+            if values["net_profit_growth_yoy"] >= 20:
+                reason_parts.append("净利润增长优秀")
+        if values.get("revenue_growth_yoy") is not None:
+            reason_parts.append("营收增长已接入")
+        if values.get("pe_ttm") is not None or values.get("pb") is not None:
+            reason_parts.append("估值数据已接入")
+        if values.get("pe_ttm") is not None and values["pe_ttm"] > 40:
+            reason_parts.append("估值偏高")
+        if values.get("debt_to_asset") is not None:
+            reason_parts.append("资产负债率已接入")
+        missing = [field for field in CORE_AVAILABLE_FIELDS if values.get(field) is None]
+        if missing:
+            reason_parts.append("部分财务数据缺失")
+        reason = "；".join(dict.fromkeys(reason_parts)) or "基本面字段有限，部分维度保留中性分。"
         status = "Available"
 
     output: dict[str, Any] = {
@@ -331,6 +354,7 @@ def _build_row(row: pd.Series, fundamental_map: dict[str, dict[str, Any]]) -> di
         "growth_score": growth,
         "financial_quality_score": quality,
         "fundamental_research_score": score,
+        "fundamental_reason": reason,
         "fundamental_summary": summary,
         "fundamental_strengths": list(dict.fromkeys(strengths)),
         "fundamental_risks": list(dict.fromkeys(risks)),

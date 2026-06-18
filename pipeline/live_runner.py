@@ -20,10 +20,13 @@ from data.news_loader import NEWS_COLUMNS, build_news_dataset
 from backtest.return_analysis import build_return_analysis
 from factor.factor_lab import build_factor_dataset
 from fundamental.fundamental_engine import FUNDAMENTAL_RESEARCH_FIELDS, build_fundamental_research
+from industry.industry_engine import INDUSTRY_RESEARCH_FIELDS, build_industry_research
 from news.event_engine import NEWS_EVENT_FIELDS, build_news_event_scores
 from pipeline.scheduler import load_scheduler_cache, run_scheduled_pipeline
-from pipeline.stage_selector import SCHEDULER_FIELDS
+from pipeline.stage_selector import SCHEDULER_FIELDS, assign_final_buckets
 from research.score_activation import ACTIVATED_RESEARCH_FIELDS, activate_research_scores
+from research.research_explainer import RESEARCH_EXPLAINER_FIELDS, build_research_explanation
+from research.unified_ranking_engine import UNIFIED_RESEARCH_FIELDS, build_unified_research_score
 from screening.candidate_pool import build_candidate_pool
 from screening.composite_score_engine import build_composite_quant_score
 from screening.fundamental_screening import build_fundamental_screening
@@ -67,7 +70,10 @@ LIVE_PIPELINE_FIELDS = [
     *NEWS_COLUMNS,
     *NEWS_EVENT_FIELDS,
     *INDUSTRY_COLUMNS,
+    *INDUSTRY_RESEARCH_FIELDS,
     *ACTIVATED_RESEARCH_FIELDS,
+    *UNIFIED_RESEARCH_FIELDS,
+    *RESEARCH_EXPLAINER_FIELDS,
     *SCHEDULER_FIELDS,
 ]
 
@@ -123,7 +129,11 @@ def _copy_price_history_dict(price_history_dict: Any) -> dict[str, pd.DataFrame]
 def _build_demo_universe(max_stocks: int | None = None) -> pd.DataFrame:
     rows = []
     limit = max_stocks or len(DEMO_STOCKS)
-    for index, (ticker, name, industry) in enumerate(DEMO_STOCKS[:limit], start=1):
+    for index in range(1, limit + 1):
+        ticker, name, industry = DEMO_STOCKS[(index - 1) % len(DEMO_STOCKS)]
+        if index > len(DEMO_STOCKS):
+            ticker = f"9{index:05d}"
+            name = f"{name} Demo {index}"
         rows.append(
             {
                 "ticker": ticker,
@@ -136,8 +146,8 @@ def _build_demo_universe(max_stocks: int | None = None) -> pd.DataFrame:
                 "is_suspended": False,
                 "status": "Available",
                 "universe_status": "Available",
-                "universe_total_count": min(limit, len(DEMO_STOCKS)),
-                "universe_filtered_count": min(limit, len(DEMO_STOCKS)),
+                "universe_total_count": limit,
+                "universe_filtered_count": limit,
                 "universe_summary": DEMO_NOTICE,
             }
         )
@@ -191,6 +201,74 @@ def _build_demo_price_history(universe: pd.DataFrame) -> dict[str, pd.DataFrame]
         str(row["ticker"]): _demo_history_for(index)
         for index, row in universe.reset_index(drop=True).iterrows()
     }
+
+
+def _enrich_demo_research_variation(df: pd.DataFrame) -> pd.DataFrame:
+    """Add deterministic demo-only news and industry variation for fallback UI validation."""
+    result = df.copy(deep=True)
+    if result.empty:
+        return result
+    positive_titles = [
+        "AI算力订单中标",
+        "业绩预增并回购",
+        "军工国产替代订单",
+    ]
+    neutral_titles = ["公司公告", "行业调研会议", "日常经营公告"]
+    negative_titles = ["风险提示", "减持公告", "诉讼处罚"]
+    concept_map = {
+        "AI": "AI,算力,国产替代",
+        "Semiconductor": "芯片,AI,国产替代",
+        "Electronics": "AI,机器人,数据中心",
+        "Communication": "算力,数据中心,AI",
+        "New Energy": "新能源,储能",
+        "Auto": "新能源,机器人",
+        "Financial": "金融,指数",
+        "Consumer": "消费,品牌",
+        "Medical": "医疗,创新药",
+        "Resource": "资源,周期",
+    }
+    for position, index in enumerate(result.index):
+        cycle = position % 5
+        if cycle in {0, 1}:
+            title = positive_titles[position % len(positive_titles)]
+        elif cycle == 4:
+            title = negative_titles[position % len(negative_titles)]
+        else:
+            title = neutral_titles[position % len(neutral_titles)]
+        industry = str(result.at[index, "industry"]) if "industry" in result.columns else ""
+        concepts = concept_map.get(industry, industry or "综合研究")
+        result.at[index, "news_title"] = title
+        result.at[index, "news_source"] = "Built-in demo"
+        result.at[index, "news_time"] = date.today().isoformat()
+        result.at[index, "news_sentiment_label"] = ""
+        result.at[index, "news_keywords"] = ""
+        result.at[index, "news_type"] = ""
+        result.at[index, "concepts"] = concepts
+        result.at[index, "industry_strength_score"] = [78, 72, 64, 55, 42][cycle]
+        result.at[index, "concept_heat_score"] = [82, 74, 60, 52, 44][cycle]
+        current_price = result.get("latest_price", pd.Series(index=result.index, dtype="float64")).get(index, None)
+        current_quality = result.get("quote_quality_score", pd.Series(index=result.index, dtype="float64")).get(index, None)
+        result.at[index, "latest_price"] = (20 + position) if pd.isna(current_price) else current_price
+        result.at[index, "quote_quality_score"] = 80 if pd.isna(current_quality) else current_quality
+        result.at[index, "data_status"] = "Fallback"
+        result.at[index, "status"] = "Available"
+        result.at[index, "universe_status"] = "Available"
+        result.at[index, "is_st"] = False
+        result.at[index, "is_suspended"] = False
+    news_events = build_news_event_scores(result)
+    if not news_events.empty and "ticker" in news_events.columns and "ticker" in result.columns:
+        event_by_ticker = news_events.set_index(news_events["ticker"].astype(str))
+        ticker_key = result["ticker"].astype(str)
+        for field in NEWS_EVENT_FIELDS:
+            if field in {"ticker", "name"} or field not in news_events.columns:
+                continue
+            result[field] = ticker_key.map(event_by_ticker[field])
+    result = build_industry_research(result)
+    result = activate_research_scores(result)
+    result = build_unified_research_score(result)
+    result = build_research_explanation(result)
+    result = assign_final_buckets(result)
+    return result
 
 
 def _attach_factor_fields(df: pd.DataFrame) -> pd.DataFrame:
@@ -412,7 +490,10 @@ def _run_pipeline(
     )
     with_industry = _merge_optional_layer(with_news_events, industry, INDUSTRY_COLUMNS)
 
-    result = activate_research_scores(with_industry)
+    with_industry_research = build_industry_research(with_industry)
+    result = activate_research_scores(with_industry_research)
+    result = build_unified_research_score(result)
+    result = build_research_explanation(result)
     result.attrs.update(kline_attrs)
     result.attrs["fundamental_enabled"] = bool(fundamental_enabled)
     result.attrs["fundamental_data_source"] = loaded_fundamentals.attrs.get("fundamental_data_source", "Unavailable")
@@ -447,6 +528,7 @@ def _build_demo_result(max_stocks: int | None = None) -> pd.DataFrame:
     fundamentals = _build_demo_fundamentals(universe)
     histories = _build_demo_price_history(universe)
     result = _run_pipeline(universe, fundamentals, histories, kline_enabled=False, max_kline_stocks=max_stocks or 200, fundamental_enabled=False)
+    result = _enrich_demo_research_variation(result)
     return _finalize(result, is_demo=True, source="Built-in demo", message=DEMO_NOTICE, source_attrs=universe.attrs)
 
 

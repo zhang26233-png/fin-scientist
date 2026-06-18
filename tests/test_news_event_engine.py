@@ -100,3 +100,18 @@ def test_output_order_is_stable():
     result = build_news_event_scores(source)
 
     assert result["ticker"].tolist() == ["600002", "600001"]
+
+
+def test_v710_positive_event_weights_lift_news_score():
+    neutral = build_news_event_scores(pd.DataFrame([{"ticker": "600000", "news_title": "公司公告"}]))
+    positive = build_news_event_scores(pd.DataFrame([{"ticker": "600000", "news_title": "AI算力订单中标"}]))
+
+    assert positive.loc[0, "news_event_score"] > neutral.loc[0, "news_event_score"]
+    assert positive.loc[0, "news_reason"]
+
+
+def test_v710_negative_event_weights_reduce_news_score():
+    negative = build_news_event_scores(pd.DataFrame([{"ticker": "600000", "news_title": "公司减持处罚退市风险提示"}]))
+
+    assert negative.loc[0, "news_event_score"] < 50
+    assert negative.loc[0, "news_reason"]

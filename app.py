@@ -17,8 +17,8 @@ from ui.product_ui import (
     set_product_state,
 )
 
-APP_VERSION = "v7.0.4"
-APP_STAGE = "Scheduler Final Fix"
+APP_VERSION = "v7.1.0"
+APP_STAGE = "Unified Research Ranking Engine"
 
 # Re-export core functions used by the existing tests and notebooks.
 calculate_indicators = legacy_app.calculate_indicators

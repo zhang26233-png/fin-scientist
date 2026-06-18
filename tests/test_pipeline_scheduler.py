@@ -143,8 +143,37 @@ def test_scheduler_result_cache_contains_final_bucket_fields(monkeypatch, tmp_pa
 
     cached = pd.read_csv(tmp_path / "latest_research_result.csv", dtype={"ticker": str})
 
-    assert {"research_rank", "research_score", "research_bucket", "bucket_generation_reason"}.issubset(cached.columns)
+    assert {
+        "research_rank",
+        "research_score",
+        "research_bucket",
+        "bucket_generation_reason",
+        "unified_research_score",
+        "research_summary",
+    }.issubset(cached.columns)
     assert cached["research_bucket"].notna().any()
+
+
+def test_scheduler_final_rank_uses_unified_research_score(monkeypatch):
+    import pipeline.scheduler as scheduler
+
+    def fake_full_run(source, **kwargs):
+        result = source.copy(deep=True)
+        is_unified_high = result["ticker"].astype(str).eq("000003")
+        result["name"] = is_unified_high.map({True: "unified_high", False: "activated_high"})
+        result["real_technical_score"] = is_unified_high.map({True: 90, False: 40})
+        result["capital_flow_score"] = is_unified_high.map({True: 90, False: 40})
+        result["fundamental_research_score"] = is_unified_high.map({True: 90, False: 40})
+        result["industry_score"] = is_unified_high.map({True: 90, False: 40})
+        result["news_event_score"] = is_unified_high.map({True: 90, False: 40})
+        result["activated_composite_score"] = is_unified_high.map({True: 50, False: 95})
+        return result
+
+    monkeypatch.setattr(scheduler, "_scheduled_full_run", fake_full_run)
+    result = scheduler.run_scheduled_pipeline(_universe(4), stage1_limit=4, stage2_limit=2, stage3_limit=2, core_limit=1, watch_limit=1)
+
+    assert result["name"].tolist()[0] == "unified_high"
+    assert result["research_score"].tolist()[0] == result["unified_research_score"].tolist()[0]
 
 
 def test_scheduler_cache_invalidates_missing_bucket(monkeypatch, tmp_path):

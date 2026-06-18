@@ -17,7 +17,9 @@ from pipeline.stage_selector import (
     select_stage2_candidates,
     select_stage3_candidates,
 )
+from research.research_explainer import build_research_explanation
 from research.score_activation import activate_research_scores
+from research.unified_ranking_engine import build_unified_research_score
 from technical.indicator_engine import REAL_TECHNICAL_INDICATOR_FIELDS
 from fundamental.fundamental_engine import FUNDAMENTAL_RESEARCH_FIELDS
 from capital_flow.capital_engine import CAPITAL_ENGINE_FIELDS
@@ -26,7 +28,16 @@ from capital_flow.capital_engine import CAPITAL_ENGINE_FIELDS
 SCHEDULER_CACHE_DIR = Path("cache/scheduler")
 SCHEDULER_REPORT_CACHE = SCHEDULER_CACHE_DIR / "latest_scheduler_report.csv"
 SCHEDULER_RESULT_CACHE = SCHEDULER_CACHE_DIR / "latest_research_result.csv"
-REQUIRED_RESULT_CACHE_FIELDS = ["ticker", "name", "activated_composite_score", "research_rank", "research_score", "research_bucket"]
+REQUIRED_RESULT_CACHE_FIELDS = [
+    "ticker",
+    "name",
+    "activated_composite_score",
+    "unified_research_score",
+    "research_summary",
+    "research_rank",
+    "research_score",
+    "research_bucket",
+]
 
 
 def _copy(df: pd.DataFrame | None) -> pd.DataFrame:
@@ -55,7 +66,8 @@ def _save_cache(result: pd.DataFrame, report: pd.DataFrame) -> None:
 def _final_summary(df: pd.DataFrame) -> dict[str, object]:
     source = _copy(df)
     bucket = source["research_bucket"].fillna("").astype(str) if "research_bucket" in source.columns else pd.Series(dtype=object)
-    score = pd.to_numeric(source["activated_composite_score"], errors="coerce") if "activated_composite_score" in source.columns else pd.Series(dtype=float)
+    score_field = "unified_research_score" if "unified_research_score" in source.columns else "activated_composite_score"
+    score = pd.to_numeric(source[score_field], errors="coerce") if score_field in source.columns else pd.Series(dtype=float)
     distribution = bucket.value_counts().to_dict() if len(bucket) else {}
     return {
         "rows": int(len(source)),
@@ -290,6 +302,9 @@ def run_scheduled_pipeline(
     final_result = _overlay_by_ticker(stage4, stage2, REAL_TECHNICAL_INDICATOR_FIELDS)
     final_result = _overlay_by_ticker(final_result, stage3, FUNDAMENTAL_RESEARCH_FIELDS + CAPITAL_ENGINE_FIELDS)
     final_result = _ensure_scheduler_fields(final_result)
+    final_result = build_unified_research_score(final_result)
+    final_result = build_research_explanation(final_result)
+    final_result = assign_final_buckets(final_result, core_limit=core_limit, watch_limit=watch_limit)
     final_result.attrs.update(source_attrs)
     for key in [
         "kline_enabled",

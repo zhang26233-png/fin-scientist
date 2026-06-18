@@ -53,8 +53,9 @@ def test_input_object_not_mutated():
 def test_without_fundamental_df_graceful_degrade_from_existing_fields():
     result = build_fundamental_research(_base_quotes())
     assert "fundamental_available" in result.columns
-    assert result.loc[0, "fundamental_available"] is False
-    assert result.loc[0, "fundamental_research_score"] == 50
+    assert result.loc[0, "fundamental_available"] is True
+    assert result.loc[0, "fundamental_research_score"] != 50
+    assert "估值数据已接入" in result.loc[0, "fundamental_reason"]
 
 
 def test_fundamental_df_merges_by_ticker():

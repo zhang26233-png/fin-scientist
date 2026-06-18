@@ -168,6 +168,16 @@ def select_stage3_candidates(df: pd.DataFrame | None, limit: int = 100) -> pd.Da
 
 
 def _final_score(df: pd.DataFrame) -> pd.Series:
+    unified = _num(df.get("unified_research_score"), df.index)
+    if "unified_research_score" in df.columns:
+        fallback = (
+            _num(df.get("real_technical_score"), df.index).fillna(50) * 0.30
+            + _num(df.get("capital_flow_score"), df.index).fillna(50) * 0.25
+            + _num(df.get("fundamental_research_score"), df.index).fillna(50) * 0.20
+            + _num(df.get("industry_score"), df.index).fillna(_num(df.get("industry_strength_score"), df.index).fillna(50)) * 0.15
+            + _num(df.get("news_event_score"), df.index).fillna(50) * 0.10
+        )
+        return unified.where(unified.notna(), fallback)
     activated = _num(df.get("activated_composite_score"), df.index)
     fallback = (
         _num(df.get("fundamental_research_score"), df.index).fillna(50) * 0.30

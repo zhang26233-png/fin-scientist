@@ -46,7 +46,7 @@ def _known_issues(audit: dict[str, Any]) -> list[str]:
     return issues or ["- No blocking issue found in the current audit frames."]
 
 
-def build_release_report(research_df: pd.DataFrame | None = None, version: str = "v7.0.4") -> dict[str, Any]:
+def build_release_report(research_df: pd.DataFrame | None = None, version: str = "v7.1.0") -> dict[str, Any]:
     """Run audits, write CSV/Markdown artifacts, and return report metadata."""
     source = research_df.copy(deep=True) if isinstance(research_df, pd.DataFrame) else pd.DataFrame()
     audit = run_system_audit(source)
@@ -69,13 +69,13 @@ def build_release_report(research_df: pd.DataFrame | None = None, version: str =
     rc_ready = audit["system_status"] in {"PASS", "WARN"} and audit["research_result_status"] != "Unavailable"
     markdown = "\n".join(
         [
-            f"# Fin-Scientist {version} Scheduler Final Fix",
+            f"# Fin-Scientist {version} Unified Research Ranking Engine",
             "",
             "All outputs are only for learning and research and do not constitute investment advice.",
             "",
             "## 1. Current Version",
             f"- Version: {version}",
-            "- Stage: Scheduler Final Fix",
+            "- Stage: Unified Research Ranking Engine",
             "",
             "## 2. Module Status Overview",
             f"- {_count_status(audit['module_audit'])}",
@@ -98,7 +98,7 @@ def build_release_report(research_df: pd.DataFrame | None = None, version: str =
             *issues[:50],
             "",
             "## 8. Next Version Suggestions",
-            "- Continue with v7.1.0 Unified Research Ranking Engine after the audit remains stable on live and cache data.",
+            "- Continue with v7.1.x validation after the unified research ranking output remains stable on live and cache data.",
             "- Keep ranking explanations research-only and preserve the existing scoring boundary.",
             "",
             "## 9. Release Candidate Standard",

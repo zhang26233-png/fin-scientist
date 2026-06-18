@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v7.0.4.
+Current: v7.1.0.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -240,7 +240,8 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v7.0.1: System Audit Release Candidate completed.
 - v7.0.3: Research Result Calibration & Bucket Fix completed.
 - v7.0.4: Scheduler Final Fix completed.
-- Next target: v7.1.0 Unified Research Ranking Engine.
+- v7.1.0: Unified Research Ranking Engine completed.
+- Next target: v7.1.x Unified Ranking Validation.
 - A-share universe builder.
 - Fundamental screening entry point.
 - Technical screening entry point.
@@ -666,6 +667,15 @@ Completed v7.0.4 scope:
 - Invalidated old Scheduler result caches when required final bucket/rank/score fields are missing.
 - Updated Dashboard and Selection Results count cards to display Core Count, Watch Count, and Excluded Count from `research_bucket`.
 - Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `selection_score`, `candidate_rank`, scoring formulas, data sources, factors, pages, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and buy/sell/hold advice unchanged.
+
+Completed v7.1.0 scope:
+
+- Added `research/unified_ranking_engine.py` with `unified_research_score = 0.30 * real_technical_score + 0.25 * capital_flow_score + 0.20 * fundamental_research_score + 0.15 * industry_score + 0.10 * news_event_score`.
+- Added contribution fields for technical, capital, fundamental, industry, and news dimensions.
+- Added `research/research_explainer.py` and Product UI explanation cards for research-only interpretation.
+- Updated Scheduler final ranking, `research_rank`, `research_score`, Core Research, Watch Research, and Excluded / Low Priority to use unified research score.
+- Enhanced fundamental, news, and industry layers with deterministic reasons and non-silent neutral fallback behavior.
+- Kept protected scoring fields, data sources, pages, trading logic, target prices, return promises, API keys, databases, and buy/sell/hold advice unchanged.
 
 Boundary:
 
