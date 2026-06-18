@@ -200,7 +200,7 @@ Boundary:
 
 ## v3.x - Quantitative Research Foundation
 
-Current: v7.0.1.
+Current: v7.0.3.
 
 Goal: build shared universe, screening, scoring, and validation entry points before any machine learning layer.
 
@@ -238,6 +238,7 @@ Goal: build shared universe, screening, scoring, and validation entry points bef
 - v6.9.0: Full News & Event Research Engine completed.
 - v7.0.0: Research Pipeline Scheduler completed.
 - v7.0.1: System Audit Release Candidate completed.
+- v7.0.3: Research Result Calibration & Bucket Fix completed.
 - Next target: v7.1.0 Unified Research Ranking Engine.
 - A-share universe builder.
 - Fundamental screening entry point.
@@ -642,6 +643,17 @@ Completed v7.0.1 scope:
 - Added the Product UI page "系统验收 / Release Check" and sidebar action "运行系统验收".
 - Dashboard now shows System Status and Research Result Status.
 - Next target: v7.1.0 Unified Research Ranking Engine.
+- Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and buy/sell/hold advice unchanged.
+
+Completed v7.0.3 scope:
+
+- Calibrated final Scheduler buckets so non-empty valid research results do not collapse entirely into Excluded / Low Priority.
+- Updated final ranking to use `activated_composite_score` descending, with a documented neutral fallback score when activated composite data is missing.
+- Added Core Research / Watch Research / Excluded / Low Priority rules based on rank windows, 55/50 score thresholds, severe data-quality exclusion, and relative-ranking fallback.
+- Added `research_score`, improved selected/excluded reasons, and the relative-ranking fallback warning.
+- Updated Product UI Selection Results so the default table shows Core + Watch, Top Core and Top Watch use unified `research_bucket`, and the Exclude tab shows Excluded / Low Priority.
+- Updated Dashboard and Scheduler reports with final bucket counts and activated composite score max/min/mean.
+- Added real research-result data audit checks for rows, scores, buckets, Core + Watch availability, Core empty failure, and Watch empty warning.
 - Kept `core/scoring.py`, `strategy_score`, `research_priority_score`, `priority_stability_score`, `candidate_rank`, `selection_score`, trading logic, API keys, databases, vector stores, machine-learning predictions, return promises, and buy/sell/hold advice unchanged.
 
 Boundary:

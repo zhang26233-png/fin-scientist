@@ -23,6 +23,14 @@ SCHEDULER_REPORT_COLUMNS = [
     "stage_status",
     "stage_warning",
     "data_source_summary",
+    "final_rows",
+    "core_count",
+    "watch_count",
+    "exclude_count",
+    "max_score",
+    "min_score",
+    "mean_score",
+    "bucket_distribution",
 ]
 
 
@@ -39,6 +47,7 @@ class PipelineRunReport:
     end_time: str = ""
     total_seconds: float = 0.0
     data_source_summary: str = ""
+    final_summary: dict[str, Any] = field(default_factory=dict)
     _started_at: float = field(default_factory=perf_counter, repr=False)
     _stages: list[dict[str, Any]] = field(default_factory=list, repr=False)
 
@@ -64,8 +73,21 @@ class PipelineRunReport:
                 "stage_status": stage_status or "OK",
                 "stage_warning": stage_warning or "",
                 "data_source_summary": self.data_source_summary or "",
+                "final_rows": 0,
+                "core_count": 0,
+                "watch_count": 0,
+                "exclude_count": 0,
+                "max_score": None,
+                "min_score": None,
+                "mean_score": None,
+                "bucket_distribution": "",
             }
         )
+
+    def set_final_summary(self, summary: dict[str, Any]) -> None:
+        self.final_summary = dict(summary or {})
+        for stage in self._stages:
+            stage.update(self.final_summary)
 
     def finish(self, data_source_summary: str = "") -> None:
         self.end_time = _now_text()
@@ -76,6 +98,8 @@ class PipelineRunReport:
             stage["end_time"] = self.end_time
             stage["total_seconds"] = self.total_seconds
             stage["data_source_summary"] = self.data_source_summary
+            if self.final_summary:
+                stage.update(self.final_summary)
 
     def to_dataframe(self) -> pd.DataFrame:
         if not self.end_time:

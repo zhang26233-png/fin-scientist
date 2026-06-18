@@ -20,15 +20,16 @@
 
 ## Version State
 
-- CURRENT_VERSION = v7.0.1
-- CURRENT_STAGE = System Audit Release Candidate
+- CURRENT_VERSION = v7.0.3
+- CURRENT_STAGE = Research Result Calibration
 - NEXT_TARGET = v7.1.0 Unified Research Ranking Engine
 
 Version evidence from current files:
 
-- `app.py`: `APP_VERSION = "v7.0.1"`
-- `legacy_app.py`: `APP_VERSION = "v7.0.1"`
-- `README.md`: Current version: v7.0.1
+- `ui/product_ui.py`: `PRODUCT_VERSION = "v7.0.3"`
+- `README.md`: Current version: v7.0.3
+
+V7.0.3 calibrates the final Scheduler research result layer. `assign_final_buckets()` now ranks by `activated_composite_score` descending, fills missing activated scores from fundamental, real technical, capital-flow, news-event, and quote-quality fallback scores, and emits unified `research_bucket`, `research_rank`, `research_score`, selected/excluded reasons, and scheduler warnings. Core Research uses rank plus a 55 score threshold, Watch Research uses the next rank window or a 50 score threshold, and severe data-quality rows remain Excluded / Low Priority. If the absolute Core threshold is too strict, relative-ranking fallback generates Core Research rows and records the warning. Product UI defaults the selection page to Core + Watch, fixes Top Core / Top Watch / Exclude tabs, and Dashboard exposes Core, Watch, Exclude, max/min/mean activated composite score. Scheduler reports now include final row count, bucket counts, score summary, and bucket distribution. Real data audit adds checks for non-empty research rows, non-empty scores, non-empty buckets, Core + Watch availability, Core empty failure, and Watch empty warning. All outputs remain only for learning and research and do not constitute investment advice.
 
 V7.0.1 adds the System Audit Release Candidate layer. New package `audit/` contains `system_audit.py`, `module_audit.py`, `ui_audit.py`, and `release_report.py`. The audit checks data, research, scoring, scheduler, cache, and UI readiness without adding new data sources or changing scoring logic. It validates module importability, callable boundaries, pipeline wiring, UI wiring, required final research fields, Scheduler stages, Core Research / Watch Research / Excluded / Low Priority output counts, data-source status, and Release Candidate readiness. It writes `cache/audit/latest_system_audit.csv`, `cache/audit/latest_pipeline_audit.csv`, and `cache/audit/latest_release_report.md`. Product UI adds the "系统验收 / Release Check" page and a sidebar "运行系统验收" button. Dashboard shows System Status and Research Result Status. All outputs remain only for learning and research and do not constitute investment advice.
 

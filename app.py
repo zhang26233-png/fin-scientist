@@ -17,8 +17,8 @@ from ui.product_ui import (
     set_product_state,
 )
 
-APP_VERSION = "v7.0.1"
-APP_STAGE = "System Audit Release Candidate"
+APP_VERSION = "v7.0.3"
+APP_STAGE = "Research Result Calibration"
 
 # Re-export core functions used by the existing tests and notebooks.
 calculate_indicators = legacy_app.calculate_indicators

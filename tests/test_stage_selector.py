@@ -120,3 +120,70 @@ def test_empty_dataframe_returns_safely():
     assert select_stage2_candidates(empty).empty
     assert select_stage3_candidates(empty).empty
     assert assign_final_buckets(empty).empty
+
+
+def test_equal_scores_generate_core_and_watch():
+    df = pd.DataFrame(
+        {
+            "ticker": [f"{i:06d}" for i in range(100)],
+            "activated_composite_score": [64.0] * 100,
+            "quote_quality_score": [80] * 100,
+        }
+    )
+
+    result = assign_final_buckets(df)
+
+    assert int(result["research_bucket"].eq("Core Research").sum()) == 20
+    assert int(result["research_bucket"].eq("Watch Research").sum()) > 0
+
+
+def test_score_above_55_below_70_can_be_core():
+    df = pd.DataFrame({"ticker": ["a", "b"], "activated_composite_score": [64, 56], "quote_quality_score": [80, 80]})
+
+    result = assign_final_buckets(df, core_limit=1, watch_limit=1)
+
+    assert result.iloc[0]["research_bucket"] == "Core Research"
+
+
+def test_missing_activated_score_uses_fallback_score():
+    df = pd.DataFrame(
+        {
+            "ticker": ["high", "low"],
+            "fundamental_research_score": [80, 40],
+            "real_technical_score": [80, 40],
+            "capital_flow_score": [80, 40],
+            "news_event_score": [80, 40],
+            "quote_quality_score": [80, 40],
+        }
+    )
+
+    result = assign_final_buckets(df, core_limit=1, watch_limit=1)
+
+    assert result["ticker"].tolist()[0] == "high"
+    assert result["activated_composite_score"].tolist()[0] == 80
+
+
+def test_research_bucket_only_contains_legal_values():
+    df = pd.DataFrame({"ticker": ["a", "b", "c"], "activated_composite_score": [80, 55, 10], "quote_quality_score": [80, 80, 80]})
+
+    result = assign_final_buckets(df, core_limit=1, watch_limit=1)
+
+    assert set(result["research_bucket"]).issubset({"Core Research", "Watch Research", "Excluded / Low Priority"})
+
+
+def test_research_rank_sorts_by_activated_composite_score_desc():
+    df = pd.DataFrame({"ticker": ["low", "high", "mid"], "activated_composite_score": [40, 90, 60], "quote_quality_score": [80, 80, 80]})
+
+    result = assign_final_buckets(df, core_limit=1, watch_limit=1)
+
+    assert result["ticker"].tolist() == ["high", "mid", "low"]
+    assert result["research_rank"].tolist() == [1, 2, 3]
+
+
+def test_neutral_scores_use_relative_ranking_fallback():
+    df = pd.DataFrame({"ticker": [f"{i:06d}" for i in range(30)], "activated_composite_score": [50] * 30, "quote_quality_score": [80] * 30})
+
+    result = assign_final_buckets(df, core_limit=10, watch_limit=10)
+
+    assert int(result["research_bucket"].eq("Core Research").sum()) == 10
+    assert result["research_scheduler_warning"].str.contains("relative ranking fallback", case=False).any()

@@ -119,6 +119,18 @@ def test_scheduler_report_fields_complete(monkeypatch):
     assert list(report.columns) == SCHEDULER_REPORT_COLUMNS
 
 
+def test_scheduler_report_includes_final_bucket_summary(monkeypatch):
+    import pipeline.scheduler as scheduler
+
+    monkeypatch.setattr(scheduler, "_scheduled_full_run", _fake_full_run)
+    result = scheduler.run_scheduled_pipeline(_universe(10), stage1_limit=8, stage2_limit=6, stage3_limit=5)
+    report = result.attrs["scheduler_report_df"]
+
+    assert int(report["final_rows"].iloc[0]) == len(result)
+    assert int(report["core_count"].iloc[0]) == int(result["research_bucket"].eq("Core Research").sum())
+    assert "bucket_distribution" in report.columns
+
+
 def test_does_not_mutate_input(monkeypatch):
     import pipeline.scheduler as scheduler
 
@@ -128,3 +140,34 @@ def test_does_not_mutate_input(monkeypatch):
     scheduler.run_scheduled_pipeline(source, stage1_limit=5, stage2_limit=4, stage3_limit=3)
 
     pd.testing.assert_frame_equal(source, original)
+
+
+def test_core_tab_not_empty(monkeypatch):
+    import ui.product_ui as product_ui
+
+    df = pd.DataFrame(
+        {
+            "ticker": ["core", "watch", "exclude"],
+            "name": ["Core", "Watch", "Exclude"],
+            "research_bucket": ["Core Research", "Watch Research", "Excluded / Low Priority"],
+            "research_rank": [1, 2, 3],
+            "activated_composite_score": [64, 60, 40],
+        }
+    )
+
+    class DummyTab:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    monkeypatch.setattr(product_ui, "_render_page_header", lambda *args, **kwargs: None)
+    monkeypatch.setattr(product_ui, "_render_table", lambda frame, columns, label: frame.copy(deep=True))
+    monkeypatch.setattr(product_ui.st, "selectbox", lambda label, options, index=0: options[index])
+    monkeypatch.setattr(product_ui.st, "tabs", lambda labels: [DummyTab() for _ in labels])
+    monkeypatch.setattr(product_ui.st, "error", lambda message: None)
+
+    result = product_ui.render_selection_page(df)
+
+    assert not result["top_core"].empty

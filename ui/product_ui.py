@@ -23,8 +23,8 @@ from ui.workstation_theme import badge_html, get_workstation_css, status_tone
 from ui.workstation_ui import render_research_workstation
 
 
-PRODUCT_VERSION = "v7.0.1"
-PRODUCT_STAGE = "System Audit Release Candidate"
+PRODUCT_VERSION = "v7.0.3"
+PRODUCT_STAGE = "Research Result Calibration"
 
 DASHBOARD_PAGE = "首页总览 Dashboard"
 UNIVERSE_PAGE = "全A股票池"
@@ -366,6 +366,20 @@ def _metric_value(df: pd.DataFrame, field: str) -> Any:
     return pd.to_numeric(df[field], errors="coerce").mean()
 
 
+def _metric_max(df: pd.DataFrame, field: str) -> Any:
+    if df.empty or field not in df.columns:
+        return None
+    values = pd.to_numeric(df[field], errors="coerce")
+    return values.max() if not values.dropna().empty else None
+
+
+def _metric_min(df: pd.DataFrame, field: str) -> Any:
+    if df.empty or field not in df.columns:
+        return None
+    values = pd.to_numeric(df[field], errors="coerce")
+    return values.min() if not values.dropna().empty else None
+
+
 def _has_nonempty_value(value: Any) -> bool:
     if isinstance(value, list):
         return any(bool(item) for item in value)
@@ -416,7 +430,7 @@ def _current_audit_status() -> tuple[str, str]:
 def build_dashboard_summary(df: Any) -> dict[str, Any]:
     """Build product dashboard metrics from the current research frame."""
     source = safe_copy_frame(df)
-    bucket_field = _first_available_field(source, ["research_bucket", "activated_research_bucket", "selection_bucket"])
+    bucket_field = "research_bucket" if "research_bucket" in source.columns else _first_available_field(source, ["activated_research_bucket", "selection_bucket"])
     selection_score_field = _first_available_field(source, ["activated_selection_score", "selection_score"])
     composite_score_field = _first_available_field(source, ["activated_composite_score", "composite_score"])
     if source.empty:
@@ -453,9 +467,9 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
     return {
         "total_count": int(len(source)),
         "universe_size": int(source.attrs.get("universe_size", len(source))) if hasattr(source, "attrs") else int(len(source)),
-        "core_count": int(bucket.isin(["Core", "Core Research"]).sum()),
-        "watch_count": int(bucket.isin(["Watch", "Watch Research"]).sum()),
-        "exclude_count": int(bucket.isin(["Exclude", "Excluded", "Excluded / Low Priority"]).sum()),
+        "core_count": int(bucket.eq("Core Research").sum()),
+        "watch_count": int(bucket.eq("Watch Research").sum()),
+        "exclude_count": int(bucket.eq("Excluded / Low Priority").sum()),
         "pipeline_mode": source.attrs.get("pipeline_mode", "Scheduler") if hasattr(source, "attrs") else "Scheduler",
         "scheduler_stage1_rows": int(source.attrs.get("scheduler_stage1_rows", 0)) if hasattr(source, "attrs") else 0,
         "scheduler_stage2_rows": int(source.attrs.get("scheduler_stage2_rows", 0)) if hasattr(source, "attrs") else 0,
@@ -467,6 +481,9 @@ def build_dashboard_summary(df: Any) -> dict[str, Any]:
         "research_result_status": _current_audit_status()[1],
         "average_selection_score": _metric_value(source, selection_score_field) if selection_score_field else None,
         "average_composite_score": _metric_value(source, composite_score_field) if composite_score_field else None,
+        "max_activated_composite_score": _metric_max(source, "activated_composite_score"),
+        "min_activated_composite_score": _metric_min(source, "activated_composite_score"),
+        "mean_activated_composite_score": _metric_value(source, "activated_composite_score"),
         "average_real_technical_score": _metric_value(source, "real_technical_score"),
         "technical_history_available_count": technical_history_count,
         "technical_high_risk_count": technical_high_risk_count,
@@ -628,6 +645,9 @@ def render_dashboard_page(df: Any) -> dict[str, Any]:
         ("Exclude 数量", summary["exclude_count"], "排除或不可用对象"),
         ("平均 activated_selection_score", summary["average_selection_score"], "激活后的研究分数均值"),
         ("平均 activated_composite_score", summary["average_composite_score"], "激活后的综合研究分数均值"),
+        ("最高 activated_composite_score", summary["max_activated_composite_score"], "当前结果最高综合研究分"),
+        ("最低 activated_composite_score", summary["min_activated_composite_score"], "当前结果最低综合研究分"),
+        ("平均 activated_composite_score", summary["mean_activated_composite_score"], "当前结果平均综合研究分"),
         ("平均 real_technical_score", summary["average_real_technical_score"], "真实技术指标研究分均值"),
         ("技术历史可用数量", summary["technical_history_available_count"], "历史行情可用的研究对象"),
         ("技术风险提示数量", summary["technical_high_risk_count"], "存在技术风险提示的对象"),
@@ -706,7 +726,9 @@ def render_selection_page(df: Any) -> dict[str, pd.DataFrame]:
     """Render stock-selection result page."""
     source = safe_copy_frame(df)
     _render_page_header("选股结果", "Core、Watch、风险和数据缺失对象分组")
-    display_source = source.copy(deep=True)
+    bucket = source["research_bucket"].fillna("") if "research_bucket" in source.columns else pd.Series([""] * len(source), index=source.index)
+    default_mask = bucket.isin(["Core Research", "Watch Research"])
+    display_source = source[default_mask].copy(deep=True) if default_mask.any() else source.copy(deep=True)
     sort_options = [
         "research_bucket",
         "activated_composite_score",
@@ -730,16 +752,15 @@ def render_selection_page(df: Any) -> dict[str, pd.DataFrame]:
     elif sort_field == "research_bucket" and "research_rank" in display_source.columns:
         display_source = display_source.sort_values(by="research_rank", ascending=True, kind="mergesort")
     table = _render_table(display_source, SELECTION_COLUMNS, "Stock Selection")
-    bucket_field = _first_available_field(source, ["research_bucket", "activated_research_bucket", "selection_bucket"])
-    bucket = source[bucket_field] if bucket_field else pd.Series([""] * len(source), index=source.index)
-    risk = source["risk_level"] if "risk_level" in source.columns else pd.Series([""] * len(source), index=source.index)
     warnings = collect_warning_fields(source)
     sections = {
-        "top_core": source[bucket.isin(["Core", "Core Research"])].copy(deep=True),
-        "top_watch": source[bucket.isin(["Watch", "Watch Research"])].copy(deep=True),
-        "risk_objects": source[risk.eq("High")].copy(deep=True),
+        "top_core": source[bucket.eq("Core Research")].copy(deep=True),
+        "top_watch": source[bucket.eq("Watch Research")].copy(deep=True),
+        "risk_objects": source[bucket.eq("Excluded / Low Priority")].copy(deep=True),
         "missing_data": source.iloc[0:0].copy(deep=True),
     }
+    if sections["top_core"].empty and not source.empty:
+        st.error("Core为空，可能是分层规则或阈值过严，请检查 research_bucket 分布。")
     if warnings and not source.empty:
         sections["missing_data"] = source.copy(deep=True)
     tabs = st.tabs(["Top Core", "Top Watch", "风险标的", "数据缺失标的"])

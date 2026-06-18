@@ -51,6 +51,23 @@ def _save_cache(result: pd.DataFrame, report: pd.DataFrame) -> None:
         pass
 
 
+def _final_summary(df: pd.DataFrame) -> dict[str, object]:
+    source = _copy(df)
+    bucket = source["research_bucket"].fillna("").astype(str) if "research_bucket" in source.columns else pd.Series(dtype=object)
+    score = pd.to_numeric(source["activated_composite_score"], errors="coerce") if "activated_composite_score" in source.columns else pd.Series(dtype=float)
+    distribution = bucket.value_counts().to_dict() if len(bucket) else {}
+    return {
+        "final_rows": int(len(source)),
+        "core_count": int(bucket.eq("Core Research").sum()) if len(bucket) else 0,
+        "watch_count": int(bucket.eq("Watch Research").sum()) if len(bucket) else 0,
+        "exclude_count": int(bucket.eq("Excluded / Low Priority").sum()) if len(bucket) else 0,
+        "max_score": round(float(score.max()), 4) if not score.dropna().empty else None,
+        "min_score": round(float(score.min()), 4) if not score.dropna().empty else None,
+        "mean_score": round(float(score.mean()), 4) if not score.dropna().empty else None,
+        "bucket_distribution": str(distribution),
+    }
+
+
 def _overlay_by_ticker(target: pd.DataFrame, overlay: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     if target.empty or overlay.empty or "ticker" not in target.columns or "ticker" not in overlay.columns:
         return target
@@ -186,6 +203,7 @@ def run_scheduled_pipeline(
         report.add_stage("Stage 3: Research Scoring", 0, 0, 0.0, "OK", "Skipped because prior stage is empty.")
         report.add_stage("Stage 4: Deep Event Layer", 0, 0, 0.0, "OK", "Skipped because prior stage is empty.")
         report.finish("Empty input universe.")
+        report.set_final_summary(_final_summary(empty))
         scheduler_report_df = report.to_dataframe()
         empty.attrs.update(source_attrs)
         empty.attrs["scheduler_report_df"] = scheduler_report_df
@@ -299,6 +317,7 @@ def run_scheduled_pipeline(
     for key in ["news_enabled", "news_event_enabled", "news_source", "news_status", "news_rows", "news_warning", "news_updated_at", "news_event_cache_status", "news_event_cache_path", "news_attempts"]:
         if key in stage4.attrs:
             final_result.attrs[key] = stage4.attrs.get(key)
+    report.set_final_summary(_final_summary(final_result))
     report.finish(
         f"source={source_attrs.get('data_source', 'Unknown')}; status={source_attrs.get('data_status', 'Unknown')}; input_rows={len(source)}"
     )
@@ -311,9 +330,11 @@ def run_scheduled_pipeline(
     final_result.attrs["scheduler_stage1_rows"] = len(stage1)
     final_result.attrs["scheduler_stage2_rows"] = len(stage2)
     final_result.attrs["scheduler_stage3_rows"] = len(stage3)
-    final_result.attrs["scheduler_core_count"] = int(final_result["research_bucket"].eq("Core Research").sum()) if "research_bucket" in final_result.columns else 0
-    final_result.attrs["scheduler_watch_count"] = int(final_result["research_bucket"].eq("Watch Research").sum()) if "research_bucket" in final_result.columns else 0
-    final_result.attrs["scheduler_exclude_count"] = int(final_result["research_bucket"].eq("Excluded / Low Priority").sum()) if "research_bucket" in final_result.columns else 0
+    summary = _final_summary(final_result)
+    final_result.attrs["scheduler_core_count"] = int(summary["core_count"])
+    final_result.attrs["scheduler_watch_count"] = int(summary["watch_count"])
+    final_result.attrs["scheduler_exclude_count"] = int(summary["exclude_count"])
+    final_result.attrs["scheduler_final_summary"] = summary
     _save_cache(final_result, scheduler_report_df)
     return final_result
 
